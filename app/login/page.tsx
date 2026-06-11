@@ -25,13 +25,14 @@ export default function LoginPage() {
     const sb = createClient();
     sb.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { setChecking(false); return; }
-      const { data: wedding } = await sb.from("wedding").select("id").eq("user_id", user.id).single();
-      if (wedding) {
-        router.replace("/dashboard");
-      } else {
-        setLoggedInNoWedding(true);
-        setChecking(false);
-      }
+      // Check mariage owned
+      const { data: wedding } = await sb.from("wedding").select("id").eq("user_id", user.id).limit(1).maybeSingle();
+      if (wedding) { router.replace("/dashboard"); return; }
+      // Check mariage partagé
+      const { data: shared } = await sb.from("wedding_access").select("id").eq("user_id", user.id).not("accepted_at", "is", null).limit(1).maybeSingle();
+      if (shared) { router.replace("/dashboard"); return; }
+      setLoggedInNoWedding(true);
+      setChecking(false);
     });
   }, []);
 
@@ -114,6 +115,9 @@ export default function LoginPage() {
                     <button type="button" className="icon-btn w-8 h-8 absolute right-1.5 top-1/2 -translate-y-1/2" onClick={() => setShowPw((s) => !s)}>
                       <Icon name="eye" size={18} />
                     </button>
+                  </div>
+                  <div className="text-right mt-1">
+                    <a href="/reset-password" className="text-[12px] text-primary hover:underline">Mot de passe oublié ?</a>
                   </div>
                 </Field>
                 {err && (

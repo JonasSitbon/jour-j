@@ -24,7 +24,7 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   const { pathname } = request.nextUrl;
 
-  const publicPaths = ["/", "/login", "/signup", "/auth"];
+  const publicPaths = ["/", "/login", "/signup", "/auth", "/reset-password"];
   const isPublic = publicPaths.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
   // Redirige les non-authentifiés vers /login (sauf pages publiques)
