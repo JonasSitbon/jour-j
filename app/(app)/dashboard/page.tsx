@@ -10,6 +10,7 @@ import { useStore } from "@/components/providers";
 import { fmt } from "@/lib/format";
 import { Icon } from "@/components/icon";
 import { Card, Badge, Button, Ring } from "@/components/ui";
+import type { AppState } from "@/lib/types";
 
 /* ------------------------------------------------------------------ */
 const TILE_TONE: Record<string, string> = {
@@ -447,6 +448,82 @@ function Reveal({ children, delay = 0, className }: { children: React.ReactNode;
   );
 }
 
+/* ------------------------------------------------------------------ */
+/* UpcomingSnapshot                                                    */
+/* ------------------------------------------------------------------ */
+function UpcomingSnapshot({ state }: { state: AppState }) {
+  const today = new Date().toISOString().split("T")[0];
+
+  const urgentTasks = state.tasks
+    .filter((t) => !t.done && t.due)
+    .sort((a, b) => a.due.localeCompare(b.due))
+    .slice(0, 3);
+
+  const upcomingPayments = state.payments
+    .filter((p) => p.status !== "paid" && p.due)
+    .sort((a, b) => a.due.localeCompare(b.due))
+    .slice(0, 3);
+
+  if (urgentTasks.length === 0 && upcomingPayments.length === 0) return null;
+
+  return (
+    <motion.div variants={fadeUp} className="mt-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {urgentTasks.length > 0 && (
+          <Card>
+            <div className="sec-title mb-3"><Icon name="check-circle" size={15} className="text-primary" />Tâches prioritaires</div>
+            <div className="flex flex-col gap-2">
+              {urgentTasks.map((t) => {
+                const isLate = t.due < today;
+                const daysLeft = Math.round((new Date(t.due).getTime() - Date.now()) / 86400000);
+                return (
+                  <Link key={t.id} href="/checklist" className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-line hover:border-line-strong hover:bg-hover transition">
+                    <div className={`w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0 ${isLate ? "bg-coral-soft" : "bg-primary-soft"}`}>
+                      <Icon name="check" size={14} className={isLate ? "text-coral" : "text-primary-700"} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-medium truncate">{t.title}</div>
+                      <div className={`text-[11.5px] ${isLate ? "text-coral" : "text-text-3"}`}>
+                        {isLate ? `${Math.abs(daysLeft)}j de retard` : `J-${daysLeft}`}
+                      </div>
+                    </div>
+                    <Icon name="chevron-right" size={13} className="text-text-3 shrink-0" />
+                  </Link>
+                );
+              })}
+            </div>
+          </Card>
+        )}
+        {upcomingPayments.length > 0 && (
+          <Card>
+            <div className="sec-title mb-3"><Icon name="card" size={15} className="text-primary" />Paiements à venir</div>
+            <div className="flex flex-col gap-2">
+              {upcomingPayments.map((p) => {
+                const isLate = p.due < today;
+                return (
+                  <Link key={p.id} href="/payments" className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-line hover:border-line-strong hover:bg-hover transition">
+                    <div className={`w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0 ${isLate ? "bg-coral-soft" : "bg-amber-soft"}`}>
+                      <Icon name="wallet" size={14} className={isLate ? "text-coral" : "text-[var(--gold-ink)]"} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-medium truncate">{p.label}</div>
+                      <div className="text-[11.5px] text-text-3">{p.vendor}</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="font-mono text-[13px] font-semibold">{p.amount.toLocaleString("fr-FR")} €</div>
+                      <div className={`text-[11px] ${isLate ? "text-coral" : "text-text-3"}`}>{new Date(p.due + "T00:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}</div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </Card>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
 /* ================================================================== */
 /* Page                                                                */
 /* ================================================================== */
@@ -803,6 +880,9 @@ export default function DashboardPage() {
           </Card>
         </Reveal>
       </div>
+
+      {/* ── Upcoming snapshot ─────────────────────────────────── */}
+      <UpcomingSnapshot state={state} />
     </div>
   );
 }

@@ -7,16 +7,47 @@ const geist = Inter({ subsets: ["latin"], variable: "--font-geist", weight: ["30
 const geistMono = Roboto_Mono({ subsets: ["latin"], variable: "--font-geist-mono", weight: ["400", "500", "600"] });
 
 export const metadata: Metadata = {
-  title: "Jour J — Organisez votre mariage",
-  description: "L'application tout-en-un pour préparer votre mariage : invités, budget, prestataires, checklist et plan de table.",
-  themeColor: "#C96E2C",
-  manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, statusBarStyle: "default", title: "Jour J" },
+  metadataBase: new URL("https://the-cockpit.fr"),
+  title: {
+    default: "The Cockpit — Organisez votre mariage sereinement",
+    template: "%s | The Cockpit",
+  },
+  description: "Gérez tous les aspects de votre mariage : invités, prestataires, budget, planning et Jour J. Gratuit, élégant et collaboratif.",
+  keywords: ["organisation mariage", "wedding planner", "liste invités mariage", "budget mariage", "planning mariage", "tableau de bord mariage"],
+  authors: [{ name: "The Cockpit" }],
+  creator: "The Cockpit",
   openGraph: {
-    title: "Jour J — Organisez votre mariage",
-    description: "L'application tout-en-un pour préparer votre mariage sereinement.",
-    locale: "fr_FR",
     type: "website",
+    locale: "fr_FR",
+    url: "https://the-cockpit.fr",
+    siteName: "The Cockpit",
+    title: "The Cockpit — Organisez votre mariage sereinement",
+    description: "Gérez tous les aspects de votre mariage : invités, prestataires, budget, planning et Jour J. Gratuit, élégant et collaboratif.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "The Cockpit — Tableau de bord mariage",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "The Cockpit — Organisez votre mariage sereinement",
+    description: "Gérez tous les aspects de votre mariage. Gratuit et élégant.",
+    images: ["/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
+  manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "The Cockpit" },
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
   },
 };
 
