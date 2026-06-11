@@ -1,0 +1,283 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   JOUR J — Design tokens (beige pastel · accent orange/jaune)
+   ============================================================ */
+:root {
+  --primary: #C96E2C;
+  --primary-600: #B85F22;
+  --primary-700: #9C4E1A;
+  --primary-soft: #F6E5D0;
+  --primary-softer: #FBF1E3;
+  --on-primary: #FFFAF2;
+
+  --sage: #7E9A63;      --sage-soft: #EAF0DD;
+  --coral: #C0533A;     --coral-soft: #F8E2D9;
+  --gold: #D6A22F;      --gold-soft: #F7EBCC;
+  --amber: #D6A22F;     --amber-soft: #F7EBCC;
+  --gold-ink: #8A6A1B;
+
+  --bg: #F4ECDD;        --bg-2: #ECE1CD;
+  --surface: #FFFCF6;   --surface-2: #FAF3E7;  --surface-3: #F1E7D6;
+  --hover: #F2E9D8;
+  --line: #E7DBC5;      --line-strong: #DACBAF;
+
+  --text: #382F23;      --text-2: #6B5E49;     --text-3: #9C8E76;
+
+  --sh-xs: 0 1px 2px rgba(56,47,35,.05);
+  --sh-sm: 0 1px 3px rgba(56,47,35,.07), 0 1px 2px rgba(56,47,35,.04);
+  --sh-md: 0 4px 16px -4px rgba(56,47,35,.12), 0 2px 6px -2px rgba(56,47,35,.07);
+  --sh-lg: 0 16px 40px -12px rgba(56,47,35,.20), 0 6px 14px -6px rgba(56,47,35,.10);
+  --sh-primary: 0 8px 22px -6px rgba(201,110,44,.42);
+}
+
+[data-theme="dark"] {
+  --primary: #E2A05A;
+  --primary-600: #EAAE6C;
+  --primary-700: #F0BC84;
+  --primary-soft: #3A2E1D;
+  --primary-softer: #2E2517;
+  --on-primary: #1C1810;
+
+  --sage: #9CB87E;      --sage-soft: #232C18;
+  --coral: #E08260;     --coral-soft: #34211A;
+  --gold: #E2B459;      --gold-soft: #322914;
+  --amber: #E2B459;     --amber-soft: #322914;
+  --gold-ink: #E2B459;
+
+  --bg: #1C1810;        --bg-2: #14110B;
+  --surface: #25201A;   --surface-2: #2B2519;  --surface-3: #322B20;
+  --hover: #322B20;
+  --line: #362E22;      --line-strong: #463C2C;
+
+  --text: #F4EFE4;      --text-2: #BEB29B;     --text-3: #8C8068;
+
+  --sh-xs: 0 1px 2px rgba(0,0,0,.4);
+  --sh-sm: 0 1px 3px rgba(0,0,0,.5);
+  --sh-md: 0 4px 16px -4px rgba(0,0,0,.5);
+  --sh-lg: 0 16px 40px -12px rgba(0,0,0,.6);
+  --sh-primary: 0 8px 24px -6px rgba(226,160,90,.35);
+}
+
+/* ============================================================
+   WEDDING THEMES — override primary + bg per style
+   ============================================================ */
+
+/* Classique — Navy & Or */
+:not([data-theme="dark"])[data-wedding-theme="classique"] {
+  --primary: #1E3A5F;  --primary-600: #162D4A;  --primary-700: #0F2035;
+  --primary-soft: #E4EBF5;  --primary-softer: #F0F5FA;  --on-primary: #F8FBFF;
+  --sage: #8499AE;  --sage-soft: #E4EAF0;
+  --gold: #C4961A;  --gold-soft: #F5ECCA;  --gold-ink: #8A6A10;
+  --bg: #F5F4F2;  --bg-2: #EDECE8;
+  --surface: #FAFAF8;  --surface-2: #F4F3F0;  --surface-3: #ECEAE6;
+  --sh-primary: 0 8px 22px -6px rgba(30,58,95,.40);
+}
+[data-theme="dark"][data-wedding-theme="classique"] {
+  --primary: #5A88C0;  --primary-600: #6E98CC;  --primary-700: #84AADB;
+  --primary-soft: #162236;  --primary-softer: #0E1928;
+  --sage: #6A88B0;     --sage-soft: #142038;
+  --gold: #D4AA4A;     --gold-soft: #2A2210;   --gold-ink: #D4AA4A;
+  --bg: #10161E;       --bg-2: #0C1016;
+  --surface: #18202E;  --surface-2: #1E2838;   --surface-3: #243040;
+  --hover: #243040;
+  --line: #28344A;     --line-strong: #36425A;
+  --sh-primary: 0 8px 24px -6px rgba(90,136,192,.35);
+}
+
+/* Champêtre — Olive & Blé */
+:not([data-theme="dark"])[data-wedding-theme="champetre"] {
+  --primary: #6B8C3E;  --primary-600: #5A7832;  --primary-700: #486226;
+  --primary-soft: #EBF0DA;  --primary-softer: #F4F7EC;  --on-primary: #F8FBF0;
+  --sage: #8DAB72;  --sage-soft: #E5F0D8;
+  --gold: #C4A030;  --gold-soft: #F5EBCA;  --gold-ink: #7A6318;
+  --bg: #F3F1E5;  --bg-2: #EBE8D5;
+  --surface: #FEFDF6;  --surface-2: #F6F4E7;  --surface-3: #EDEAD8;
+  --sh-primary: 0 8px 22px -6px rgba(107,140,62,.42);
+}
+[data-theme="dark"][data-wedding-theme="champetre"] {
+  --primary: #90B858;  --primary-600: #A0C468;  --primary-700: #B0D07A;
+  --primary-soft: #1E2E10;  --primary-softer: #16240A;
+  --sage: #7AAA56;     --sage-soft: #182810;
+  --gold: #C8AA3A;     --gold-soft: #28220C;   --gold-ink: #C8AA3A;
+  --bg: #12180A;       --bg-2: #0E1408;
+  --surface: #1A2210;  --surface-2: #202A14;   --surface-3: #28321A;
+  --hover: #28321A;
+  --line: #2C381C;     --line-strong: #384626;
+  --sh-primary: 0 8px 24px -6px rgba(144,184,88,.30);
+}
+
+/* Romantique — Rose & Champagne */
+:not([data-theme="dark"])[data-wedding-theme="romantique"] {
+  --primary: #B5586E;  --primary-600: #9E4A5E;  --primary-700: #873C4E;
+  --primary-soft: #F5E0E6;  --primary-softer: #FAF0F3;  --on-primary: #FFF8FA;
+  --sage: #B09CB5;  --sage-soft: #EEE4F0;
+  --gold: #C9A07A;  --gold-soft: #F5EAD8;  --gold-ink: #8A6A44;
+  --bg: #FDF4F5;  --bg-2: #F7EAec;
+  --surface: #FFFBFC;  --surface-2: #FAF3F5;  --surface-3: #F3E8EB;
+  --sh-primary: 0 8px 22px -6px rgba(181,88,110,.40);
+}
+[data-theme="dark"][data-wedding-theme="romantique"] {
+  --primary: #D8809A;  --primary-600: #E490AA;  --primary-700: #EEA0BA;
+  --primary-soft: #32101C;  --primary-softer: #280A14;
+  --sage: #B090B8;     --sage-soft: #28182C;
+  --gold: #D4AA7A;     --gold-soft: #301E10;   --gold-ink: #D4AA7A;
+  --bg: #1E1016;       --bg-2: #160C10;
+  --surface: #281820;  --surface-2: #301E28;   --surface-3: #382430;
+  --hover: #382430;
+  --line: #3C2630;     --line-strong: #4A3040;
+  --sh-primary: 0 8px 24px -6px rgba(216,128,154,.30);
+}
+
+/* Tropical — Émeraude & Soleil */
+:not([data-theme="dark"])[data-wedding-theme="tropical"] {
+  --primary: #1F7A5C;  --primary-600: #186649;  --primary-700: #115236;
+  --primary-soft: #DCF0E9;  --primary-softer: #EEF8F4;  --on-primary: #F0FEFA;
+  --sage: #5DAA88;  --sage-soft: #DAEEE5;
+  --gold: #E4A83A;  --gold-soft: #F8EACA;  --gold-ink: #8A6418;
+  --bg: #F1F7F4;  --bg-2: #E6F0EB;
+  --surface: #F8FDFB;  --surface-2: #EFF8F3;  --surface-3: #E2F0E8;
+  --sh-primary: 0 8px 22px -6px rgba(31,122,92,.42);
+}
+[data-theme="dark"][data-wedding-theme="tropical"] {
+  --primary: #3AAE84;  --primary-600: #50BE98;  --primary-700: #68CEB0;
+  --primary-soft: #0C2C1E;  --primary-softer: #082016;
+  --sage: #4A9E74;     --sage-soft: #102A1C;
+  --gold: #E4A840;     --gold-soft: #2C1E08;   --gold-ink: #E4A840;
+  --bg: #0E1C16;       --bg-2: #0A1610;
+  --surface: #162820;  --surface-2: #1C3028;   --surface-3: #223830;
+  --hover: #223830;
+  --line: #263C32;     --line-strong: #304A3E;
+  --sh-primary: 0 8px 24px -6px rgba(58,174,132,.30);
+}
+
+/* Moderne — Graphite & Or */
+:not([data-theme="dark"])[data-wedding-theme="moderne"] {
+  --primary: #323232;  --primary-600: #222222;  --primary-700: #141414;
+  --primary-soft: #EBEBEB;  --primary-softer: #F5F5F5;  --on-primary: #FFFFFF;
+  --sage: #808080;  --sage-soft: #E8E8E8;
+  --gold: #C2A03A;  --gold-soft: #F4EBCA;  --gold-ink: #7A6418;
+  --bg: #F6F6F6;  --bg-2: #EEEEEE;
+  --surface: #FAFAFA;  --surface-2: #F4F4F4;  --surface-3: #ECECEC;
+  --sh-primary: 0 8px 22px -6px rgba(50,50,50,.38);
+}
+[data-theme="dark"][data-wedding-theme="moderne"] {
+  --primary: #A0A0A0;  --primary-600: #B4B4B4;  --primary-700: #C8C8C8;
+  --primary-soft: #242424;  --primary-softer: #1A1A1A;
+  --sage: #888888;     --sage-soft: #202020;
+  --gold: #C2A03A;     --gold-soft: #28200A;   --gold-ink: #C2A03A;
+  --bg: #141414;       --bg-2: #101010;
+  --surface: #1E1E1E;  --surface-2: #242424;   --surface-3: #2C2C2C;
+  --hover: #2C2C2C;
+  --line: #303030;     --line-strong: #3C3C3C;
+  --sh-primary: 0 8px 24px -6px rgba(160,160,160,.25);
+}
+
+/* Baroque — Bordeaux & Or Royal */
+:not([data-theme="dark"])[data-wedding-theme="baroque"] {
+  --primary: #7A1C40;  --primary-600: #671532;  --primary-700: #540E24;
+  --primary-soft: #F2DDEA;  --primary-softer: #F9EEF5;  --on-primary: #FFF8FC;
+  --sage: #9A7080;  --sage-soft: #F0E4EA;
+  --gold: #C4921A;  --gold-soft: #F5E8C4;  --gold-ink: #7A5810;
+  --bg: #F6F1F4;  --bg-2: #EEE5EA;
+  --surface: #FDFAFB;  --surface-2: #F6F0F3;  --surface-3: #EDE4E8;
+  --sh-primary: 0 8px 22px -6px rgba(122,28,64,.42);
+}
+[data-theme="dark"][data-wedding-theme="baroque"] {
+  --primary: #B05880;  --primary-600: #C46C94;  --primary-700: #D880A8;
+  --primary-soft: #28101C;  --primary-softer: #1E0A14;
+  --sage: #98728A;     --sage-soft: #281020;
+  --gold: #CC9A3A;     --gold-soft: #281C08;   --gold-ink: #CC9A3A;
+  --bg: #1A0E14;       --bg-2: #140A10;
+  --surface: #24161E;  --surface-2: #2C1C26;   --surface-3: #34222E;
+  --hover: #34222E;
+  --line: #38242E;     --line-strong: #463040;
+  --sh-primary: 0 8px 24px -6px rgba(176,88,128,.30);
+}
+
+/* Marin — Bleu Marine & Sable */
+:not([data-theme="dark"])[data-wedding-theme="marin"] {
+  --primary: #1B4B8C;  --primary-600: #153C72;  --primary-700: #0F2D58;
+  --primary-soft: #E4EBF5;  --primary-softer: #EFF4FA;  --on-primary: #F5F9FF;
+  --sage: #5E8FAA;  --sage-soft: #DFF0F8;
+  --gold: #C8A96A;  --gold-soft: #F5E8CA;  --gold-ink: #7A6030;
+  --bg: #F1F4F8;  --bg-2: #E8EDF5;
+  --surface: #F8FAFB;  --surface-2: #F0F4F8;  --surface-3: #E6ECF4;
+  --sh-primary: 0 8px 22px -6px rgba(27,75,140,.40);
+}
+[data-theme="dark"][data-wedding-theme="marin"] {
+  --primary: #4A82C4;  --primary-600: #5A92D4;  --primary-700: #6CA4E4;
+  --primary-soft: #0C1E34;  --primary-softer: #08142A;
+  --sage: #5282A8;     --sage-soft: #101E34;
+  --gold: #C8A86A;     --gold-soft: #261C08;   --gold-ink: #C8A86A;
+  --bg: #0C1420;       --bg-2: #08101A;
+  --surface: #141E2E;  --surface-2: #1A2638;   --surface-3: #202E42;
+  --hover: #202E42;
+  --line: #24324C;     --line-strong: #2E4062;
+  --sh-primary: 0 8px 24px -6px rgba(74,130,196,.30);
+}
+
+@layer base {
+  * { @apply border-line; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-feature-settings: "cv01","cv03","ss01";
+    letter-spacing: -0.011em;
+    -webkit-font-smoothing: antialiased;
+    transition: background .35s, color .35s;
+  }
+  /* Grain subtil */
+  body::before {
+    content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    opacity: .035; mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  [data-theme="dark"] body::before { opacity: .05; mix-blend-mode: screen; }
+  ::selection { background: var(--primary-soft); color: var(--text); }
+}
+
+/* ============================================================
+   Patterns réutilisés (gardent les TSX concis)
+   ============================================================ */
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 h-10 px-4 rounded-sm text-sm font-medium
+           transition active:translate-y-px disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap;
+  }
+  .btn-primary { @apply bg-primary text-primary-fg shadow-primary hover:bg-primary-600; }
+  .btn-secondary { @apply bg-surface text-text border border-line-strong shadow-xs hover:bg-hover; }
+  .btn-ghost { @apply text-text-2 hover:bg-hover hover:text-text; }
+  .btn-danger { @apply bg-coral-soft text-coral hover:bg-coral hover:text-white; }
+  .btn-sm { @apply h-8 px-3 text-[13px]; }
+  .btn-lg { @apply h-12 px-6 text-[15px]; }
+
+  .icon-btn { @apply inline-flex items-center justify-center w-10 h-10 rounded-sm text-text-2 transition hover:bg-hover hover:text-text relative; }
+
+  .card { @apply bg-surface border border-line rounded-card shadow-sm; }
+
+  .input {
+    @apply h-11 px-3.5 w-full bg-surface text-text border border-line-strong rounded-sm text-sm
+           transition placeholder:text-text-3 hover:border-text-3
+           focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary-soft;
+  }
+
+  .badge { @apply inline-flex items-center gap-1.5 h-6 px-2.5 rounded-full text-xs font-medium leading-none; }
+  .progress-track { @apply h-2 rounded-full bg-surface-3 overflow-hidden; }
+
+  .field-label { @apply text-[13px] font-medium text-text-2; }
+  .sec-title { @apply text-base font-semibold tracking-[-.01em] flex items-center gap-2.5; }
+  .link { @apply text-primary text-[13px] font-medium cursor-pointer hover:text-primary-600 hover:underline; }
+  .skel { background: linear-gradient(90deg, var(--surface-3) 25%, var(--hover) 50%, var(--surface-3) 75%); background-size: 200% 100%; @apply rounded-md animate-shimmer; }
+}
+
+/* scrollbars discrètes */
+* { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 999px; border: 3px solid var(--bg); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}
