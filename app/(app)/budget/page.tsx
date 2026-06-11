@@ -11,6 +11,7 @@ import type { BudgetPost } from "@/lib/types";
 import { createClient } from "@/lib/supabase";
 import { getWeddingId } from "@/lib/db";
 import { seedDefaultBudget } from "@/lib/seed";
+import { ScrollReveal } from "@/components/scroll-reveal";
 
 /* ─── French wedding benchmarks (moyenne 2024 ≈ 29 200 €) ─────────────── */
 const FR_AVERAGE_TOTAL = 29200;
@@ -680,6 +681,7 @@ export default function BudgetPage() {
         ]} />
 
       {/* ── Tab navigation ─────────────────────────────────────────────── */}
+      <ScrollReveal>
       <div className="flex gap-1 mb-5 bg-surface-2 p-1 rounded-[14px] w-fit">
         {([
           { id: "overview" as const, label: "Aperçu", icon: "pie" },
@@ -699,6 +701,7 @@ export default function BudgetPage() {
           </button>
         ))}
       </div>
+      </ScrollReveal>
 
       {/* ── Benchmark tab ──────────────────────────────────────────────── */}
       {activeTab === "benchmark" && <BenchmarkTab />}
@@ -726,6 +729,7 @@ export default function BudgetPage() {
 
       {/* ── Quick stats pills ──────────────────────────────────────────── */}
       {state.budget.length > 0 && (
+        <ScrollReveal delay={0}>
         <div className="flex flex-wrap gap-2 mb-5">
           <div className="flex items-center gap-1.5 rounded-full bg-surface-2 border border-line px-3.5 py-1.5 text-[12.5px] font-medium">
             <span>💰</span>
@@ -748,8 +752,10 @@ export default function BudgetPage() {
             <span className={`font-mono font-semibold ${remaining < 0 ? "text-coral" : "text-text-1"}`}>{fmt.eur(remaining)}</span>
           </div>
         </div>
+        </ScrollReveal>
       )}
 
+      <ScrollReveal delay={0.05}>
       <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-5 mb-5">
         <Card>
           <div className="sec-title mb-[18px]"><Icon name="pie" size={17} className="text-text-3" />Répartition par poste</div>
@@ -782,7 +788,9 @@ export default function BudgetPage() {
           <div className="text-text-2 text-[12.5px]">Contributions familles : {fmt.eur(state.contributions.reduce((s, c) => s + c.amount, 0))}</div>
         </Card>
       </div>
+      </ScrollReveal>
 
+      <ScrollReveal delay={0.1}>
       <Card pad={false} className="mb-5">
         <div className="flex items-center justify-between px-4 pt-4"><div className="sec-title"><Icon name="bars" size={17} className="text-text-3" />Prévu vs réel par poste</div></div>
         <div className="mt-3">
@@ -829,7 +837,9 @@ export default function BudgetPage() {
           })}
         </div>
       </Card>
+      </ScrollReveal>
 
+      <ScrollReveal delay={0.05}>
       <div className="flex items-center justify-between mb-4"><div className="sec-title"><Icon name="users" size={17} className="text-text-3" />Qui paie quoi</div></div>
       <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
         {Object.entries(payers).map(([name, amount], i) => {
@@ -853,6 +863,7 @@ export default function BudgetPage() {
           </Card>
         ))}
       </div>
+      </ScrollReveal>
       </div>}
 
       {addingPost && (

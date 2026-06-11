@@ -10,6 +10,7 @@ import { PageTutorial } from "@/components/tutorial";
 import type { Payment } from "@/lib/types";
 import { createClient } from "@/lib/supabase";
 import { getWeddingId } from "@/lib/db";
+import { ScrollReveal } from "@/components/scroll-reveal";
 
 const PSTATUS: Record<string, { label: string; tone: any; ico: string; m: string }> = {
   paid:     { label: "Payé",       tone: "sage",    ico: "check",  m: "bg-sage-soft text-sage" },
@@ -393,15 +394,20 @@ export default function PaymentsPage() {
         ]} />
 
       {/* ─── Stats bar ─── */}
-      <StatsBar payments={state.payments} />
+      <ScrollReveal delay={0}>
+        <StatsBar payments={state.payments} />
+      </ScrollReveal>
 
       {/* ─── Tabs ─── */}
+      <ScrollReveal delay={0.05}>
       <div className="mb-5">
         <Tabs tabs={MAIN_TABS} value={tab} onChange={setTab} />
       </div>
+      </ScrollReveal>
 
       {/* ─── List tab ─── */}
       {tab === "list" && (
+        <ScrollReveal delay={0.1}>
         <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-5">
           <div>
             <div className="flex items-center gap-2.5 flex-wrap mb-4">
@@ -484,11 +490,14 @@ export default function PaymentsPage() {
             </Card>
           </div>
         </div>
+        </ScrollReveal>
       )}
 
       {/* ─── Calendar tab ─── */}
       {tab === "calendar" && (
-        <CalendarView payments={state.payments} onView={setViewing} />
+        <ScrollReveal delay={0.05}>
+          <CalendarView payments={state.payments} onView={setViewing} />
+        </ScrollReveal>
       )}
 
       {viewing && <PaymentDetailDrawer payment={viewing} onClose={() => setViewing(null)} />}

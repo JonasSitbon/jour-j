@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase";
 import { getWeddingId } from "@/lib/db";
 import { seedDefaultTasks, seedDefaultDayJ } from "@/lib/seed";
 import type { Task, SubTask } from "@/lib/types";
+import { ScrollReveal } from "@/components/scroll-reveal";
 
 // ─── Assignee types ───────────────────────────────────────────────────────────
 type Assignee = "all" | "a" | "b" | "both" | "vendor";
@@ -923,6 +924,7 @@ export default function ChecklistPage() {
 
       {/* ── Quick stats bar ───────────────────────────────────────────────────── */}
       {cat !== "jourj" && state.tasks.length > 0 && (
+        <ScrollReveal delay={0}>
         <div className="flex items-center gap-2 text-[12.5px] text-text-2 mb-4 flex-wrap">
           <span className="flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-sage inline-block" />
@@ -943,8 +945,10 @@ export default function ChecklistPage() {
             </>
           )}
         </div>
+        </ScrollReveal>
       )}
 
+      <ScrollReveal delay={0.05}>
       <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-5 items-start">
         <div>
           <Card className="mb-3 !p-4">
@@ -1070,6 +1074,7 @@ export default function ChecklistPage() {
           )}
         </div>
       </div>
+      </ScrollReveal>
 
       {addingTask && <TaskDrawer onClose={() => setAddingTask(false)} />}
       {editingTask && <EditTaskDrawer task={editingTask} onClose={() => setEditingTask(null)} />}

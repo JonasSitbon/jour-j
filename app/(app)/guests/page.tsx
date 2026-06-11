@@ -6,6 +6,7 @@ import { Icon } from "@/components/icon";
 import { Card, Badge, Button, Search, Select, Segmented, Field, Input, Textarea, Avatar, Drawer, Modal, Empty, Tabs } from "@/components/ui";
 import { PageHead } from "@/components/shell";
 import { PageTutorial } from "@/components/tutorial";
+import { ScrollReveal } from "@/components/scroll-reveal";
 import type { Guest, Diet } from "@/lib/types";
 
 const RSVP: Record<string, { label: string; tone: any; dot: string }> = {
@@ -879,11 +880,16 @@ export default function GuestsPage() {
           { icon: "table", title: "Plan de table", desc: "Glissez-déposez vos invités sur les tables dans l'onglet Plan de table." },
         ]} />
 
-      <div className="mb-5"><Counters /></div>
+      <ScrollReveal delay={0}>
+        <div className="mb-5"><Counters /></div>
+      </ScrollReveal>
 
+      <ScrollReveal delay={0.05}>
       <div className="mb-5"><Tabs value={tab} onChange={setTab} tabs={[{ id: "list", label: "Liste" }, { id: "plan", label: "Plan de table" }, { id: "lodge", label: "Hébergements" }]} /></div>
+      </ScrollReveal>
 
       {tab === "list" && <>
+        <ScrollReveal delay={0.1}>
         <div className="flex items-center gap-2.5 flex-wrap mb-4">
           <Search value={q} onChange={setQ} placeholder="Rechercher un invité, un groupe…" className="flex-1 min-w-[200px]" />
           <Segmented value={side} onChange={setSide} options={[{ value: "all", label: "Tous" }, { value: "A", label: SIDES.A }, { value: "B", label: SIDES.B }]} />
@@ -981,6 +987,7 @@ export default function GuestsPage() {
               ))}
             </div>
           )}
+        </ScrollReveal>
       </>}
 
       {tab === "plan" && <TablePlan />}

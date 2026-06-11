@@ -12,6 +12,7 @@ import { getWeddingId } from "@/lib/db";
 import { seedDefaultDateCandidates } from "@/lib/seed";
 import { geocodeCity, fetchDateWeather, fetchMonthlyWeather } from "@/lib/weather";
 import { PageTutorial } from "@/components/tutorial";
+import { ScrollReveal } from "@/components/scroll-reveal";
 
 const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 const DOW = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
@@ -245,6 +246,7 @@ export default function DatesPage() {
           { icon: "calendar", title: "Sélectionnez votre date", desc: "Cliquez sur une carte pour la choisir. Cliquez à nouveau pour désélectionner. Vous pouvez laisser toutes les dates en attente." },
         ]} />
 
+      <ScrollReveal delay={0}>
       <div className="flex items-center justify-between mb-4"><div className="sec-title"><Icon name="star" size={17} className="text-text-3" />Dates candidates</div></div>
 
       {/* Nudge: candidates exist but none selected */}
@@ -276,6 +278,9 @@ export default function DatesPage() {
         </div>
       ) : null}
 
+      </ScrollReveal>
+
+      <ScrollReveal delay={0.05}>
       <div className="grid grid-cols-[repeat(auto-fit,minmax(230px,1fr))] gap-4 mb-6">
         {state.dateCandidates.map((d) => {
           const dt = new Date(d.date + "T00:00:00");
@@ -362,6 +367,9 @@ export default function DatesPage() {
         })}
       </div>
 
+      </ScrollReveal>
+
+      <ScrollReveal delay={0.1}>
       <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-5">
         <Card>
           <div className="flex items-center justify-between mb-4">
@@ -477,6 +485,8 @@ export default function DatesPage() {
           </Card>
         </div>
       </div>
+
+      </ScrollReveal>
 
       {adding && <AddDateDrawer onClose={() => setAdding(false)} weddingDate={state.wedding.date} />}
     </div>

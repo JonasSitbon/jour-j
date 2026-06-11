@@ -11,6 +11,7 @@ import { PageTutorial } from "@/components/tutorial";
 import type { Vendor } from "@/lib/types";
 import { createClient } from "@/lib/supabase";
 import { getWeddingId } from "@/lib/db";
+import { ScrollReveal } from "@/components/scroll-reveal";
 
 const STATUS: Record<string, { label: string; tone: any }> = {
   signed: { label: "Signé", tone: "sage" }, pending: { label: "En attente", tone: "amber" }, declined: { label: "Refusé", tone: "coral" },
@@ -928,6 +929,7 @@ export default function VendorsPage() {
           { icon: "card", title: "Gérez les paiements", desc: "Une fois signé, créez les échéances de paiement directement depuis la fiche prestataire." },
         ]} />
 
+      <ScrollReveal delay={0}>
       <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
         <button onClick={() => setCat("all")} className={`inline-flex items-center gap-2 h-[38px] px-3.5 rounded-full border text-[13px] font-medium whitespace-nowrap transition ${cat === "all" ? "bg-text text-bg border-transparent" : "bg-surface border-line text-text-2 hover:border-line-strong"}`}>Tous <span className="text-[11px] opacity-70">{state.vendors.length}</span></button>
         {cats.map((c) => {
@@ -939,6 +941,7 @@ export default function VendorsPage() {
           );
         })}
       </div>
+      </ScrollReveal>
 
       {Object.keys(grouped).length === 0 ? (
         <Card>
@@ -974,7 +977,8 @@ export default function VendorsPage() {
       ) : Object.entries(grouped).map(([cid, vs]) => {
         const catObj = cats.find((c) => c.id === cid)!;
         return (
-          <div key={cid} className="mb-6">
+          <ScrollReveal key={cid} delay={0.05}>
+          <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <div className="sec-title">
                 <Icon name={catObj?.icon ?? "file"} size={17} className="text-text-3" />
@@ -1043,6 +1047,7 @@ export default function VendorsPage() {
               })}
             </div>
           </div>
+          </ScrollReveal>
         );
       })}
 
