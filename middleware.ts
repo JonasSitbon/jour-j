@@ -32,6 +32,21 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
+  // Protection des routes /admin : super_admin uniquement
+  if (pathname.startsWith("/admin")) {
+    if (!user) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("account_type")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (!profile || profile.account_type !== "super_admin") {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+  }
+
   // On NE redirige PAS les utilisateurs authentifiés depuis /login
   // La page login gère elle-même la redirection (évite les boucles)
 
