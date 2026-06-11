@@ -46,20 +46,20 @@ CREATE POLICY "profiles_superadmin_update" ON public.profiles
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 DECLARE
-  full TEXT;
+  full_name TEXT;
   fname TEXT;
   lname TEXT;
 BEGIN
-  full  := COALESCE(NEW.raw_user_meta_data->>'full_name', '');
+  full_name := COALESCE(NEW.raw_user_meta_data->>'full_name', '');
   fname := COALESCE(
     NEW.raw_user_meta_data->>'first_name',
-    CASE WHEN full != '' THEN split_part(full, ' ', 1) ELSE NULL END
+    CASE WHEN full_name != '' THEN split_part(full_name, ' ', 1) ELSE NULL END
   );
   lname := COALESCE(
     NEW.raw_user_meta_data->>'last_name',
     CASE
-      WHEN full != '' AND position(' ' in full) > 0
-      THEN substring(full from position(' ' in full) + 1)
+      WHEN full_name != '' AND position(' ' in full_name) > 0
+      THEN substring(full_name from position(' ' in full_name) + 1)
       ELSE NULL
     END
   );
