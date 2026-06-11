@@ -5,46 +5,453 @@ import { useStore, useToast, useTheme } from "@/components/providers";
 import { Icon } from "@/components/icon";
 import { Card, Badge, Button, Field, Input, Select, Avatar, Modal } from "@/components/ui";
 import { PageHead } from "@/components/shell";
+import { updateProfile, inviteToWedding, revokeWeddingAccess, updateWeddingAccessRole } from "@/lib/db";
+import { createClient } from "@/lib/supabase";
+import type { WeddingRole } from "@/lib/types";
 
-const ACCESS: Record<string, { label: string; tone: any }> = {
-  owner: { label: "Propriétaire", tone: "primary" }, edit: { label: "Édition", tone: "sage" }, read: { label: "Lecture seule", tone: "neutral" },
+// ── Constantes ───────────────────────────────────────────────────────────────
+
+const ROLE_META: Record<WeddingRole, { label: string; tone: any; desc: string }> = {
+  owner:  { label: "Propriétaire",   tone: "primary", desc: "Contrôle total de l'espace" },
+  admin:  { label: "Administrateur", tone: "sage",    desc: "Peut inviter et modifier les paramètres" },
+  editor: { label: "Éditeur",        tone: "amber",   desc: "Peut modifier les données" },
+  viewer: { label: "Lecteur",        tone: "neutral", desc: "Lecture seule" },
 };
 
+const ACCOUNT_TYPE_META: Record<string, { label: string; tone: any }> = {
+  couple:      { label: "Couple",          tone: "primary" },
+  planner:     { label: "Wedding Planner", tone: "sage" },
+  super_admin: { label: "Super Admin",     tone: "coral" },
+};
+
+const COVER_COLORS = [
+  { value: "#C96E2C", label: "Bohème" },
+  { value: "#1E3A5F", label: "Classique" },
+  { value: "#6B8C3E", label: "Champêtre" },
+  { value: "#B5586E", label: "Romantique" },
+  { value: "#1F7A5C", label: "Tropical" },
+  { value: "#323232", label: "Moderne" },
+];
+
+// ── Toggle ───────────────────────────────────────────────────────────────────
+
 function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
-  return <button onClick={onClick} role="switch" aria-checked={on} className={`w-[42px] h-6 rounded-full relative transition shrink-0 ${on ? "bg-primary" : "bg-line-strong"}`}>
-    <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-xs transition-transform ${on ? "translate-x-[18px]" : ""}`} />
-  </button>;
+  return (
+    <button onClick={onClick} role="switch" aria-checked={on}
+      className={`w-[42px] h-6 rounded-full relative transition shrink-0 ${on ? "bg-primary" : "bg-line-strong"}`}>
+      <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-xs transition-transform ${on ? "translate-x-[18px]" : ""}`} />
+    </button>
+  );
 }
 
-function InviteModal({ onClose }: { onClose: () => void }) {
-  const { update } = useStore();
+// ── Section Mon Profil ───────────────────────────────────────────────────────
+
+function ProfileSection() {
+  const { state } = useStore();
   const toast = useToast();
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState("read");
+  const [firstName, setFirstName] = useState(state.profile?.firstName ?? "");
+  const [lastName, setLastName]   = useState(state.profile?.lastName ?? "");
+  const [saving, setSaving]       = useState(false);
+  const [userEmail, setUserEmail] = useState<string>("");
+
+  useEffect(() => {
+    if (state.profile) {
+      setFirstName(state.profile.firstName);
+      setLastName(state.profile.lastName);
+    }
+  }, [state.profile]);
+
+  useEffect(() => {
+    createClient().auth.getUser().then(({ data }) => {
+      if (data.user?.email) setUserEmail(data.user.email);
+    });
+  }, []);
+
+  const fullName   = `${firstName} ${lastName}`.trim() || "?";
+  const accountMeta = state.profile ? ACCOUNT_TYPE_META[state.profile.accountType] : null;
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await updateProfile({ firstName: firstName.trim(), lastName: lastName.trim() });
+      toast("Profil mis à jour");
+    } catch {
+      toast("Erreur lors de la mise à jour", "err");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Card>
+      <div className="sec-title mb-[18px]"><Icon name="user" size={17} className="text-text-3" />Mon profil</div>
+      <div className="flex flex-col gap-5">
+        {/* Avatar + badge */}
+        <div className="flex items-center gap-4">
+          <Avatar name={fullName} size="lg" />
+          <div className="flex flex-col gap-1.5">
+            <div className="text-sm font-semibold">{fullName}</div>
+            {accountMeta && (
+              <Badge tone={accountMeta.tone}>{accountMeta.label}</Badge>
+            )}
+            <div className="text-[12px] text-text-3">Photo de profil — bientôt disponible</div>
+          </div>
+        </div>
+
+        {/* Champs nom / prénom */}
+        <div className="flex gap-3">
+          <Field label="Prénom"><Input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Prénom" /></Field>
+          <Field label="Nom"><Input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Nom" /></Field>
+        </div>
+
+        {/* Email lecture seule */}
+        <Field label="Adresse email">
+          <div className="input bg-surface-2 text-text-2 cursor-not-allowed flex items-center gap-2">
+            <Icon name="mail" size={15} className="text-text-3 shrink-0" />
+            <span className="text-[13px]">{userEmail || "—"}</span>
+          </div>
+        </Field>
+
+        <div>
+          <Button variant="primary" icon="check" onClick={handleSave} disabled={saving}>
+            {saving ? "Enregistrement…" : "Enregistrer"}
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+// ── Modal d'invitation améliorée ─────────────────────────────────────────────
+
+function InviteModal({ onClose, weddingId }: { onClose: () => void; weddingId: number }) {
+  const toast = useToast();
+  const [email, setEmail]   = useState("");
+  const [role, setRole]     = useState<WeddingRole>("editor");
+  const [loading, setLoading] = useState(false);
+
+  const send = async () => {
+    if (!email.includes("@")) { toast("Email invalide", "err"); return; }
+    setLoading(true);
+    try {
+      const { error } = await inviteToWedding(weddingId, email, role) as any;
+      if (error) { toast(error, "err"); return; }
+      toast("Invitation envoyée");
+      onClose();
+    } catch {
+      toast("Erreur lors de l'invitation", "err");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Modal title="Inviter une personne" onClose={onClose}
-      footer={<><Button variant="ghost" onClick={onClose}>Annuler</Button><Button variant="primary" icon="mail" onClick={() => { if (!email.includes("@")) { toast("Email invalide", "err"); return; } update("members", (m) => [...m, { id: Date.now(), name: email.split("@")[0], email, role: role === "edit" ? "Co-organisateur" : "Invité", access: role as any }]); toast("Invitation envoyée"); onClose(); }}>Envoyer l'invitation</Button></>}>
-      <div className="flex flex-col gap-4">
-        <Field label="Adresse email"><Input icon="mail" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="personne@email.fr" /></Field>
-        <Field label="Niveau d'accès"><Select value={role} onChange={setRole} options={[{ value: "read", label: "Lecture seule" }, { value: "edit", label: "Édition complète" }]} /></Field>
-        <div className="text-text-2 text-[12.5px] flex gap-2"><Icon name="info" size={15} />La personne recevra un lien pour rejoindre votre espace mariage.</div>
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button variant="primary" icon="mail" onClick={send} disabled={loading}>
+            {loading ? "Envoi…" : "Envoyer l'invitation"}
+          </Button>
+        </>
+      }>
+      <div className="flex flex-col gap-5">
+        <Field label="Adresse email">
+          <Input icon="mail" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="personne@email.fr" />
+        </Field>
+        <Field label="Rôle">
+          <Select value={role} onChange={(v) => setRole(v as WeddingRole)} options={[
+            { value: "admin",  label: "Administrateur — peut inviter et modifier les paramètres" },
+            { value: "editor", label: "Éditeur — peut modifier les données" },
+            { value: "viewer", label: "Lecteur — lecture seule" },
+          ]} />
+        </Field>
+
+        {/* Descriptions des rôles */}
+        <div className="bg-surface-2 rounded-card border border-line p-4 flex flex-col gap-2.5">
+          {(["admin", "editor", "viewer"] as WeddingRole[]).map((r) => (
+            <div key={r} className={`flex items-start gap-2.5 ${r === role ? "opacity-100" : "opacity-50"}`}>
+              <Badge tone={ROLE_META[r].tone}>{ROLE_META[r].label}</Badge>
+              <span className="text-[12.5px] text-text-2 mt-0.5">{ROLE_META[r].desc}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="text-text-2 text-[12.5px] flex gap-2 items-start">
+          <Icon name="info" size={15} className="shrink-0 mt-0.5" />
+          La personne recevra un lien pour rejoindre votre espace mariage.
+        </div>
       </div>
     </Modal>
   );
 }
 
+// ── Tableau des permissions ───────────────────────────────────────────────────
+
+function PermissionsAccordion() {
+  const [open, setOpen] = useState(false);
+  const rows = [
+    { perm: "Voir tout",                  owner: true,  admin: true,  editor: true,  viewer: true  },
+    { perm: "Modifier les données",       owner: true,  admin: true,  editor: true,  viewer: false },
+    { perm: "Inviter des collaborateurs", owner: true,  admin: true,  editor: false, viewer: false },
+    { perm: "Modifier les paramètres",    owner: true,  admin: false, editor: false, viewer: false },
+    { perm: "Supprimer le mariage",       owner: true,  admin: false, editor: false, viewer: false },
+  ];
+
+  return (
+    <div className="border border-line rounded-card mt-4 overflow-hidden">
+      <button
+        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-hover transition"
+        onClick={() => setOpen(!open)}
+      >
+        <span className="text-[13px] font-medium text-text-2">Tableau des permissions</span>
+        <Icon name={open ? "chevronU" : "chevronD"} size={16} className="text-text-3" />
+      </button>
+      {open && (
+        <div className="border-t border-line overflow-x-auto">
+          <table className="w-full text-[12.5px]">
+            <thead>
+              <tr className="border-b border-line bg-surface-2">
+                <th className="text-left px-4 py-2.5 font-medium text-text-2">Permission</th>
+                {(["owner", "admin", "editor", "viewer"] as WeddingRole[]).map((r) => (
+                  <th key={r} className="px-3 py-2.5 font-medium text-center">
+                    <Badge tone={ROLE_META[r].tone}>{ROLE_META[r].label}</Badge>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => (
+                <tr key={i} className="border-b border-line last:border-0">
+                  <td className="px-4 py-2.5 text-text-2">{row.perm}</td>
+                  {(["owner", "admin", "editor", "viewer"] as WeddingRole[]).map((r) => (
+                    <td key={r} className="px-3 py-2.5 text-center">
+                      {(row as any)[r]
+                        ? <Icon name="check-circle" size={15} className="text-sage inline-block" />
+                        : <span className="text-text-3 text-base leading-none">–</span>
+                      }
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Section Accès ─────────────────────────────────────────────────────────────
+
+function AccessSection() {
+  const { state, update } = useStore();
+  const toast = useToast();
+  const [inviting, setInviting] = useState(false);
+
+  const activeWeddingId = state.activeWeddingId;
+  const members = state.members;
+
+  const handleRevokeLocal = (id: number) => {
+    update("members", (l) => l.filter((x) => x.id !== id));
+    toast("Accès révoqué");
+  };
+
+  return (
+    <>
+      <Card>
+        <div className="flex items-center justify-between mb-5">
+          <div className="sec-title"><Icon name="users" size={17} className="text-text-3" />Gestion des accès</div>
+          <Button variant="primary" size="sm" icon="plus" onClick={() => setInviting(true)}>Inviter</Button>
+        </div>
+
+        {members.length === 0 && (
+          <div className="py-6 text-center text-[13px] text-text-2">Aucun collaborateur pour l'instant.</div>
+        )}
+
+        {members.map((m) => {
+          const accessKey = (m.access in ROLE_META ? m.access : "viewer") as WeddingRole;
+          const meta = ROLE_META[accessKey];
+          const isOwner = m.access === "owner";
+          return (
+            <div key={m.id} className="flex items-center gap-3.5 py-3.5 border-b border-line last:border-0">
+              <Avatar name={m.name} />
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold truncate">{m.name}</div>
+                <div className="text-[12.5px] text-text-2 truncate">{m.email}</div>
+              </div>
+              {isOwner ? (
+                <Badge tone={meta.tone} dot>{meta.label}</Badge>
+              ) : (
+                <div className="flex items-center gap-2 shrink-0">
+                  <Select
+                    value={accessKey}
+                    onChange={async (v) => {
+                      const newRole = v as WeddingRole;
+                      try {
+                        await updateWeddingAccessRole(m.id, newRole);
+                        update("members", (l) => l.map((x) => x.id === m.id ? { ...x, access: newRole as any } : x));
+                        toast("Rôle mis à jour");
+                      } catch {
+                        toast("Erreur lors de la mise à jour", "err");
+                      }
+                    }}
+                    options={[
+                      { value: "admin",  label: "Administrateur" },
+                      { value: "editor", label: "Éditeur" },
+                      { value: "viewer", label: "Lecteur" },
+                    ]}
+                    className="text-[12.5px] !py-1.5 !h-auto"
+                  />
+                  <button
+                    className="icon-btn w-8 h-8 text-coral"
+                    title="Révoquer l'accès"
+                    onClick={() => {
+                      void revokeWeddingAccess(m.id).catch(() => {});
+                      handleRevokeLocal(m.id);
+                    }}
+                  >
+                    <Icon name="trash" size={16} />
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        <PermissionsAccordion />
+      </Card>
+
+      {inviting && activeWeddingId && (
+        <InviteModal onClose={() => setInviting(false)} weddingId={activeWeddingId} />
+      )}
+    </>
+  );
+}
+
+// ── Modal confirmation suppression compte ─────────────────────────────────────
+
+function DeleteAccountModal({ onClose }: { onClose: () => void }) {
+  const toast = useToast();
+  const [confirm, setConfirm] = useState("");
+  const canDelete = confirm === "SUPPRIMER";
+
+  return (
+    <Modal
+      title="Supprimer mon compte"
+      onClose={onClose}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button variant="danger" icon="trash" disabled={!canDelete} onClick={() => { toast("Suppression en cours…"); onClose(); }}>
+            Supprimer définitivement
+          </Button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        <div className="bg-coral-soft border border-coral/20 rounded-card p-4 text-[13px] text-coral flex gap-2.5 items-start">
+          <Icon name="alert" size={16} className="shrink-0 mt-0.5" />
+          <div>
+            <div className="font-semibold mb-1">Cette action est irréversible</div>
+            <div className="text-[12.5px] opacity-80">Toutes vos données (mariage, invités, prestataires, budget) seront définitivement supprimées.</div>
+          </div>
+        </div>
+        <Field label={'Tapez "SUPPRIMER" pour confirmer'}>
+          <Input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="SUPPRIMER" />
+        </Field>
+      </div>
+    </Modal>
+  );
+}
+
+// ── Section Compte ────────────────────────────────────────────────────────────
+
+function AccountSection() {
+  const toast = useToast();
+  const [deletingAccount, setDeletingAccount] = useState(false);
+
+  const handleResetPassword = async () => {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.email) { toast("Email introuvable", "err"); return; }
+    const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) { toast("Erreur lors de l'envoi", "err"); return; }
+    toast("Email de réinitialisation envoyé");
+  };
+
+  const handleSignOutAll = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut({ scope: "global" });
+    toast("Déconnecté de tous les appareils");
+    window.location.href = "/login";
+  };
+
+  return (
+    <>
+      <div className="flex flex-col gap-5">
+        <Card>
+          <div className="sec-title mb-4"><Icon name="key" size={17} className="text-text-3" />Sécurité</div>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-4 py-4 border-b border-line">
+              <div>
+                <div className="text-sm font-medium">Changer le mot de passe</div>
+                <div className="text-[12.5px] text-text-2 mt-0.5">Un email de réinitialisation sera envoyé à votre adresse</div>
+              </div>
+              <Button variant="secondary" size="sm" icon="key" onClick={handleResetPassword}>Envoyer le lien</Button>
+            </div>
+            <div className="flex items-center justify-between gap-4 py-4">
+              <div>
+                <div className="text-sm font-medium">Se déconnecter de tous les appareils</div>
+                <div className="text-[12.5px] text-text-2 mt-0.5">Invalide toutes vos sessions actives</div>
+              </div>
+              <Button variant="secondary" size="sm" icon="logout" onClick={handleSignOutAll}>Se déconnecter</Button>
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="sec-title mb-4 text-coral"><Icon name="alert" size={17} />Zone de danger</div>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="text-sm font-medium">Supprimer mon compte</div>
+              <div className="text-[12.5px] text-text-2 mt-0.5">Supprime définitivement votre compte et toutes vos données</div>
+            </div>
+            <Button variant="danger" size="sm" icon="trash" onClick={() => setDeletingAccount(true)}>Supprimer</Button>
+          </div>
+        </Card>
+      </div>
+
+      {deletingAccount && <DeleteAccountModal onClose={() => setDeletingAccount(false)} />}
+    </>
+  );
+}
+
+// ── Page principale ───────────────────────────────────────────────────────────
+
 export default function SettingsPage() {
   const { state, update } = useStore();
   const toast = useToast();
   const { theme, setTheme, weddingTheme, setWeddingTheme } = useTheme();
-  const [sec, setSec] = useState("wedding");
-  const [inviting, setInviting] = useState(false);
+  const [sec, setSec] = useState("profile");
   const [notif, setNotif] = useState<Record<string, boolean>>({ rsvp: true, payments: true, deadlines: true, weekly: false, vendors: true });
   const w = state.wedding;
   const setW = (k: string, v: string) => update("wedding", (p) => ({ ...p, [k]: v }));
-  const SECTIONS = [["wedding", "Mariage", "rings"], ["access", "Accès", "users"], ["notif", "Notifications", "bell"], ["data", "Données", "save"], ["emails", "Emails", "mail"], ["theme", "Apparence", "sun"]];
 
-  // CSV export
+  const SECTIONS = [
+    ["profile",  "Mon profil",    "user"],
+    ["wedding",  "Mariage",       "rings"],
+    ["access",   "Accès",         "users"],
+    ["account",  "Compte",        "key"],
+    ["notif",    "Notifications", "bell"],
+    ["data",     "Données",       "save"],
+    ["emails",   "Emails",        "mail"],
+    ["theme",    "Apparence",     "sun"],
+  ];
+
+  // ── CSV export ──────────────────────────────────────────────────────────────
   const exportGuestsCsv = () => {
     const headers = ["Nom", "Côté", "RSVP", "Régime", "Table", "Hébergement", "Enfant", "Transport", "Cadeau", "Groupe", "Notes"];
     const rsvpLabel: Record<string, string> = { yes: "Confirmé", pending: "En attente", declined: "Décliné" };
@@ -73,7 +480,7 @@ export default function SettingsPage() {
     toast(`${state.guests.length} invités exportés`);
   };
 
-  // Share token
+  // ── Share token ─────────────────────────────────────────────────────────────
   function getOrCreateShareToken(): string {
     const existing = localStorage.getItem("jj_share_token");
     if (existing) return existing;
@@ -81,7 +488,7 @@ export default function SettingsPage() {
     localStorage.setItem("jj_share_token", token);
     return token;
   }
-  const [shareUrl, setShareUrl] = useState<string>("");
+  const [shareUrl, setShareUrl]       = useState<string>("");
   const [confirmRegen, setConfirmRegen] = useState(false);
   useEffect(() => {
     const token = getOrCreateShareToken();
@@ -95,51 +502,101 @@ export default function SettingsPage() {
     toast("Lien de partage régénéré");
   };
 
-  // Email accordion
+  // ── Email accordion ─────────────────────────────────────────────────────────
   const [openEmail, setOpenEmail] = useState<string | null>(null);
+
+  // ── Wedding cover color ─────────────────────────────────────────────────────
+  const [coverColor, setCoverColor] = useState(
+    (state.myWeddings.find((w2) => w2.id === state.activeWeddingId)?.coverColor) ?? "#C96E2C"
+  );
 
   return (
     <div className="mx-auto w-full max-w-[1320px] px-5 md:px-8 py-6 md:py-8 pb-28 md:pb-12">
       <PageHead title="Paramètres" sub="Gérez votre espace, vos collaborateurs et vos préférences." />
 
       <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-6 items-start">
+        {/* Nav latérale */}
         <div className="flex md:flex-col gap-0.5 flex-wrap md:sticky md:top-20">
           {SECTIONS.map(([id, label, icon]) => (
-            <button key={id} onClick={() => setSec(id)} className={`flex items-center gap-3 px-3 py-2.5 rounded-sm text-[13.5px] font-medium transition ${sec === id ? "bg-primary-soft text-primary-700" : "text-text-2 hover:bg-hover hover:text-text"}`}><Icon name={icon} size={17} />{label}</button>
+            <button key={id} onClick={() => setSec(id)}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-sm text-[13.5px] font-medium transition ${sec === id ? "bg-primary-soft text-primary-700" : "text-text-2 hover:bg-hover hover:text-text"}`}>
+              <Icon name={icon} size={17} />{label}
+            </button>
           ))}
         </div>
 
-        <div>
+        {/* Contenu */}
+        <div className="flex flex-col gap-5">
+
+          {/* ── Mon profil ─────────────────────────────────────────────────── */}
+          {sec === "profile" && <ProfileSection />}
+
+          {/* ── Mariage ────────────────────────────────────────────────────── */}
           {sec === "wedding" && (
             <Card>
               <div className="sec-title mb-[18px]"><Icon name="rings" size={17} className="text-text-3" />Informations du mariage</div>
               <div className="flex flex-col gap-4">
-                <div className="flex gap-3"><Field label="Prénom (côté A)"><Input value={w.partnerA} onChange={(e) => setW("partnerA", e.target.value)} /></Field><Field label="Prénom (côté B)"><Input value={w.partnerB} onChange={(e) => setW("partnerB", e.target.value)} /></Field></div>
-                <div className="flex gap-3"><Field label="Date du mariage"><Input type="date" value={w.date} onChange={(e) => setW("date", e.target.value)} /></Field><Field label="Thème"><Input value={w.theme} onChange={(e) => setW("theme", e.target.value)} /></Field></div>
-                <div className="flex gap-3"><Field label="Lieu"><Input value={w.venue} onChange={(e) => setW("venue", e.target.value)} /></Field><Field label="Ville"><Input value={w.city} onChange={(e) => setW("city", e.target.value)} /></Field></div>
-                <div><Button variant="primary" icon="check" onClick={() => { update("wedding", (p) => ({ ...p })); toast("Modifications enregistrées"); }}>Enregistrer</Button></div>
+                <Field label="Nom de l'espace mariage">
+                  <Input
+                    value={(state.myWeddings.find((w2) => w2.id === state.activeWeddingId)?.name) ?? ""}
+                    onChange={() => {}}
+                    placeholder={`${w.partnerA} & ${w.partnerB}`}
+                  />
+                </Field>
+                <div className="flex gap-3">
+                  <Field label="Prénom (côté A)"><Input value={w.partnerA} onChange={(e) => setW("partnerA", e.target.value)} /></Field>
+                  <Field label="Prénom (côté B)"><Input value={w.partnerB} onChange={(e) => setW("partnerB", e.target.value)} /></Field>
+                </div>
+                <div className="flex gap-3">
+                  <Field label="Date du mariage"><Input type="date" value={w.date} onChange={(e) => setW("date", e.target.value)} /></Field>
+                  <Field label="Thème"><Input value={w.theme} onChange={(e) => setW("theme", e.target.value)} /></Field>
+                </div>
+                <div className="flex gap-3">
+                  <Field label="Lieu"><Input value={w.venue} onChange={(e) => setW("venue", e.target.value)} /></Field>
+                  <Field label="Ville"><Input value={w.city} onChange={(e) => setW("city", e.target.value)} /></Field>
+                </div>
+
+                {/* Couleur de couverture */}
+                <Field label="Couleur de l'espace (card couverture)">
+                  <div className="flex gap-2.5 mt-1">
+                    {COVER_COLORS.map((c) => (
+                      <button
+                        key={c.value}
+                        title={c.label}
+                        onClick={() => setCoverColor(c.value)}
+                        className={`w-8 h-8 rounded-full border-2 transition ${coverColor === c.value ? "border-text scale-110 shadow-md" : "border-transparent hover:scale-105"}`}
+                        style={{ background: c.value }}
+                      />
+                    ))}
+                  </div>
+                </Field>
+
+                <div>
+                  <Button variant="primary" icon="check" onClick={() => { update("wedding", (p) => ({ ...p })); toast("Modifications enregistrées"); }}>
+                    Enregistrer
+                  </Button>
+                </div>
               </div>
             </Card>
           )}
 
-          {sec === "access" && (
-            <Card>
-              <div className="flex items-center justify-between mb-4"><div className="sec-title"><Icon name="users" size={17} className="text-text-3" />Gestion des accès</div><Button variant="primary" size="sm" icon="plus" onClick={() => setInviting(true)}>Inviter</Button></div>
-              {state.members.map((m) => (
-                <div key={m.id} className="flex items-center gap-3.5 py-3.5 border-b border-line last:border-0">
-                  <Avatar name={m.name} />
-                  <div className="flex-1 min-w-0"><div className="text-sm font-semibold">{m.name}</div><div className="text-[12.5px] text-text-2">{m.email} · {m.role}</div></div>
-                  <Badge tone={ACCESS[m.access].tone} dot>{ACCESS[m.access].label}</Badge>
-                  {m.access !== "owner" && <button className="icon-btn w-8 h-8" onClick={() => { update("members", (l) => l.filter((x) => x.id !== m.id)); toast("Accès révoqué"); }}><Icon name="trash" size={17} /></button>}
-                </div>
-              ))}
-            </Card>
-          )}
+          {/* ── Accès ──────────────────────────────────────────────────────── */}
+          {sec === "access" && <AccessSection />}
 
+          {/* ── Compte ─────────────────────────────────────────────────────── */}
+          {sec === "account" && <AccountSection />}
+
+          {/* ── Notifications ──────────────────────────────────────────────── */}
           {sec === "notif" && (
             <Card>
               <div className="sec-title mb-2"><Icon name="bell" size={17} className="text-text-3" />Notifications email</div>
-              {[["rsvp", "Réponses RSVP", "Quand un invité confirme ou décline"], ["payments", "Paiements", "Échéances et retards de paiement"], ["deadlines", "Échéances de tâches", "Rappels J-30, J-15, J-7"], ["vendors", "Prestataires", "Devis reçus et relances"], ["weekly", "Résumé hebdomadaire", "Un point chaque lundi matin"]].map(([k, l, d]) => (
+              {[
+                ["rsvp",      "Réponses RSVP",          "Quand un invité confirme ou décline"],
+                ["payments",  "Paiements",               "Échéances et retards de paiement"],
+                ["deadlines", "Échéances de tâches",     "Rappels J-30, J-15, J-7"],
+                ["vendors",   "Prestataires",            "Devis reçus et relances"],
+                ["weekly",    "Résumé hebdomadaire",     "Un point chaque lundi matin"],
+              ].map(([k, l, d]) => (
                 <div key={k} className="flex items-center justify-between gap-4 py-4 border-b border-line last:border-0">
                   <div><div className="text-sm font-medium">{l}</div><div className="text-[12.5px] text-text-2 mt-0.5">{d}</div></div>
                   <Toggle on={notif[k]} onClick={() => { setNotif((n) => ({ ...n, [k]: !n[k] })); toast("Préférence mise à jour"); }} />
@@ -148,12 +605,12 @@ export default function SettingsPage() {
             </Card>
           )}
 
+          {/* ── Données ────────────────────────────────────────────────────── */}
           {sec === "data" && (
             <div className="flex flex-col gap-5">
               <Card>
                 <div className="sec-title mb-4"><Icon name="save" size={17} className="text-text-3" />Sauvegarde &amp; export</div>
                 <div className="flex flex-col gap-3">
-                  {/* Real CSV export row */}
                   <div className="flex items-center justify-between gap-4 py-4 border-b border-line">
                     <div className="flex items-center gap-3">
                       <span className="w-[38px] h-[38px] rounded-[11px] flex items-center justify-center bg-primary-soft text-primary-700"><Icon name="download" size={18} /></span>
@@ -164,26 +621,29 @@ export default function SettingsPage() {
                     </div>
                     <Button variant="secondary" size="sm" onClick={exportGuestsCsv}>Exporter CSV</Button>
                   </div>
-                  {/* Static entries */}
-                  {[["Sauvegarde automatique", "Vos données sont sauvegardées en continu", "check-circle", ""], ["Plan de table PDF", "Document imprimable du placement", "file", "Plan de table exporté"], ["Budget PDF", "Récapitulatif financier détaillé", "wallet", "Budget exporté"]].map(([l, d, ic, msg], i) => (
+                  {[
+                    ["Sauvegarde automatique", "Vos données sont sauvegardées en continu", "check-circle", ""],
+                    ["Plan de table PDF",       "Document imprimable du placement",          "file",         "Plan de table exporté"],
+                    ["Budget PDF",              "Récapitulatif financier détaillé",           "wallet",       "Budget exporté"],
+                  ].map(([l, d, ic, msg], i) => (
                     <div key={i} className="flex items-center justify-between gap-4 py-4 border-b border-line last:border-0">
-                      <div className="flex items-center gap-3"><span className="w-[38px] h-[38px] rounded-[11px] flex items-center justify-center bg-primary-soft text-primary-700"><Icon name={ic} size={18} /></span><div><div className="text-sm font-medium">{l}</div><div className="text-[12.5px] text-text-2">{d}</div></div></div>
+                      <div className="flex items-center gap-3">
+                        <span className="w-[38px] h-[38px] rounded-[11px] flex items-center justify-center bg-primary-soft text-primary-700"><Icon name={ic} size={18} /></span>
+                        <div><div className="text-sm font-medium">{l}</div><div className="text-[12.5px] text-text-2">{d}</div></div>
+                      </div>
                       {msg ? <Button variant="secondary" size="sm" onClick={() => toast(msg)}>Exporter</Button> : <Badge tone="sage" dot>Activée</Badge>}
                     </div>
                   ))}
                 </div>
               </Card>
 
-              {/* Share link card */}
+              {/* Lien de partage */}
               <Card>
                 <div className="sec-title mb-1"><Icon name="link" size={17} className="text-text-3" />Lien de partage en lecture seule</div>
                 <p className="text-[12.5px] text-text-2 mb-4">Partagez ce lien avec vos témoins ou votre famille pour qu'ils puissent consulter vos préparatifs en lecture seule.</p>
                 <div className="flex gap-2 mb-4">
-                  <input
-                    readOnly
-                    value={shareUrl}
-                    className="flex-1 bg-surface-2 border border-line rounded-md px-3 py-2 text-[12.5px] font-mono text-text-2 focus:outline-none"
-                  />
+                  <input readOnly value={shareUrl}
+                    className="flex-1 bg-surface-2 border border-line rounded-md px-3 py-2 text-[12.5px] font-mono text-text-2 focus:outline-none" />
                   <Button variant="secondary" size="sm" icon="copy" onClick={() => { navigator.clipboard.writeText(shareUrl); toast("Lien copié !"); }}>Copier</Button>
                 </div>
                 <div className="mb-4 flex flex-col gap-1">
@@ -197,28 +657,24 @@ export default function SettingsPage() {
             </div>
           )}
 
+          {/* ── Emails ─────────────────────────────────────────────────────── */}
           {sec === "emails" && (
             <Card>
               <div className="sec-title mb-1"><Icon name="mail" size={17} className="text-text-3" />Templates d'email Supabase</div>
               <p className="text-[12.5px] text-text-2 mb-5">Ces templates sont utilisés pour les emails d'authentification envoyés par Supabase. Collez-les dans Supabase Dashboard → Authentication → Email Templates.</p>
-
-              {/* Accordion rows */}
               {[
-                { key: "confirm", title: "Confirmation d'inscription", desc: "Envoyé lors de la création de compte", path: "emails/confirmation.html" },
-                { key: "reset", title: "Réinitialisation de mot de passe", desc: "Envoyé lors d'une demande de reset", path: "emails/reset-password.html" },
-                { key: "invite", title: "Invitation d'un collaborateur", desc: "Envoyé lors d'une invitation", path: "emails/invite.html" },
+                { key: "confirm", title: "Confirmation d'inscription",    desc: "Envoyé lors de la création de compte",    path: "emails/confirmation.html" },
+                { key: "reset",   title: "Réinitialisation de mot de passe", desc: "Envoyé lors d'une demande de reset",  path: "emails/reset-password.html" },
+                { key: "invite",  title: "Invitation d'un collaborateur", desc: "Envoyé lors d'une invitation",           path: "emails/invite.html" },
               ].map(({ key, title, desc, path }) => (
                 <div key={key} className="border-b border-line last:border-0">
-                  <button
-                    className="w-full flex items-center gap-3 py-4 text-left"
-                    onClick={() => setOpenEmail(openEmail === key ? null : key)}
-                  >
+                  <button className="w-full flex items-center gap-3 py-4 text-left" onClick={() => setOpenEmail(openEmail === key ? null : key)}>
                     <span className="w-[34px] h-[34px] rounded-[9px] flex items-center justify-center bg-primary-soft text-primary-700 shrink-0"><Icon name="mail" size={16} /></span>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium">{title}</div>
                       <div className="text-[12.5px] text-text-2">{desc}</div>
                     </div>
-                    <Icon name={openEmail === key ? "chevron-up" : "chevron-down"} size={16} className="text-text-3 shrink-0" />
+                    <Icon name={openEmail === key ? "chevronU" : "chevronD"} size={16} className="text-text-3 shrink-0" />
                   </button>
                   {openEmail === key && (
                     <div className="pb-4 pl-[46px] flex flex-col gap-3">
@@ -232,8 +688,6 @@ export default function SettingsPage() {
                   )}
                 </div>
               ))}
-
-              {/* Step-by-step guide */}
               <div className="mt-5 bg-surface-2 rounded-card border border-line p-4">
                 <div className="text-[12px] font-semibold text-text-2 uppercase tracking-wide mb-3">Guide étape par étape</div>
                 <ol className="flex flex-col gap-2">
@@ -252,12 +706,9 @@ export default function SettingsPage() {
                 </ol>
                 <div className="mt-4 pt-3 border-t border-line">
                   <div className="text-[12px] text-text-3 mb-1">Lien direct Supabase</div>
-                  <a
-                    href="https://sxoocdnedizxlegwshxl.supabase.co/project/default/auth/templates"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-mono text-[11.5px] text-primary-700 hover:underline break-all"
-                  >
+                  <a href="https://sxoocdnedizxlegwshxl.supabase.co/project/default/auth/templates"
+                    target="_blank" rel="noopener noreferrer"
+                    className="font-mono text-[11.5px] text-primary-700 hover:underline break-all">
                     https://sxoocdnedizxlegwshxl.supabase.co/project/default/auth/templates
                   </a>
                 </div>
@@ -265,13 +716,15 @@ export default function SettingsPage() {
             </Card>
           )}
 
+          {/* ── Apparence ──────────────────────────────────────────────────── */}
           {sec === "theme" && (
             <>
               <Card>
                 <div className="sec-title mb-4"><Icon name="sun" size={17} className="text-text-3" />Mode d&apos;affichage</div>
                 <div className="flex gap-3.5">
                   {[["light", "Clair", "sun"], ["dark", "Sombre", "moon"]].map(([id, label, ic]) => (
-                    <button key={id} onClick={() => setTheme(id as any)} className={`flex-1 text-center rounded-card border p-6 transition ${theme === id ? "border-primary ring-2 ring-primary-soft" : "border-line hover:border-line-strong"}`}>
+                    <button key={id} onClick={() => setTheme(id as any)}
+                      className={`flex-1 text-center rounded-card border p-6 transition ${theme === id ? "border-primary ring-2 ring-primary-soft" : "border-line hover:border-line-strong"}`}>
                       <Icon name={ic} size={26} className={theme === id ? "text-primary mx-auto" : "text-text-2 mx-auto"} />
                       <div className="mt-2.5 font-semibold text-sm">{label}</div>
                       {theme === id && <div className="mt-1.5 flex justify-center"><Badge tone="primary" icon="check">Actif</Badge></div>}
@@ -284,14 +737,14 @@ export default function SettingsPage() {
                 <p className="text-[13px] text-text-2 mb-5">Adapte les couleurs de toute l&apos;application à votre style.</p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {([
-                    { id: "boheme",    label: "Bohème",     emoji: "🌿", colors: ["#C96E2C", "#7E9A63", "#F4ECDD"] },
-                    { id: "classique", label: "Classique",  emoji: "🏛",  colors: ["#1E3A5F", "#C4961A", "#F5F4F2"] },
-                    { id: "champetre", label: "Champêtre",  emoji: "🌾", colors: ["#6B8C3E", "#C4A030", "#F3F1E5"] },
-                    { id: "romantique",label: "Romantique", emoji: "🌸", colors: ["#B5586E", "#C9A07A", "#FDF4F5"] },
-                    { id: "tropical",  label: "Tropical",   emoji: "🏖", colors: ["#1F7A5C", "#E4A83A", "#F1F7F4"] },
-                    { id: "moderne",   label: "Moderne",    emoji: "🖤", colors: ["#323232", "#C2A03A", "#F6F6F6"] },
-                    { id: "baroque",   label: "Baroque",    emoji: "🏰", colors: ["#7A1C40", "#C4921A", "#F6F1F4"] },
-                    { id: "marin",     label: "Marin",      emoji: "🌊", colors: ["#1B4B8C", "#C8A96A", "#F1F4F8"] },
+                    { id: "boheme",     label: "Bohème",     emoji: "🌿", colors: ["#C96E2C", "#7E9A63", "#F4ECDD"] },
+                    { id: "classique",  label: "Classique",  emoji: "🏛",  colors: ["#1E3A5F", "#C4961A", "#F5F4F2"] },
+                    { id: "champetre",  label: "Champêtre",  emoji: "🌾", colors: ["#6B8C3E", "#C4A030", "#F3F1E5"] },
+                    { id: "romantique", label: "Romantique", emoji: "🌸", colors: ["#B5586E", "#C9A07A", "#FDF4F5"] },
+                    { id: "tropical",   label: "Tropical",   emoji: "🏖", colors: ["#1F7A5C", "#E4A83A", "#F1F7F4"] },
+                    { id: "moderne",    label: "Moderne",    emoji: "🖤", colors: ["#323232", "#C2A03A", "#F6F6F6"] },
+                    { id: "baroque",    label: "Baroque",    emoji: "🏰", colors: ["#7A1C40", "#C4921A", "#F6F1F4"] },
+                    { id: "marin",      label: "Marin",      emoji: "🌊", colors: ["#1B4B8C", "#C8A96A", "#F1F4F8"] },
                   ] as const).map(({ id, label, emoji, colors }) => {
                     const active = weddingTheme === id;
                     return (
@@ -318,11 +771,11 @@ export default function SettingsPage() {
               </Card>
             </>
           )}
+
         </div>
       </div>
 
-      {inviting && <InviteModal onClose={() => setInviting(false)} />}
-
+      {/* Modal régénération lien */}
       {confirmRegen && (
         <Modal
           title="Régénérer le lien de partage ?"

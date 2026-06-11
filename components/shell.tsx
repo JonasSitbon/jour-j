@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useId } from "react";
+import React, { useState, useEffect, useId, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,6 +9,7 @@ import { Badge, IconButton, Avatar } from "./ui";
 import { useStore, useTheme } from "./providers";
 import { NotificationsPanel } from "./notifications-panel";
 import { createClient } from "@/lib/supabase";
+import type { WeddingRole } from "@/lib/types";
 
 // ─── Navigation structure ───────────────────────────────────────────────────
 
@@ -17,8 +18,9 @@ const NAV_GROUPS = [
     id: "overview",
     label: "Vue d'ensemble",
     items: [
-      { id: "dashboard",  label: "Tableau de bord",     icon: "grid"         },
-      { id: "dates",      label: "Sélecteur de dates",  icon: "calendar"     },
+      { id: "dashboard",     label: "Tableau de bord",     icon: "grid"         },
+      { id: "dates",         label: "Sélecteur de dates",  icon: "calendar"     },
+      { id: "mes-mariages",  label: "Mes mariages",        icon: "rings"        },
     ],
   },
   {
@@ -272,6 +274,173 @@ function NavGroups({
   );
 }
 
+// ─── Role label helper ────────────────────────────────────────────────────────
+
+function roleLabel(role: WeddingRole) {
+  switch (role) {
+    case "owner":  return "Propriétaire";
+    case "admin":  return "Admin";
+    case "editor": return "Éditeur";
+    case "viewer": return "Lecteur";
+  }
+}
+
+// ─── Wedding Switcher ────────────────────────────────────────────────────────
+
+function WeddingSwitcher({ collapsed }: { collapsed: boolean }) {
+  const { state, switchWedding } = useStore();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    function handle(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, [open]);
+
+  const active = state.myWeddings.find((w) => w.id === state.activeWeddingId) ?? state.myWeddings[0];
+  if (!active) return null;
+
+  const color = active.coverColor || "#C96E2C";
+
+  // Format date in short French style
+  function fmtShort(dateStr: string) {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+  }
+
+  if (collapsed) {
+    return (
+      <NavTooltip label={`${active.partnerA} & ${active.partnerB}`}>
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className="flex justify-center w-full mb-3 py-1"
+          aria-label="Changer de mariage"
+        >
+          <span
+            className="w-6 h-6 rounded-sm shrink-0 border border-black/10"
+            style={{ background: color }}
+          />
+        </button>
+      </NavTooltip>
+    );
+  }
+
+  return (
+    <div ref={ref} className="relative mb-4">
+      {/* Trigger button */}
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md border transition-colors
+          ${open
+            ? "bg-surface-3 border-line-strong"
+            : "bg-surface-2 border-line hover:bg-surface-3 hover:border-line-strong"
+          }`}
+      >
+        <span
+          className="w-5 h-5 rounded-sm shrink-0 border border-black/10"
+          style={{ background: color }}
+        />
+        <div className="flex-1 min-w-0 text-left">
+          <div className="text-[12.5px] font-semibold truncate leading-tight">
+            {active.partnerA} &amp; {active.partnerB}
+          </div>
+          <div className="text-[10.5px] text-text-3 truncate leading-tight">
+            {fmtShort(active.date)}
+          </div>
+        </div>
+        {state.myWeddings.length > 1 && (
+          <motion.span
+            animate={{ rotate: open ? 180 : 0 }}
+            transition={{ type: "spring", stiffness: 420, damping: 32 }}
+            className="text-text-3 shrink-0"
+          >
+            <Icon name="chevronD" size={14} />
+          </motion.span>
+        )}
+      </button>
+
+      {/* Dropdown */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -6, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.97, transition: { duration: 0.12 } }}
+            transition={{ type: "spring", stiffness: 460, damping: 30 }}
+            className="absolute top-full left-0 right-0 mt-1.5 z-[250]
+                       bg-popover border border-line rounded-md shadow-lg overflow-hidden"
+          >
+            <div className="py-1 max-h-[280px] overflow-y-auto">
+              {state.myWeddings.map((w) => {
+                const isActive = w.id === state.activeWeddingId;
+                const wColor = w.coverColor || "#C96E2C";
+                return (
+                  <button
+                    key={w.id}
+                    onClick={async () => {
+                      setOpen(false);
+                      if (!isActive) await switchWedding(w.id);
+                    }}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors
+                      ${isActive
+                        ? "bg-primary-soft"
+                        : "hover:bg-hover"
+                      }`}
+                  >
+                    <span
+                      className="w-4 h-4 rounded-[3px] shrink-0 border border-black/10"
+                      style={{ background: wColor }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-[12px] font-semibold truncate ${isActive ? "text-primary-700" : "text-text"}`}>
+                        {w.partnerA} &amp; {w.partnerB}
+                      </div>
+                      <div className="text-[10.5px] text-text-3 truncate">{fmtShort(w.date)}</div>
+                    </div>
+                    <span className={`badge text-[10px] shrink-0 ${
+                      w.role === "owner"  ? "bg-primary-soft text-primary-700" :
+                      w.role === "admin"  ? "bg-sage-soft text-sage" :
+                      w.role === "editor" ? "bg-amber-soft text-[var(--gold-ink)]" :
+                      "bg-surface-3 text-text-2"
+                    }`}>
+                      {roleLabel(w.role)}
+                    </span>
+                    {isActive && (
+                      <Icon name="check" size={14} className="text-primary shrink-0" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="border-t border-line">
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  router.push("/onboarding?new=1");
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-[12.5px] font-medium
+                           text-text-2 hover:bg-hover hover:text-text transition-colors"
+              >
+                <Icon name="plus" size={15} className="text-text-3" />
+                Créer un mariage
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 // ─── Brand ───────────────────────────────────────────────────────────────────
 
 function Brand({ collapsed }: { collapsed: boolean }) {
@@ -413,6 +582,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </motion.button>
           </div>
 
+          {/* Wedding Switcher */}
+          <WeddingSwitcher collapsed={collapsed} />
+
           {/* Nav */}
           <NavGroups current={current} collapsed={collapsed} />
 
@@ -522,6 +694,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               transition={{ type: "spring", stiffness: 380, damping: 36 }}
             >
               <Brand collapsed={false} />
+              <WeddingSwitcher collapsed={false} />
               <NavGroups current={current} collapsed={false} onNavigate={() => setMenuOpen(false)} />
               <div className="mt-auto pt-4 border-t border-line flex flex-col gap-2.5">
                 <div className="flex items-center justify-between px-1">
