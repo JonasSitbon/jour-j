@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import type { AppState } from "@/lib/types";
 import { initialState } from "@/lib/data";
-import { loadAll, syncKey } from "@/lib/db";
+import { loadAll, syncKey, setActiveWedding } from "@/lib/db";
 
 /* ----------------------------- Store ----------------------------- */
 type Updater<K extends keyof AppState> = AppState[K] | ((prev: AppState[K]) => AppState[K]);
@@ -13,6 +13,7 @@ interface StoreApi {
   state: AppState;
   update: <K extends keyof AppState>(key: K, value: Updater<K>) => void;
   reloadAll: () => Promise<void>;
+  switchWedding: (id: number) => Promise<void>;
   SIDES: { A: string; B: string };
 }
 const StoreCtx = createContext<StoreApi | null>(null);
@@ -73,6 +74,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
     if (data) setState((s) => ({ ...s, ...data }));
   }, []);
 
+  const switchWedding = useCallback(async (id: number) => {
+    setLoading(true);
+    setActiveWedding(id);
+    const data = await loadAll(id);
+    if (data) setState((s) => ({ ...s, ...data }));
+    setLoading(false);
+  }, []);
+
   const update = useCallback(<K extends keyof AppState>(key: K, value: Updater<K>) => {
     setState((s) => {
       const prevVal = s[key];
@@ -121,7 +130,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const showSpinner = loading && !isPublicPage;
 
   return (
-    <StoreCtx.Provider value={{ state, update, reloadAll, SIDES: { A: state.wedding.partnerA, B: state.wedding.partnerB } }}>
+    <StoreCtx.Provider value={{ state, update, reloadAll, switchWedding, SIDES: { A: state.wedding.partnerA, B: state.wedding.partnerB } }}>
       <ThemeCtx.Provider value={{ theme, setTheme, weddingTheme, setWeddingTheme }}>
         <ToastCtx.Provider value={pushToast}>
           {showSpinner ? (

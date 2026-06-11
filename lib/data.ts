@@ -213,6 +213,9 @@ export const initialState: AppState = {
   dateCandidates, holidays, weatherByMonth, weatherCity: WEDDING.city,
   members, notifications,
   selectedDate: 1,
+  activeWeddingId: null,
+  myWeddings: [],
+  profile: null,
 };
 
 export const SIDES = { A: WEDDING.partnerA, B: WEDDING.partnerB };

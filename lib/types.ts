@@ -87,6 +87,41 @@ export interface Wedding {
   venue: string; city: string; theme: string; guestTarget: number;
 }
 
+// ── Multi-mariage & profils ─────────────────────────────────────────────────
+
+export type AccountType = "couple" | "planner" | "super_admin";
+export type WeddingRole = "owner" | "admin" | "editor" | "viewer";
+
+export interface Profile {
+  id: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl: string | null;
+  accountType: AccountType;
+}
+
+export interface WeddingSummary {
+  id: number;
+  name: string | null;
+  partnerA: string;
+  partnerB: string;
+  date: string;
+  city: string;
+  role: WeddingRole;
+  coverColor: string;
+}
+
+export interface WeddingAccess {
+  id: number;
+  weddingId: number;
+  userId: string;
+  role: WeddingRole;
+  invitedAt: string;
+  acceptedAt: string | null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export interface AppState {
   wedding: Wedding;
   guests: Guest[];
@@ -107,4 +142,8 @@ export interface AppState {
   members: Member[];
   notifications: Notification[];
   selectedDate: number;
+  // Multi-mariage
+  activeWeddingId: number | null;
+  myWeddings: WeddingSummary[];
+  profile: Profile | null;
 }
