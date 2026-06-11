@@ -17,6 +17,8 @@ const FEATURES = [
 ];
 
 export default function SignupPage() {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [pw2, setPw2] = useState("");
@@ -27,12 +29,17 @@ export default function SignupPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!firstName.trim() || !lastName.trim()) { setErr("Prénom et nom sont obligatoires"); return; }
     if (!email.includes("@")) { setErr("Adresse email invalide"); return; }
     if (pw.length < 8) { setErr("Le mot de passe doit contenir au moins 8 caractères"); return; }
     if (pw !== pw2) { setErr("Les mots de passe ne correspondent pas"); return; }
     setErr(""); setLoading(true);
 
-    const { data, error } = await createClient().auth.signUp({ email, password: pw });
+    const { data, error } = await createClient().auth.signUp({
+      email,
+      password: pw,
+      options: { data: { first_name: firstName.trim(), last_name: lastName.trim() } },
+    });
     if (error) { setErr(error.message); setLoading(false); return; }
 
     if (data.session) {
@@ -114,6 +121,21 @@ export default function SignupPage() {
               </p>
 
               <div className="flex flex-col gap-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Prénom">
+                    <Input
+                      value={firstName} onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="Marie" autoComplete="given-name"
+                    />
+                  </Field>
+                  <Field label="Nom">
+                    <Input
+                      value={lastName} onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Dupont" autoComplete="family-name"
+                    />
+                  </Field>
+                </div>
+
                 <Field label="Adresse email">
                   <Input
                     icon="mail" type="email" value={email}

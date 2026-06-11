@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase";
 
-type Provider = "google" | "azure";
+type Provider = "google";
 
 const PROVIDERS: { id: Provider; label: string; icon: React.ReactNode }[] = [
   {
@@ -17,28 +17,15 @@ const PROVIDERS: { id: Provider; label: string; icon: React.ReactNode }[] = [
       </svg>
     ),
   },
-  {
-    id: "azure",
-    label: "Continuer avec Microsoft",
-    icon: (
-      <svg viewBox="0 0 21 21" width="18" height="18" aria-hidden>
-        <rect x="1"  y="1"  width="9" height="9" fill="#f25022" />
-        <rect x="11" y="1"  width="9" height="9" fill="#7fba00" />
-        <rect x="1"  y="11" width="9" height="9" fill="#00a4ef" />
-        <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
-      </svg>
-    ),
-  },
 ];
 
 export function OAuthButtons({ mode }: { mode: "login" | "signup" }) {
   const handleOAuth = async (provider: Provider) => {
     const supabase = createClient();
     await supabase.auth.signInWithOAuth({
-      provider: provider === "azure" ? "azure" : provider,
+      provider,
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
-        ...(provider === "azure" ? { scopes: "email openid profile" } : {}),
       },
     });
   };
