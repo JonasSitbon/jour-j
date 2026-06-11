@@ -281,3 +281,11 @@
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
 }
+
+/* ── Print styles ──────────────────────────────────────────────── */
+@media print {
+  aside, [data-sidebar], nav { display: none !important; }
+  .no-print { display: none !important; }
+  body { background: white !important; color: black !important; }
+  .card, [class*="card"] { box-shadow: none !important; border: 1px solid #ddd !important; }
+}

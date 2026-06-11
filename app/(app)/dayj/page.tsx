@@ -5,6 +5,7 @@ import { useStore } from "@/components/providers";
 import { Icon } from "@/components/icon";
 import { Card, Badge, Button, Empty, Field, Input, Textarea, Select, Modal } from "@/components/ui";
 import { PageHead } from "@/components/shell";
+import { exportDayJPDF } from "@/lib/pdf-dayj";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                                */
@@ -783,6 +784,16 @@ export default function DayJPage() {
       <PageHead
         title="Déroulé du Jour J"
         sub={weddingDate ? `Programme heure par heure · ${weddingDate}` : "Programme heure par heure de votre mariage"}
+        actions={
+          <>
+            <Button variant="ghost" icon="download" onClick={() => window.print()}>
+              Imprimer
+            </Button>
+            <Button variant="secondary" icon="download" onClick={() => exportDayJPDF(events, state.wedding.partnerA, state.wedding.partnerB, state.wedding.date)}>
+              Export PDF
+            </Button>
+          </>
+        }
       />
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 pb-16 space-y-6">
