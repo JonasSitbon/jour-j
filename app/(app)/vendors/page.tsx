@@ -26,20 +26,20 @@ const daysSince = (iso: string) => fmt.daysUntil(iso) * -1;
 // ─── Vendor type picker data ──────────────────────────────────────────────────
 
 const VENDOR_TYPES = [
-  { cat: "Lieu / Salle",           emoji: "🏛",  range: "3 000 – 15 000 €", docs: ["Contrat de location", "Devis détaillé", "Assurance annulation"],          tip: "Vérifiez la capacité, le parking et les horaires autorisés." },
-  { cat: "Traiteur",               emoji: "🍽",  range: "8 000 – 25 000 €", docs: ["Menu détaillé", "Conditions d'annulation", "Attestation hygiène"],          tip: "Demandez une dégustation avant de signer." },
-  { cat: "Photographe",            emoji: "📷",  range: "2 000 – 6 000 €",  docs: ["Contrat prestation", "Droits à l'image", "Livraison album"],                tip: "Regardez 2-3 reportages complets, pas juste les highlights." },
-  { cat: "Vidéaste",               emoji: "🎬",  range: "1 500 – 5 000 €",  docs: ["Contrat prestation", "Droits à l'image"],                                   tip: "Demandez un exemple de film complet (pas de teaser)." },
-  { cat: "Fleuriste",              emoji: "🌸",  range: "1 500 – 5 000 €",  docs: ["Devis fleurs", "Book créations"],                                            tip: "Précisez les fleurs de saison pour réduire les coûts." },
-  { cat: "DJ / Animation",         emoji: "🎵",  range: "800 – 3 000 €",    docs: ["Contrat prestation", "Liste matériel"],                                      tip: "Testez son mix et discutez de vos morceaux incontournables." },
-  { cat: "Groupe / Orchestre",     emoji: "🎷",  range: "1 500 – 6 000 €",  docs: ["Contrat prestation", "Setlist"],                                             tip: "Précisez la durée des sets et les pauses." },
-  { cat: "Officiant / Célébrant",  emoji: "💍",  range: "500 – 1 500 €",    docs: ["Dossier cérémonie"],                                                         tip: "Rencontrez-le en personne pour vérifier le feeling." },
-  { cat: "Wedding Planner",        emoji: "📋",  range: "1 500 – 6 000 €",  docs: ["Contrat de coordination", "Planning J"],                                     tip: "Clarifiez exactement ce qui est inclus (J-only ou full)." },
-  { cat: "Transport",              emoji: "🚗",  range: "300 – 1 500 €",    docs: ["Contrat transport", "Assurance"],                                             tip: "Réservez 6-12 mois avant pour les voitures de prestige." },
-  { cat: "Coiffure & Maquillage",  emoji: "💄",  range: "300 – 1 200 €",    docs: ["Devis prestation", "Test J-2 mois"],                                         tip: "Planifiez un essai 2 mois avant — obligatoire." },
-  { cat: "Pâtissier / Gâteau",     emoji: "🎂",  range: "300 – 1 500 €",    docs: ["Devis gâteau", "Dégustation"],                                               tip: "Réservez dès que possible, les bons pâtissiers sont vite complets." },
-  { cat: "Faire-part & Papeterie", emoji: "💌",  range: "300 – 1 000 €",    docs: ["Bon à tirer", "Devis impression"],                                           tip: "Envoyez les save-the-dates 12 mois avant, les invitations 3 mois avant." },
-  { cat: "Autre",                  emoji: "⚡",  range: "",                  docs: ["Devis"],                                                                      tip: "" },
+  { cat: "Lieu / Salle",           catId: "salle",     emoji: "🏛",  range: "3 000 – 15 000 €", docs: ["Contrat de location", "Devis détaillé", "Assurance annulation"],          tip: "Vérifiez la capacité, le parking et les horaires autorisés." },
+  { cat: "Traiteur",               catId: "traiteur",  emoji: "🍽",  range: "8 000 – 25 000 €", docs: ["Menu détaillé", "Conditions d'annulation", "Attestation hygiène"],          tip: "Demandez une dégustation avant de signer." },
+  { cat: "Photographe",            catId: "photo",     emoji: "📷",  range: "2 000 – 6 000 €",  docs: ["Contrat prestation", "Droits à l'image", "Livraison album"],                tip: "Regardez 2-3 reportages complets, pas juste les highlights." },
+  { cat: "Vidéaste",               catId: "video",     emoji: "🎬",  range: "1 500 – 5 000 €",  docs: ["Contrat prestation", "Droits à l'image"],                                   tip: "Demandez un exemple de film complet (pas de teaser)." },
+  { cat: "Fleuriste",              catId: "fleurs",    emoji: "🌸",  range: "1 500 – 5 000 €",  docs: ["Devis fleurs", "Book créations"],                                            tip: "Précisez les fleurs de saison pour réduire les coûts." },
+  { cat: "DJ / Animation",         catId: "dj",        emoji: "🎵",  range: "800 – 3 000 €",    docs: ["Contrat prestation", "Liste matériel"],                                      tip: "Testez son mix et discutez de vos morceaux incontournables." },
+  { cat: "Groupe / Orchestre",     catId: "dj",        emoji: "🎷",  range: "1 500 – 6 000 €",  docs: ["Contrat prestation", "Setlist"],                                             tip: "Précisez la durée des sets et les pauses." },
+  { cat: "Officiant / Célébrant",  catId: "officiant", emoji: "💍",  range: "500 – 1 500 €",    docs: ["Dossier cérémonie"],                                                         tip: "Rencontrez-le en personne pour vérifier le feeling." },
+  { cat: "Wedding Planner",        catId: "divers",    emoji: "📋",  range: "1 500 – 6 000 €",  docs: ["Contrat de coordination", "Planning J"],                                     tip: "Clarifiez exactement ce qui est inclus (J-only ou full)." },
+  { cat: "Transport",              catId: "voiture",   emoji: "🚗",  range: "300 – 1 500 €",    docs: ["Contrat transport", "Assurance"],                                             tip: "Réservez 6-12 mois avant pour les voitures de prestige." },
+  { cat: "Coiffure & Maquillage",  catId: "beaute",    emoji: "💄",  range: "300 – 1 200 €",    docs: ["Devis prestation", "Test J-2 mois"],                                         tip: "Planifiez un essai 2 mois avant — obligatoire." },
+  { cat: "Pâtissier / Gâteau",     catId: "gateau",    emoji: "🎂",  range: "300 – 1 500 €",    docs: ["Devis gâteau", "Dégustation"],                                               tip: "Réservez dès que possible, les bons pâtissiers sont vite complets." },
+  { cat: "Faire-part & Papeterie", catId: "fairepart", emoji: "💌",  range: "300 – 1 000 €",    docs: ["Bon à tirer", "Devis impression"],                                           tip: "Envoyez les save-the-dates 12 mois avant, les invitations 3 mois avant." },
+  { cat: "Autre",                  catId: null,        emoji: "⚡",  range: "",                  docs: ["Devis"],                                                                      tip: "" },
 ] as const;
 
 type VendorTypeItem = typeof VENDOR_TYPES[number];
@@ -269,12 +269,11 @@ function NewVendorDrawer({
 
   // Pre-fill cat from picked type if possible
   const defaultCat = useMemo(() => {
-    if (!pickedType || pickedType.cat === "Autre") return state.vendorCats[0]?.id ?? "salle";
-    // Try to match by label
-    const match = state.vendorCats.find(
-      (c) => c.label.toLowerCase() === pickedType.cat.toLowerCase()
-    );
-    return match?.id ?? state.vendorCats[0]?.id ?? "salle";
+    if (!pickedType || pickedType.catId === null) return state.vendorCats[0]?.id ?? "salle";
+    // Use explicit catId mapping first
+    const byId = state.vendorCats.find((c) => c.id === pickedType.catId);
+    if (byId) return byId.id;
+    return state.vendorCats[0]?.id ?? "salle";
   }, [pickedType, state.vendorCats]);
 
   const [form, setForm] = useState({
