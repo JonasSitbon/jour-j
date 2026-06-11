@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useStore } from "@/components/providers";
 import { fmt } from "@/lib/format";
@@ -206,39 +206,14 @@ function AlertItem({ alert, isLast }: { alert: AlertEntry; isLast: boolean }) {
 }
 
 /* ------------------------------------------------------------------ */
-/* CountdownRing                                                        */
+/* CountdownBlock                                                       */
 /* ------------------------------------------------------------------ */
-function CountdownRing({ days }: { days: number }) {
-  const size = 80, stroke = 5;
-  const radius = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const TOTAL_DAYS = 730;
-  const elapsed = Math.max(0, TOTAL_DAYS - Math.max(0, days));
-  const pct = Math.min(1, elapsed / TOTAL_DAYS);
-  const targetOffset = circumference * (1 - pct);
-  const ringRef = useRef<SVGCircleElement>(null);
-
-  useEffect(() => {
-    const el = ringRef.current;
-    if (!el) return;
-    el.style.strokeDashoffset = String(circumference);
-    void el.getBoundingClientRect();
-    el.style.transition = "stroke-dashoffset 1.2s cubic-bezier(.16,1,.3,1)";
-    el.style.strokeDashoffset = String(targetOffset);
-  }, [circumference, targetOffset]);
-
-  const strokeColor = pct < 0.5 ? "var(--sage)" : pct < 0.85 ? "var(--gold)" : "var(--coral)";
-
+function CountdownBlock({ days }: { days: number }) {
   return (
-    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ position: "absolute", top: 0, left: 0, transform: "rotate(-90deg)" }} aria-hidden>
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="var(--surface-3)" strokeWidth={stroke} />
-        <circle ref={ringRef} cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={strokeColor} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={circumference} />
-      </svg>
-      <div className="relative z-10 flex flex-col items-center leading-none">
-        <span className="text-[10px] text-[#FBF1E0]/75 font-semibold uppercase tracking-widest">J-</span>
-        <span className="font-mono text-[28px] font-bold text-[#FBF1E0] leading-none">{days}</span>
-      </div>
+    <div className="flex flex-col items-center justify-center bg-white/12 border border-white/25 rounded-2xl px-5 py-4 min-w-[90px]">
+      <span className="text-[10px] text-[#FBF1E0]/75 font-semibold uppercase tracking-widest mb-1">J-</span>
+      <span className="font-mono text-[40px] font-bold text-[#FBF1E0] leading-none">{days}</span>
+      <span className="text-[11px] text-[#FBF1E0]/70 mt-1.5">{days === 1 ? "jour" : "jours"}</span>
     </div>
   );
 }
@@ -386,7 +361,7 @@ export default function DashboardPage() {
           <div className="text-sm text-text-2 mt-1 capitalize">
             {isNewUser
               ? "Votre espace est prêt. Suivez les étapes ci-dessous pour organiser votre mariage."
-              : `${todayFr}${!isPast ? ` · J-${days} avant le grand jour` : ""}`}
+              : `${todayFr}`}
           </div>
         </motion.div>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.12, duration: 0.3 }} className="flex gap-2 items-center flex-wrap">
@@ -460,20 +435,15 @@ export default function DashboardPage() {
                 </div>
               </div>
             ) : (
-              <div className="flex items-end gap-5">
-                <CountdownRing days={days} />
-                <div>
-                  <div className="text-[#FBF1E0]/80 text-[12px] font-semibold uppercase tracking-widest mb-1">Compte à rebours</div>
-                  <div className="text-[#FBF1E0]/70 text-[13px] mt-1">{days === 1 ? "jour avant le grand jour" : "jours avant le grand jour"}</div>
-                </div>
-              </div>
+              <CountdownBlock days={days} />
             )}
             {dateCand && !isPast && (
               <div className="flex items-center gap-3 bg-white/12 border border-white/20 rounded-xl px-4 py-3 backdrop-blur-sm shrink-0">
-                <Icon name="sun" size={28} className="text-[#FBF1E0]" />
+                <Icon name="sun" size={24} className="text-[#FBF1E0]" />
                 <div>
                   <div className="font-mono text-[24px] font-bold text-[#FBF1E0] leading-none">{dateCand.temp}°</div>
-                  <div className="text-[11.5px] text-[#FBF1E0]/80 mt-0.5">{dateCand.weather}% favorable</div>
+                  <div className="text-[11px] text-[#FBF1E0]/80 mt-0.5">{dateCand.city}</div>
+                  <div className="text-[10px] text-[#FBF1E0]/60 mt-0.5">{dateCand.weather}% favorable</div>
                 </div>
               </div>
             )}
