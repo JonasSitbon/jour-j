@@ -1,5 +1,5 @@
 import { createClient } from "./supabase";
-import type { AppState, Guest, Vendor, Payment, DateCandidate, Profile, WeddingSummary, WeddingRole, AccountType } from "./types";
+import type { AppState, Guest, Vendor, Payment, DateCandidate, Profile, WeddingSummary, WeddingRole, AccountType, JournalEntry } from "./types";
 
 // ID du mariage actif (persisté en localStorage côté client)
 let currentWeddingId: number | null = null;
@@ -302,4 +302,48 @@ export async function adminLoadAllProfiles() {
 export async function adminUpdateAccountType(userId: string, accountType: AccountType) {
   const c = createClient();
   await c.from("profiles").update({ account_type: accountType, updated_at: new Date().toISOString() }).eq("id", userId);
+}
+
+// ── Journal ──────────────────────────────────────────────────
+export async function loadJournal(weddingId: number): Promise<JournalEntry[]> {
+  const sb = createClient();
+  const { data } = await sb
+    .from("journal_entries")
+    .select("*")
+    .eq("wedding_id", weddingId)
+    .order("created_at", { ascending: false });
+  return (data ?? []).map(journalFromDb);
+}
+
+export async function addJournalEntry(weddingId: number, entry: Omit<JournalEntry, "id" | "weddingId" | "createdAt" | "updatedAt">): Promise<JournalEntry | null> {
+  const sb = createClient();
+  const { data } = await sb
+    .from("journal_entries")
+    .insert({ wedding_id: weddingId, title: entry.title || null, text: entry.text, category: entry.category, pinned: entry.pinned })
+    .select("*")
+    .single();
+  return data ? journalFromDb(data) : null;
+}
+
+export async function updateJournalEntry(id: number, patch: Partial<Pick<JournalEntry, "title" | "text" | "category" | "pinned">>): Promise<void> {
+  const sb = createClient();
+  await sb.from("journal_entries").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id);
+}
+
+export async function deleteJournalEntry(id: number): Promise<void> {
+  const sb = createClient();
+  await sb.from("journal_entries").delete().eq("id", id);
+}
+
+function journalFromDb(r: Record<string, any>): JournalEntry {
+  return {
+    id: r.id,
+    weddingId: r.wedding_id,
+    title: r.title ?? null,
+    text: r.text,
+    category: r.category,
+    pinned: r.pinned,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
 }

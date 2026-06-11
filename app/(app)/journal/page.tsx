@@ -2,17 +2,10 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { Icon } from "@/components/icon";
-import { Card, Badge, Button, Empty, Search, Field, Input, Textarea } from "@/components/ui";
+import { Card, Badge, Button, Empty, Search, Field, Textarea } from "@/components/ui";
 import { PageHead } from "@/components/shell";
-
-interface JournalEntry {
-  id: number;
-  text: string;
-  category: "general" | "invites" | "budget" | "prestataires" | "logistique" | "idees";
-  createdAt: string;
-  pinned: boolean;
-  title?: string;
-}
+import type { JournalEntry } from "@/lib/types";
+import { getWeddingId, loadJournal, addJournalEntry, updateJournalEntry, deleteJournalEntry } from "@/lib/db";
 
 type Category = JournalEntry["category"] | "all";
 
@@ -34,19 +27,6 @@ const CAT_ICONS: Record<JournalEntry["category"], string> = {
   idees: "sparkle",
 };
 
-function loadEntries(): JournalEntry[] {
-  try {
-    const raw = localStorage.getItem("jj_journal");
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveEntries(entries: JournalEntry[]) {
-  localStorage.setItem("jj_journal", JSON.stringify(entries));
-}
-
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
@@ -65,6 +45,8 @@ const EMPTY_FORM = { title: "", text: "", category: "general" as JournalEntry["c
 export default function JournalPage() {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [mounted, setMounted] = useState(false);
+  const [weddingId, setWeddingId] = useState<number | null>(null);
+  const [syncing, setSyncing] = useState(false);
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<Category>("all");
   const [form, setForm] = useState(EMPTY_FORM);
@@ -74,36 +56,57 @@ export default function JournalPage() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   useEffect(() => {
-    setEntries(loadEntries());
-    setMounted(true);
+    const id = getWeddingId();
+    setWeddingId(id);
+    if (!id) {
+      setMounted(true);
+      return;
+    }
+    setSyncing(true);
+    loadJournal(id)
+      .then((data) => setEntries(data))
+      .finally(() => {
+        setSyncing(false);
+        setMounted(true);
+      });
   }, []);
 
-  const persist = (next: JournalEntry[]) => {
-    setEntries(next);
-    saveEntries(next);
+  const addEntry = async () => {
+    if (!form.text.trim() || !weddingId) return;
+    setSyncing(true);
+    try {
+      const created = await addJournalEntry(weddingId, {
+        title: form.title.trim() || null,
+        text: form.text.trim(),
+        category: form.category,
+        pinned: false,
+      });
+      if (created) {
+        setEntries((prev) => [created, ...prev]);
+      }
+      setForm(EMPTY_FORM);
+      setShowForm(false);
+    } finally {
+      setSyncing(false);
+    }
   };
 
-  const addEntry = () => {
-    if (!form.text.trim()) return;
-    const entry: JournalEntry = {
-      id: Date.now(),
-      text: form.text.trim(),
-      title: form.title.trim() || undefined,
-      category: form.category,
-      createdAt: new Date().toISOString(),
-      pinned: false,
-    };
-    persist([entry, ...entries]);
-    setForm(EMPTY_FORM);
-    setShowForm(false);
+  const deleteEntry = async (id: number) => {
+    setSyncing(true);
+    try {
+      await deleteJournalEntry(id);
+      setEntries((prev) => prev.filter((e) => e.id !== id));
+    } finally {
+      setSyncing(false);
+    }
   };
 
-  const deleteEntry = (id: number) => {
-    persist(entries.filter((e) => e.id !== id));
-  };
-
-  const togglePin = (id: number) => {
-    persist(entries.map((e) => (e.id === id ? { ...e, pinned: !e.pinned } : e)));
+  const togglePin = async (id: number) => {
+    const entry = entries.find((e) => e.id === id);
+    if (!entry) return;
+    const newPinned = !entry.pinned;
+    setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, pinned: newPinned } : e)));
+    await updateJournalEntry(id, { pinned: newPinned });
   };
 
   const startEdit = (e: JournalEntry) => {
@@ -112,16 +115,27 @@ export default function JournalPage() {
     setExpandedId(null);
   };
 
-  const saveEdit = () => {
-    if (!editForm.text.trim()) return;
-    persist(
-      entries.map((e) =>
-        e.id === editingId
-          ? { ...e, text: editForm.text.trim(), title: editForm.title.trim() || undefined, category: editForm.category }
-          : e
-      )
-    );
-    setEditingId(null);
+  const saveEdit = async () => {
+    if (!editForm.text.trim() || editingId === null) return;
+    setSyncing(true);
+    try {
+      const patch = {
+        title: editForm.title.trim() || null,
+        text: editForm.text.trim(),
+        category: editForm.category,
+      };
+      await updateJournalEntry(editingId, patch);
+      setEntries((prev) =>
+        prev.map((e) =>
+          e.id === editingId
+            ? { ...e, ...patch, updatedAt: new Date().toISOString() }
+            : e
+        )
+      );
+      setEditingId(null);
+    } finally {
+      setSyncing(false);
+    }
   };
 
   const filtered = useMemo(() => {
@@ -141,6 +155,19 @@ export default function JournalPage() {
     : null;
 
   if (!mounted) return null;
+
+  if (!weddingId) {
+    return (
+      <div className="p-6 max-w-6xl mx-auto pb-24">
+        <PageHead title="Journal de bord" sub="Notes et décisions" />
+        <Card className="!p-0 mt-6">
+          <Empty icon="edit" title="Aucun mariage sélectionné">
+            Sélectionnez un mariage pour accéder au journal de bord.
+          </Empty>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-6xl mx-auto pb-24">
@@ -198,6 +225,12 @@ export default function JournalPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-[13px] text-text-2">Dernière note</span>
                   <span className="text-[13px] text-text-3">{lastUpdated}</span>
+                </div>
+              )}
+              {syncing && (
+                <div className="flex items-center gap-1.5 mt-1">
+                  <div className="w-3 h-3 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                  <span className="text-[11px] text-text-3">Synchronisation…</span>
                 </div>
               )}
             </div>
@@ -265,7 +298,7 @@ export default function JournalPage() {
                   <Button variant="secondary" size="sm" onClick={() => { setShowForm(false); setForm(EMPTY_FORM); }}>
                     Annuler
                   </Button>
-                  <Button variant="primary" size="sm" icon="save" onClick={addEntry} disabled={!form.text.trim()}>
+                  <Button variant="primary" size="sm" icon="save" onClick={addEntry} disabled={!form.text.trim() || syncing}>
                     Enregistrer
                   </Button>
                 </div>
@@ -351,7 +384,7 @@ export default function JournalPage() {
                         </div>
                         <div className="flex gap-2 justify-end pt-1">
                           <Button variant="secondary" size="sm" onClick={() => setEditingId(null)}>Annuler</Button>
-                          <Button variant="primary" size="sm" icon="save" onClick={saveEdit} disabled={!editForm.text.trim()}>
+                          <Button variant="primary" size="sm" icon="save" onClick={saveEdit} disabled={!editForm.text.trim() || syncing}>
                             Enregistrer
                           </Button>
                         </div>

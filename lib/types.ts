@@ -82,6 +82,17 @@ export interface Notification { id: number; type: NotifType; title: string; body
 export type AccessLevel = "owner" | "edit" | "read";
 export interface Member { id: number; name: string; role: string; email: string; access: AccessLevel; }
 
+export interface JournalEntry {
+  id: number;
+  weddingId: number;
+  title: string | null;
+  text: string;
+  category: "general" | "invites" | "budget" | "prestataires" | "logistique" | "idees";
+  pinned: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Wedding {
   partnerA: string; partnerB: string; date: string;
   venue: string; city: string; theme: string; guestTarget: number;
