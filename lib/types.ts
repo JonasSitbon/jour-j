@@ -96,6 +96,8 @@ export interface JournalEntry {
 export interface Wedding {
   partnerA: string; partnerB: string; date: string;
   venue: string; city: string; theme: string; guestTarget: number;
+  selectedStyle?: string;
+  customStyleNote?: string;
 }
 
 // ── Multi-mariage & profils ─────────────────────────────────────────────────

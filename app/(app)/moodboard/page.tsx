@@ -5,18 +5,27 @@ import { PageHead } from "@/components/shell";
 import { Button, Badge } from "@/components/ui";
 import { Icon } from "@/components/icon";
 import { useStore } from "@/components/providers";
+import {
+  getWeddingId,
+  loadMoodboard,
+  saveMoodboardStyle,
+  upsertPalette,
+  deletePalette as dbDeletePalette,
+  upsertMoodCard,
+  deleteMoodCard,
+} from "@/lib/db";
 
 /* ─────────────────────────── Types ─────────────────────────── */
 
 type Palette = {
-  id: string;
+  id: number | null; // null = new, not yet saved to DB
   name: string;
   colors: string[]; // hex strings, max 6
   isPrimary: boolean;
 };
 
 type InspirationCard = {
-  id: string;
+  id: number | null; // null = new, not yet saved to DB
   title: string;
   url?: string;
   note?: string;
@@ -39,7 +48,7 @@ const LS_KEY = "jj_moodboard";
 const DEFAULT_DATA: MoodData = {
   palettes: [
     {
-      id: "default",
+      id: null,
       name: "Palette principale",
       colors: ["#F4ECDD", "#C96E2C", "#382F23", "#B8C9A3", "#D4A96A"],
       isPrimary: true,
@@ -142,10 +151,6 @@ function tagColor(tag: string): string {
   return TAGS.find((t) => t.id === tag)?.color ?? "#CCCCCC";
 }
 
-function uid() {
-  return Math.random().toString(36).slice(2, 10);
-}
-
 /* ──────────────────── Swatch component ─────────────────────── */
 
 function Swatch({
@@ -204,6 +209,7 @@ export default function MoodboardPage() {
   const { state } = useStore();
   const [mounted, setMounted] = useState(false);
   const [data, setData] = useState<MoodData>(DEFAULT_DATA);
+  const [syncing, setSyncing] = useState(false);
 
   /* filter state for inspiration board */
   const [activeTag, setActiveTag] = useState<string>("all");
@@ -217,34 +223,61 @@ export default function MoodboardPage() {
   const [formColor, setFormColor] = useState("#C96E2C");
 
   /* editing palette name */
-  const [editingPaletteId, setEditingPaletteId] = useState<string | null>(null);
+  const [editingPaletteId, setEditingPaletteId] = useState<number | null>(null);
   const [editingName, setEditingName] = useState("");
 
   /* ─── SSR-safe mount + load ───────────────────────────────── */
 
   useEffect(() => {
-    setMounted(true);
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as MoodData;
-        setData(parsed);
+    const wId = getWeddingId();
+
+    async function load() {
+      const lsData = localStorage.getItem(LS_KEY);
+
+      if (wId) {
+        const { palettes, cards } = await loadMoodboard(wId);
+        setData({
+          palettes: palettes.map((p) => ({ id: p.id, name: p.name, colors: p.colors, isPrimary: p.isPrimary })),
+          selectedStyle: state.wedding.selectedStyle ?? "",
+          customStyleNote: state.wedding.customStyleNote ?? "",
+          cards: cards.map((c) => ({ id: c.id, title: c.title, url: c.url ?? undefined, note: c.note ?? undefined, tag: c.tag, color: c.color, pinned: c.pinned })),
+        });
+
+        // Migration one-time: if localStorage has data and DB is empty
+        if (lsData && palettes.length === 0 && cards.length === 0) {
+          try {
+            const ls = JSON.parse(lsData) as { palettes: any[]; cards: any[]; selectedStyle?: string; customStyleNote?: string };
+            // Migrate palettes
+            for (let i = 0; i < ls.palettes.length; i++) {
+              const p = ls.palettes[i];
+              await upsertPalette(wId, { name: p.name, colors: p.colors, isPrimary: p.isPrimary, orderIdx: i });
+            }
+            // Migrate cards
+            for (let i = 0; i < ls.cards.length; i++) {
+              const c = ls.cards[i];
+              await upsertMoodCard(wId, { title: c.title, url: c.url ?? null, note: c.note ?? null, tag: c.tag, color: c.color ?? "#C96E2C", pinned: c.pinned ?? false, orderIdx: i });
+            }
+            // Reload
+            const { palettes: p2, cards: c2 } = await loadMoodboard(wId);
+            setData((prev) => ({
+              ...prev,
+              palettes: p2.map((p) => ({ id: p.id, name: p.name, colors: p.colors, isPrimary: p.isPrimary })),
+              cards: c2.map((c) => ({ id: c.id, title: c.title, url: c.url ?? undefined, note: c.note ?? undefined, tag: c.tag, color: c.color, pinned: c.pinned })),
+              selectedStyle: ls.selectedStyle ?? "",
+              customStyleNote: ls.customStyleNote ?? "",
+            }));
+            localStorage.removeItem(LS_KEY);
+          } catch { /* ignore migration errors */ }
+        }
+      } else if (lsData) {
+        // Fallback localStorage if no weddingId
+        try { setData(JSON.parse(lsData)); } catch {}
       }
-    } catch {
-      // ignore
+      setMounted(true);
     }
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  /* ─── Auto-save ───────────────────────────────────────────── */
-
-  useEffect(() => {
-    if (!mounted) return;
-    try {
-      localStorage.setItem(LS_KEY, JSON.stringify(data));
-    } catch {
-      // ignore
-    }
-  }, [data, mounted]);
 
   /* ─── Helpers ────────────────────────────────────────────── */
 
@@ -254,96 +287,166 @@ export default function MoodboardPage() {
 
   /* ─── Style selection ────────────────────────────────────── */
 
-  function toggleStyle(id: string) {
-    updateData((prev) => ({
-      ...prev,
-      selectedStyle: prev.selectedStyle === id ? "" : id,
-    }));
+  async function toggleStyle(id: string) {
+    const wId = getWeddingId();
+    const newStyle = data.selectedStyle === id ? "" : id;
+    if (wId) {
+      setSyncing(true);
+      await saveMoodboardStyle(wId, newStyle, data.customStyleNote);
+      setSyncing(false);
+    }
+    updateData((prev) => ({ ...prev, selectedStyle: newStyle }));
+  }
+
+  async function saveCustomStyleNote(note: string) {
+    const wId = getWeddingId();
+    if (wId) {
+      await saveMoodboardStyle(wId, data.selectedStyle, note);
+    }
   }
 
   /* ─── Palette actions ────────────────────────────────────── */
 
-  function addPalette() {
-    updateData((prev) => ({
-      ...prev,
-      palettes: [
-        ...prev.palettes,
-        {
-          id: uid(),
-          name: "Nouvelle palette",
-          colors: ["#F4ECDD", "#C96E2C", "#B8C9A3"],
-          isPrimary: false,
-        },
-      ],
-    }));
+  async function addPalette() {
+    const wId = getWeddingId();
+    const newPalette = {
+      name: "Nouvelle palette",
+      colors: ["#F4ECDD", "#C96E2C", "#B8C9A3"],
+      isPrimary: false,
+    };
+    if (wId) {
+      setSyncing(true);
+      const { data: row } = await upsertPalette(wId, { ...newPalette, orderIdx: data.palettes.length });
+      setSyncing(false);
+      const id = (row as { id: number } | null)?.id ?? null;
+      setData((d) => ({ ...d, palettes: [...d.palettes, { ...newPalette, id }] }));
+    } else {
+      setData((d) => ({ ...d, palettes: [...d.palettes, { ...newPalette, id: null }] }));
+    }
   }
 
-  function deletePalette(id: string) {
+  async function removePalette(id: number | null) {
     if (!window.confirm("Supprimer cette palette ?")) return;
-    updateData((prev) => ({
-      ...prev,
-      palettes: prev.palettes.filter((p) => p.id !== id),
-    }));
+    if (id) {
+      setSyncing(true);
+      await dbDeletePalette(id);
+      setSyncing(false);
+    }
+    setData((d) => ({ ...d, palettes: d.palettes.filter((p) => p.id !== id) }));
   }
 
-  function setPrimary(id: string) {
+  async function setPrimary(id: number | null) {
+    const wId = getWeddingId();
+    const palette = data.palettes.find((p) => p.id === id);
+    if (palette && wId && id) {
+      setSyncing(true);
+      await upsertPalette(wId, { id, name: palette.name, colors: palette.colors, isPrimary: true, orderIdx: data.palettes.findIndex((p) => p.id === id) });
+      // Also update the previously primary palette
+      const prev = data.palettes.find((p) => p.isPrimary && p.id !== id);
+      if (prev && prev.id) {
+        await upsertPalette(wId, { id: prev.id, name: prev.name, colors: prev.colors, isPrimary: false, orderIdx: data.palettes.findIndex((p) => p.id === prev.id) });
+      }
+      setSyncing(false);
+    }
     updateData((prev) => ({
       ...prev,
       palettes: prev.palettes.map((p) => ({ ...p, isPrimary: p.id === id })),
     }));
   }
 
-  function updatePaletteColor(paletteId: string, colorIdx: number, hex: string) {
-    updateData((prev) => ({
-      ...prev,
-      palettes: prev.palettes.map((p) =>
+  async function updatePaletteColor(paletteId: number | null, colorIdx: number, hex: string) {
+    // Update local state immediately for responsive UX
+    let updatedPalette: Palette | undefined;
+    setData((prev) => {
+      const palettes = prev.palettes.map((p) =>
         p.id === paletteId
-          ? {
-              ...p,
-              colors: p.colors.map((c, i) => (i === colorIdx ? hex : c)),
-            }
+          ? { ...p, colors: p.colors.map((c, i) => (i === colorIdx ? hex : c)) }
           : p
-      ),
-    }));
+      );
+      updatedPalette = palettes.find((p) => p.id === paletteId);
+      return { ...prev, palettes };
+    });
+
+    // Persist to DB
+    const wId = getWeddingId();
+    if (wId && paletteId && updatedPalette) {
+      const p = data.palettes.find((p) => p.id === paletteId);
+      if (p) {
+        const newColors = p.colors.map((c, i) => (i === colorIdx ? hex : c));
+        await upsertPalette(wId, { id: paletteId, name: p.name, colors: newColors, isPrimary: p.isPrimary, orderIdx: data.palettes.findIndex((pp) => pp.id === paletteId) });
+      }
+    }
   }
 
-  function addColor(paletteId: string) {
-    updateData((prev) => ({
-      ...prev,
-      palettes: prev.palettes.map((p) =>
+  async function addColor(paletteId: number | null) {
+    let updatedPalette: Palette | undefined;
+    setData((prev) => {
+      const palettes = prev.palettes.map((p) =>
         p.id === paletteId && p.colors.length < 6
           ? { ...p, colors: [...p.colors, "#FFFFFF"] }
           : p
-      ),
-    }));
+      );
+      updatedPalette = palettes.find((p) => p.id === paletteId);
+      return { ...prev, palettes };
+    });
+
+    const wId = getWeddingId();
+    if (wId && paletteId) {
+      const p = data.palettes.find((p) => p.id === paletteId);
+      if (p && p.colors.length < 6) {
+        await upsertPalette(wId, { id: paletteId, name: p.name, colors: [...p.colors, "#FFFFFF"], isPrimary: p.isPrimary, orderIdx: data.palettes.findIndex((pp) => pp.id === paletteId) });
+      }
+    }
   }
 
-  function removeColor(paletteId: string, colorIdx: number) {
-    updateData((prev) => ({
-      ...prev,
-      palettes: prev.palettes.map((p) =>
+  async function removeColor(paletteId: number | null, colorIdx: number) {
+    let updatedPalette: Palette | undefined;
+    setData((prev) => {
+      const palettes = prev.palettes.map((p) =>
         p.id === paletteId
           ? { ...p, colors: p.colors.filter((_, i) => i !== colorIdx) }
           : p
-      ),
-    }));
+      );
+      updatedPalette = palettes.find((p) => p.id === paletteId);
+      return { ...prev, palettes };
+    });
+
+    const wId = getWeddingId();
+    if (wId && paletteId) {
+      const p = data.palettes.find((p) => p.id === paletteId);
+      if (p) {
+        const newColors = p.colors.filter((_, i) => i !== colorIdx);
+        await upsertPalette(wId, { id: paletteId, name: p.name, colors: newColors, isPrimary: p.isPrimary, orderIdx: data.palettes.findIndex((pp) => pp.id === paletteId) });
+      }
+    }
   }
 
-  function renamePalette(id: string, name: string) {
+  async function renamePalette(id: number | null, name: string) {
+    const wId = getWeddingId();
+    if (wId && id) {
+      const p = data.palettes.find((p) => p.id === id);
+      if (p) {
+        await upsertPalette(wId, { id, name, colors: p.colors, isPrimary: p.isPrimary, orderIdx: data.palettes.findIndex((pp) => pp.id === id) });
+      }
+    }
     updateData((prev) => ({
       ...prev,
       palettes: prev.palettes.map((p) => (p.id === id ? { ...p, name } : p)),
     }));
   }
 
-  function importPreset(preset: { name: string; colors: string[] }) {
-    updateData((prev) => ({
-      ...prev,
-      palettes: [
-        ...prev.palettes,
-        { id: uid(), name: preset.name, colors: preset.colors, isPrimary: false },
-      ],
-    }));
+  async function importPreset(preset: { name: string; colors: string[] }) {
+    const wId = getWeddingId();
+    const newPalette = { name: preset.name, colors: preset.colors, isPrimary: false };
+    if (wId) {
+      setSyncing(true);
+      const { data: row } = await upsertPalette(wId, { ...newPalette, orderIdx: data.palettes.length });
+      setSyncing(false);
+      const id = (row as { id: number } | null)?.id ?? null;
+      setData((d) => ({ ...d, palettes: [...d.palettes, { ...newPalette, id }] }));
+    } else {
+      setData((d) => ({ ...d, palettes: [...d.palettes, { ...newPalette, id: null }] }));
+    }
   }
 
   function copyHex(colors: string[]) {
@@ -352,10 +455,9 @@ export default function MoodboardPage() {
 
   /* ─── Card actions ───────────────────────────────────────── */
 
-  function submitCard() {
+  async function submitCard() {
     if (!formTitle.trim()) return;
-    const card: InspirationCard = {
-      id: uid(),
+    const cardData = {
       title: formTitle.trim(),
       url: formUrl.trim() || undefined,
       note: formNote.trim() || undefined,
@@ -363,7 +465,24 @@ export default function MoodboardPage() {
       color: formColor || undefined,
       pinned: false,
     };
-    updateData((prev) => ({ ...prev, cards: [card, ...prev.cards] }));
+    const wId = getWeddingId();
+    if (wId) {
+      setSyncing(true);
+      const { data: row } = await upsertMoodCard(wId, {
+        title: cardData.title,
+        url: cardData.url ?? null,
+        note: cardData.note ?? null,
+        tag: cardData.tag,
+        color: cardData.color ?? "#C96E2C",
+        pinned: false,
+        orderIdx: data.cards.length,
+      });
+      setSyncing(false);
+      const id = (row as { id: number } | null)?.id ?? null;
+      setData((d) => ({ ...d, cards: [{ ...cardData, id }, ...d.cards] }));
+    } else {
+      setData((d) => ({ ...d, cards: [{ ...cardData, id: null }, ...d.cards] }));
+    }
     setFormTitle("");
     setFormUrl("");
     setFormNote("");
@@ -372,21 +491,34 @@ export default function MoodboardPage() {
     setShowAddForm(false);
   }
 
-  function deleteCard(id: string) {
+  async function removeCard(id: number | null) {
     if (!window.confirm("Supprimer cette inspiration ?")) return;
-    updateData((prev) => ({
-      ...prev,
-      cards: prev.cards.filter((c) => c.id !== id),
-    }));
+    if (id) {
+      setSyncing(true);
+      await deleteMoodCard(id);
+      setSyncing(false);
+    }
+    setData((d) => ({ ...d, cards: d.cards.filter((c) => c.id !== id) }));
   }
 
-  function togglePin(id: string) {
-    updateData((prev) => ({
-      ...prev,
-      cards: prev.cards.map((c) =>
-        c.id === id ? { ...c, pinned: !c.pinned } : c
-      ),
-    }));
+  async function togglePin(id: number | null) {
+    const card = data.cards.find((c) => c.id === id);
+    if (!card) return;
+    const pinned = !card.pinned;
+    const wId = getWeddingId();
+    if (id && wId) {
+      await upsertMoodCard(wId, {
+        id,
+        title: card.title,
+        url: card.url ?? null,
+        note: card.note ?? null,
+        tag: card.tag,
+        color: card.color ?? "#C96E2C",
+        pinned,
+        orderIdx: data.cards.findIndex((c) => c.id === id),
+      });
+    }
+    setData((d) => ({ ...d, cards: d.cards.map((c) => c.id === id ? { ...c, pinned } : c) }));
   }
 
   /* ─── Export ─────────────────────────────────────────────── */
@@ -549,6 +681,7 @@ export default function MoodboardPage() {
             onChange={(e) =>
               updateData((prev) => ({ ...prev, customStyleNote: e.target.value }))
             }
+            onBlur={(e) => saveCustomStyleNote(e.target.value)}
           />
         </div>
       </section>
@@ -571,7 +704,7 @@ export default function MoodboardPage() {
         <div className="flex flex-col gap-4 mb-6">
           {data.palettes.map((palette) => (
             <PaletteCard
-              key={palette.id}
+              key={palette.id ?? "new"}
               palette={palette}
               editingId={editingPaletteId}
               editingName={editingName}
@@ -580,7 +713,7 @@ export default function MoodboardPage() {
                 setEditingName(name);
               }}
               onSaveEdit={() => {
-                if (editingPaletteId) {
+                if (editingPaletteId !== null) {
                   renamePalette(editingPaletteId, editingName);
                 }
                 setEditingPaletteId(null);
@@ -595,7 +728,7 @@ export default function MoodboardPage() {
               onAddColor={addColor}
               onRemoveColor={removeColor}
               onSetPrimary={setPrimary}
-              onDelete={deletePalette}
+              onDelete={removePalette}
               onCopyHex={copyHex}
             />
           ))}
@@ -830,10 +963,10 @@ export default function MoodboardPage() {
           >
             {filteredCards.map((card) => (
               <InspirationCardComp
-                key={card.id}
+                key={card.id ?? "new"}
                 card={card}
                 onPin={togglePin}
-                onDelete={deleteCard}
+                onDelete={removeCard}
               />
             ))}
           </div>
@@ -910,17 +1043,17 @@ export default function MoodboardPage() {
 
 type PaletteCardProps = {
   palette: Palette;
-  editingId: string | null;
+  editingId: number | null;
   editingName: string;
-  onStartEdit: (id: string, name: string) => void;
+  onStartEdit: (id: number | null, name: string) => void;
   onSaveEdit: () => void;
   onCancelEdit: () => void;
   onEditNameChange: (name: string) => void;
-  onUpdateColor: (paletteId: string, colorIdx: number, hex: string) => void;
-  onAddColor: (paletteId: string) => void;
-  onRemoveColor: (paletteId: string, colorIdx: number) => void;
-  onSetPrimary: (id: string) => void;
-  onDelete: (id: string) => void;
+  onUpdateColor: (paletteId: number | null, colorIdx: number, hex: string) => void;
+  onAddColor: (paletteId: number | null) => void;
+  onRemoveColor: (paletteId: number | null, colorIdx: number) => void;
+  onSetPrimary: (id: number | null) => void;
+  onDelete: (id: number | null) => void;
   onCopyHex: (colors: string[]) => void;
 };
 
@@ -1086,8 +1219,8 @@ function InspirationCardComp({
   onDelete,
 }: {
   card: InspirationCard;
-  onPin: (id: string) => void;
-  onDelete: (id: string) => void;
+  onPin: (id: number | null) => void;
+  onDelete: (id: number | null) => void;
 }) {
   const accentColor = card.color ?? tagColor(card.tag);
   const tagObj = TAGS.find((t) => t.id === card.tag);

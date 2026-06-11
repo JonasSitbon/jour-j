@@ -188,7 +188,7 @@ export async function loadAll(weddingId?: number): Promise<Partial<AppState> | n
   const [myWeddings, profile] = await Promise.all([loadMyWeddings(), loadProfile()]);
 
   return {
-    wedding:      { partnerA: w.partner_a, partnerB: w.partner_b, date: w.date, venue: w.venue, city: w.city, theme: w.theme, guestTarget: w.guest_target },
+    wedding:      { partnerA: w.partner_a, partnerB: w.partner_b, date: w.date, venue: w.venue, city: w.city, theme: w.theme, guestTarget: w.guest_target, selectedStyle: w.selected_style ?? undefined, customStyleNote: w.custom_style_note ?? undefined },
     guests:       (guests ?? []).map(guestFromDb),
     tables:       tables ?? [],
     vendors:      (vendors ?? []).map(vendorFromDb),
@@ -230,7 +230,7 @@ export async function syncKey(key: keyof AppState, newVal: any, prevVal: any) {
     case "notifications":   return syncArray("notifications", newVal, prevVal, (x) => x);
     case "dateCandidates":  return syncArray("date_candidates", newVal, prevVal, dateCandidateToDb);
     case "wedding":
-      return c.from("wedding").update({ partner_a: newVal.partnerA, partner_b: newVal.partnerB, date: newVal.date, venue: newVal.venue, city: newVal.city, theme: newVal.theme, guest_target: newVal.guestTarget }).eq("id", wId);
+      return c.from("wedding").update({ partner_a: newVal.partnerA, partner_b: newVal.partnerB, date: newVal.date, venue: newVal.venue, city: newVal.city, theme: newVal.theme, guest_target: newVal.guestTarget, selected_style: newVal.selectedStyle ?? null, custom_style_note: newVal.customStyleNote ?? null }).eq("id", wId);
     case "budgetTotal":
       return c.from("wedding").update({ budget_total: newVal }).eq("id", wId);
     case "selectedDate":
@@ -346,4 +346,70 @@ function journalFromDb(r: Record<string, any>): JournalEntry {
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
+}
+
+// ── Moodboard ────────────────────────────────────────────────
+export interface MoodboardPalette {
+  id: number;
+  name: string;
+  colors: string[];
+  isPrimary: boolean;
+  orderIdx: number;
+}
+
+export interface MoodboardCard {
+  id: number;
+  title: string;
+  url: string | null;
+  note: string | null;
+  tag: string;
+  color: string;
+  pinned: boolean;
+  orderIdx: number;
+}
+
+export async function loadMoodboard(weddingId: number) {
+  const sb = createClient();
+  const [{ data: palettes }, { data: cards }] = await Promise.all([
+    sb.from("moodboard_palettes").select("*").eq("wedding_id", weddingId).order("order_idx"),
+    sb.from("moodboard_cards").select("*").eq("wedding_id", weddingId).order("order_idx"),
+  ]);
+  return {
+    palettes: (palettes ?? []).map((p: any) => ({
+      id: p.id, name: p.name, colors: p.colors as string[], isPrimary: p.is_primary, orderIdx: p.order_idx,
+    })) as MoodboardPalette[],
+    cards: (cards ?? []).map((c: any) => ({
+      id: c.id, title: c.title, url: c.url, note: c.note, tag: c.tag, color: c.color, pinned: c.pinned, orderIdx: c.order_idx,
+    })) as MoodboardCard[],
+  };
+}
+
+export async function saveMoodboardStyle(weddingId: number, style: string, note: string) {
+  return createClient().from("wedding").update({ selected_style: style, custom_style_note: note }).eq("id", weddingId);
+}
+
+export async function upsertPalette(weddingId: number, palette: MoodboardPalette | Omit<MoodboardPalette, "id">) {
+  const sb = createClient();
+  const payload = { wedding_id: weddingId, name: palette.name, colors: palette.colors, is_primary: palette.isPrimary, order_idx: palette.orderIdx };
+  if ("id" in palette && palette.id) {
+    return sb.from("moodboard_palettes").update(payload).eq("id", palette.id).select("id").single();
+  }
+  return sb.from("moodboard_palettes").insert(payload).select("id").single();
+}
+
+export async function deletePalette(id: number) {
+  return createClient().from("moodboard_palettes").delete().eq("id", id);
+}
+
+export async function upsertMoodCard(weddingId: number, card: MoodboardCard | Omit<MoodboardCard, "id">) {
+  const sb = createClient();
+  const payload = { wedding_id: weddingId, title: card.title, url: card.url || null, note: card.note || null, tag: card.tag, color: card.color, pinned: card.pinned, order_idx: card.orderIdx };
+  if ("id" in card && card.id) {
+    return sb.from("moodboard_cards").update(payload).eq("id", card.id).select("id").single();
+  }
+  return sb.from("moodboard_cards").insert(payload).select("id").single();
+}
+
+export async function deleteMoodCard(id: number) {
+  return createClient().from("moodboard_cards").delete().eq("id", id);
 }

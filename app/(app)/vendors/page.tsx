@@ -12,6 +12,7 @@ import type { Vendor } from "@/lib/types";
 import { createClient } from "@/lib/supabase";
 import { getWeddingId } from "@/lib/db";
 import { ScrollReveal } from "@/components/scroll-reveal";
+import { exportVendorsPDF } from "@/lib/pdf-vendors";
 
 const STATUS: Record<string, { label: string; tone: any }> = {
   signed: { label: "Signé", tone: "sage" }, pending: { label: "En attente", tone: "amber" }, declined: { label: "Refusé", tone: "coral" },
@@ -23,6 +24,15 @@ const CRITERIA = [
 ] as const;
 const SCORE_CLS: Record<string, string> = { A: "bg-sage-soft text-sage", B: "bg-amber-soft text-[var(--gold-ink)]", C: "bg-coral-soft text-coral" };
 const daysSince = (iso: string) => fmt.daysUntil(iso) * -1;
+function daysSinceContact(lastContact: string): number {
+  if (!lastContact) return 999;
+  return Math.floor((Date.now() - new Date(lastContact).getTime()) / 86400000);
+}
+function avgScore(scores: Record<string, number>): number {
+  const vals = Object.values(scores).filter((v) => v > 0);
+  if (vals.length === 0) return 0;
+  return vals.reduce((a, b) => a + b, 0) / vals.length;
+}
 
 // ─── Vendor type picker data ──────────────────────────────────────────────────
 
@@ -106,7 +116,7 @@ function Comparator({ vendors, label, onClose }: { vendors: Vendor[]; label: str
 // ─── Vendor detail drawer ─────────────────────────────────────────────────────
 
 function VendorDetailDrawer({ vendor, onClose }: { vendor: Vendor; onClose: () => void }) {
-  const { update } = useStore();
+  const { state, update } = useStore();
   const toast = useToast();
   const setStatus = (status: any) => { update("vendors", (l) => l.map((v) => v.id === vendor.id ? { ...v, status } : v)); toast("Statut mis à jour"); onClose(); };
   const remove = () => { update("vendors", (l) => l.filter((v) => v.id !== vendor.id)); toast("Devis supprimé"); onClose(); };
@@ -132,6 +142,17 @@ function VendorDetailDrawer({ vendor, onClose }: { vendor: Vendor; onClose: () =
           <div className="flex items-center gap-2.5 text-[13.5px]"><Icon name="user" size={16} className="text-text-3" />{vendor.contact || "—"}</div>
           <div className="flex items-center gap-2.5 text-[13.5px]"><Icon name="phone" size={16} className="text-text-3" />{vendor.phone || "—"}</div>
           <div className="flex items-center gap-2.5 text-[13.5px]"><Icon name="mail" size={16} className="text-text-3" />{vendor.email || "—"}</div>
+          {vendor.email && (
+            <a
+              href={`mailto:${vendor.email}?subject=Mariage de ${state.wedding.partnerA} et ${state.wedding.partnerB}&body=Bonjour,`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-secondary btn-sm flex items-center gap-2 w-fit"
+            >
+              <Icon name="mail" size={14} />
+              Envoyer un email
+            </a>
+          )}
         </div>
         {vendor.included && <div><div className="field-label mb-1.5">Prestations incluses</div><div className="text-[12.5px] text-text-2 leading-relaxed">{vendor.included}</div></div>}
         <div><div className="field-label mb-2">Évaluation</div><div className="flex flex-col gap-1.5">{CRITERIA.map((c) => <div key={c.id} className="flex items-center justify-between text-[13px]"><span className="text-text-2">{c.label}</span><Stars n={(vendor.scores as any)[c.id]} /></div>)}</div></div>
@@ -916,6 +937,9 @@ export default function VendorsPage() {
         sub={`${state.vendors.length} devis · ${state.vendors.filter((v) => v.status === "signed").length} signés · ${state.vendors.filter((v) => v.status === "pending").length} en attente`}
         actions={
           <div className="flex items-center gap-2">
+            <Button variant="secondary" icon="download" onClick={() => exportVendorsPDF(state.vendors, state.wedding.partnerA, state.wedding.partnerB)}>
+              Export PDF
+            </Button>
             <Button variant="secondary" onClick={() => setShowEmailTemplates(true)}>📧 Modèles d&apos;emails</Button>
             <Button variant="primary" icon="plus" onClick={openAdd}>Ajouter un devis</Button>
           </div>
@@ -1028,7 +1052,7 @@ export default function VendorsPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <div className="text-[15.5px] font-semibold truncate">{v.name}</div>
-                            <ScoreStarBadge score={scoreToNum(v.score)} />
+                            <ScoreStarBadge score={avgScore(v.scores as unknown as Record<string, number>) || scoreToNum(v.score)} />
                           </div>
                           <div className="text-[12.5px] text-text-2 mt-0.5">{v.contact || "—"}</div>
                         </div>
@@ -1040,6 +1064,9 @@ export default function VendorsPage() {
                         <Badge tone={STATUS[v.status].tone} dot>{STATUS[v.status].label}</Badge>
                         {v.docs > 0 && <Badge tone="neutral" icon="file">Contrat</Badge>}
                         {late && <Badge tone="coral" icon="clock">Sans réponse {daysSince(v.lastContact)}j</Badge>}
+                        {v.status === "pending" && daysSinceContact(v.lastContact) > 14 && (
+                          <Badge tone="coral" icon="alert">Relancer</Badge>
+                        )}
                       </div>
                     </Card>
                   </div>
