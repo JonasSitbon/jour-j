@@ -1260,7 +1260,7 @@ function Hero() {
               className="text-[1.05rem] leading-[1.75] max-w-[480px] mb-10"
               style={{ color: TEXT_MID }}>
               Un espace tout-en-un pour les mariés et les planners —
-              invités, budget, prestataires, Jour J, plan de table.
+              invités, budget, prestataires, plan de table, Jour J.<br />
               Simple, élégant, collaboratif.
             </motion.p>
 
@@ -1561,6 +1561,7 @@ function ModuleCards() {
                 style={{
                   background: "#FFFFFF",
                   boxShadow: "0 40px 100px rgba(0,0,0,0.40), 0 8px 24px rgba(0,0,0,0.18)",
+                  height: "560px",
                   maxHeight: "90vh",
                   display: "flex",
                   flexDirection: "column",
@@ -1618,7 +1619,7 @@ function ModuleCards() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.26, duration: 0.20 }}
                   className="flex-1 overflow-y-auto p-6"
-                  style={{ background: WARM_SOFT }}
+                  style={{ background: WARM_SOFT, minHeight: 0 }}
                 >
                   {(() => {
                     const Preview = ORDERED_MODULES[active].Preview;
