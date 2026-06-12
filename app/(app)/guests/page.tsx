@@ -308,6 +308,14 @@ function GuestDrawer({ guest, onClose }: { guest: Guest; onClose: () => void }) 
           ))}
         </div>
         <Field label="Notes"><Textarea rows={3} value={g.note} onChange={(e) => set("note", e.target.value)} placeholder="Allergies, précisions…" /></Field>
+        {!isNew && g.rsvpMessage && (
+          <div className="bg-surface-2 rounded-card border border-line px-3.5 py-3">
+            <div className="text-[12px] font-semibold text-text-2 mb-1 flex items-center gap-1.5">
+              <Icon name="mail" size={13} className="text-text-3" />Message de l&apos;invité (RSVP)
+            </div>
+            <p className="text-[13px] text-text-2 italic m-0">&laquo; {g.rsvpMessage} &raquo;</p>
+          </div>
+        )}
         {!isNew && g.rsvpToken && (
           <div className="pt-3 border-t border-line">
             <div className="text-[12px] font-semibold text-text-2 mb-2 flex items-center gap-1.5">
@@ -1288,6 +1296,7 @@ export default function GuestsPage() {
       "Table": g.table ?? "",
       "Groupe": g.group || "",
       "Note": g.note || "",
+      "Message RSVP": g.rsvpMessage || "",
     }));
     const csv = Papa.unparse(rows, { delimiter: ";", quotes: true });
     const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
@@ -1539,7 +1548,12 @@ export default function GuestsPage() {
                       <td>{g.child ? <Icon name="check" size={16} className="text-sage" /> : <span className="text-text-3">—</span>}</td>
                       <td>{g.transport ? <Icon name="check" size={16} className="text-sage" /> : <span className="text-text-3">—</span>}</td>
                       <td>{g.gift ? <Icon name="check" size={16} className="text-sage" /> : <span className="text-text-3">—</span>}</td>
-                      <td><span className="text-text-3 text-[12.5px] max-w-[160px] truncate inline-block">{g.note || "—"}</span></td>
+                      <td>
+                        <span className="text-text-3 text-[12.5px] max-w-[160px] truncate inline-block" title={g.note}>{g.note || "—"}</span>
+                        {g.rsvpMessage && (
+                          <span className="text-text-2 text-[12px] max-w-[160px] truncate block italic" title={`Message de l'invité : ${g.rsvpMessage}`}>💬 {g.rsvpMessage}</span>
+                        )}
+                      </td>
                     </motion.tr>
                   ))}
                   </AnimatePresence>

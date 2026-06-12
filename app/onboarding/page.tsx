@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Logo, Icon } from "@/components/icon";
 import { Button, Field, Input } from "@/components/ui";
@@ -55,6 +55,14 @@ const LOADING_MESSAGES = [
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState<Step>(1);
+
+  // Personne arrivée via un lien d'invitation (signup / confirmation email)
+  // → pas de création de mariage, on la ramène sur l'invitation
+  useEffect(() => {
+    const pendingInvite = localStorage.getItem("jj_pending_invite");
+    if (pendingInvite) router.replace(`/invite/${pendingInvite}`);
+  }, [router]);
+
   const [accountType, setAccountType] = useState<AccountType | null>(null);
   const [loadingMsg, setLoadingMsg] = useState(0);
   const [err, setErr] = useState("");

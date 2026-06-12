@@ -5,7 +5,7 @@ import { useStore, useToast, useTheme } from "@/components/providers";
 import { Icon } from "@/components/icon";
 import { Card, Badge, Button, Field, Input, Select, Avatar, Modal } from "@/components/ui";
 import { PageHead } from "@/components/shell";
-import { updateProfile, inviteToWedding, revokeWeddingAccess, updateWeddingAccessRole, getWeddingId } from "@/lib/db";
+import { updateProfile, inviteToWedding, revokeWeddingAccess, updateWeddingAccessRole, getWeddingId, loadWeddingMembers, type WeddingMember } from "@/lib/db";
 import { createClient } from "@/lib/supabase";
 import type { WeddingRole } from "@/lib/types";
 import { VenueAutocomplete } from "@/components/venue-autocomplete";
@@ -130,20 +130,21 @@ function ProfileSection() {
 
 // ── Modal d'invitation améliorée ─────────────────────────────────────────────
 
-function InviteModal({ onClose, weddingId }: { onClose: () => void; weddingId: number }) {
+function InviteModal({ onClose, weddingId, onInvited }: { onClose: () => void; weddingId: number; onInvited?: () => void }) {
   const toast = useToast();
   const [email, setEmail]   = useState("");
   const [role, setRole]     = useState<WeddingRole>("editor");
   const [loading, setLoading] = useState(false);
+  const [inviteLink, setInviteLink] = useState("");
 
   const send = async () => {
     if (!email.includes("@")) { toast("Email invalide", "err"); return; }
     setLoading(true);
     try {
-      const { error } = await inviteToWedding(weddingId, email, role) as any;
-      if (error) { toast(error, "err"); return; }
-      toast("Invitation envoyée");
-      onClose();
+      const { error, inviteToken } = await inviteToWedding(weddingId, email, role);
+      if (error || !inviteToken) { toast(error ?? "Erreur lors de l'invitation", "err"); return; }
+      setInviteLink(`${window.location.origin}/invite/${inviteToken}`);
+      onInvited?.();
     } catch {
       toast("Erreur lors de l'invitation", "err");
     } finally {
@@ -151,16 +152,48 @@ function InviteModal({ onClose, weddingId }: { onClose: () => void; weddingId: n
     }
   };
 
+  const copy = () => {
+    navigator.clipboard.writeText(inviteLink);
+    toast("Lien copié !");
+  };
+
   return (
     <Modal title="Inviter une personne" onClose={onClose}
       footer={
         <>
-          <Button variant="ghost" onClick={onClose}>Annuler</Button>
-          <Button variant="primary" icon="mail" onClick={send} disabled={loading}>
-            {loading ? "Envoi…" : "Envoyer l'invitation"}
-          </Button>
+          <Button variant="ghost" onClick={onClose}>{inviteLink ? "Fermer" : "Annuler"}</Button>
+          {!inviteLink ? (
+            <Button variant="primary" icon="mail" onClick={send} disabled={loading}>
+              {loading ? "Création…" : "Créer l'invitation"}
+            </Button>
+          ) : (
+            <Button variant="primary" icon="copy" onClick={copy}>Copier le lien</Button>
+          )}
         </>
       }>
+      {inviteLink ? (
+        <div className="flex flex-col gap-4">
+          <div className="bg-surface-2 rounded-card border border-line p-4 flex flex-col gap-3">
+            <div className="flex items-center gap-2 text-[13px] font-medium">
+              <Icon name="check-circle" size={16} className="text-sage" />
+              Invitation créée pour <strong>{email}</strong>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                readOnly
+                value={inviteLink}
+                onFocus={(e) => e.target.select()}
+                className="flex-1 bg-surface border border-line rounded-md px-3 py-2 text-[11.5px] font-mono text-text-2 focus:outline-none"
+              />
+              <Button variant="secondary" size="sm" icon="copy" onClick={copy}>Copier</Button>
+            </div>
+          </div>
+          <div className="text-text-2 text-[12.5px] flex gap-2 items-start">
+            <Icon name="info" size={15} className="shrink-0 mt-0.5" />
+            Envoyez ce lien à la personne concernée. Elle pourra créer un compte ou se connecter, puis accepter l&apos;invitation.
+          </div>
+        </div>
+      ) : (
       <div className="flex flex-col gap-5">
         <Field label="Adresse email">
           <Input icon="mail" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="personne@email.fr" />
@@ -185,9 +218,10 @@ function InviteModal({ onClose, weddingId }: { onClose: () => void; weddingId: n
 
         <div className="text-text-2 text-[12.5px] flex gap-2 items-start">
           <Icon name="info" size={15} className="shrink-0 mt-0.5" />
-          La personne recevra un lien pour rejoindre votre espace mariage.
+          Un lien d&apos;invitation unique sera généré, à transmettre à la personne.
         </div>
       </div>
+      )}
     </Modal>
   );
 }
@@ -251,16 +285,30 @@ function PermissionsAccordion() {
 // ── Section Accès ─────────────────────────────────────────────────────────────
 
 function AccessSection() {
-  const { state, update } = useStore();
+  const { state } = useStore();
   const toast = useToast();
   const [inviting, setInviting] = useState(false);
+  const [owner, setOwner] = useState<{ name: string | null; email: string | null } | null>(null);
+  const [members, setMembers] = useState<WeddingMember[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
   const activeWeddingId = state.activeWeddingId;
-  const members = state.members;
 
-  const handleRevokeLocal = (id: number) => {
-    update("members", (l) => l.filter((x) => x.id !== id));
-    toast("Accès révoqué");
+  const refresh = async () => {
+    if (!activeWeddingId) return;
+    const data = await loadWeddingMembers(activeWeddingId);
+    if (data) { setOwner(data.owner); setMembers(data.members); }
+    setLoaded(true);
+  };
+
+  useEffect(() => {
+    refresh();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeWeddingId]);
+
+  const copyInviteLink = (token: string) => {
+    navigator.clipboard.writeText(`${window.location.origin}/invite/${token}`);
+    toast("Lien d'invitation copié !");
   };
 
   return (
@@ -271,56 +319,75 @@ function AccessSection() {
           <Button variant="primary" size="sm" icon="plus" onClick={() => setInviting(true)}>Inviter</Button>
         </div>
 
-        {members.length === 0 && (
-          <div className="py-6 text-center text-[13px] text-text-2">Aucun collaborateur pour l'instant.</div>
+        {/* Propriétaire */}
+        {owner && (
+          <div className="flex items-center gap-3.5 py-3.5 border-b border-line">
+            <Avatar name={owner.name || owner.email || "?"} />
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold truncate">{owner.name || owner.email}</div>
+              {owner.name && <div className="text-[12.5px] text-text-2 truncate">{owner.email}</div>}
+            </div>
+            <Badge tone={ROLE_META.owner.tone} dot>{ROLE_META.owner.label}</Badge>
+          </div>
+        )}
+
+        {loaded && members.length === 0 && (
+          <div className="py-6 text-center text-[13px] text-text-2">Aucun collaborateur pour l&apos;instant.</div>
         )}
 
         {members.map((m) => {
-          const accessKey = (m.access in ROLE_META ? m.access : "viewer") as WeddingRole;
-          const meta = ROLE_META[accessKey];
-          const isOwner = m.access === "owner";
+          const accessKey = (m.role in ROLE_META ? m.role : "viewer") as WeddingRole;
           return (
             <div key={m.id} className="flex items-center gap-3.5 py-3.5 border-b border-line last:border-0">
-              <Avatar name={m.name} />
+              <Avatar name={m.name || m.email || "?"} />
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold truncate">{m.name}</div>
-                <div className="text-[12.5px] text-text-2 truncate">{m.email}</div>
-              </div>
-              {isOwner ? (
-                <Badge tone={meta.tone} dot>{meta.label}</Badge>
-              ) : (
-                <div className="flex items-center gap-2 shrink-0">
-                  <Select
-                    value={accessKey}
-                    onChange={async (v) => {
-                      const newRole = v as WeddingRole;
-                      try {
-                        await updateWeddingAccessRole(m.id, newRole);
-                        update("members", (l) => l.map((x) => x.id === m.id ? { ...x, access: newRole as any } : x));
-                        toast("Rôle mis à jour");
-                      } catch {
-                        toast("Erreur lors de la mise à jour", "err");
-                      }
-                    }}
-                    options={[
-                      { value: "admin",  label: "Administrateur" },
-                      { value: "editor", label: "Éditeur" },
-                      { value: "viewer", label: "Lecteur" },
-                    ]}
-                    className="text-[12.5px] !py-1.5 !h-auto"
-                  />
-                  <button
-                    className="icon-btn w-8 h-8 text-coral"
-                    title="Révoquer l'accès"
-                    onClick={() => {
-                      void revokeWeddingAccess(m.id).catch(() => {});
-                      handleRevokeLocal(m.id);
-                    }}
-                  >
-                    <Icon name="trash" size={16} />
-                  </button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-semibold truncate">{m.name || m.email}</span>
+                  {!m.accepted && <Badge tone="amber">Invitation en attente</Badge>}
                 </div>
-              )}
+                {m.name && <div className="text-[12.5px] text-text-2 truncate">{m.email}</div>}
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {!m.accepted && m.invite_token && (
+                  <Button variant="secondary" size="sm" icon="copy" onClick={() => copyInviteLink(m.invite_token!)}>
+                    Lien
+                  </Button>
+                )}
+                <Select
+                  value={accessKey}
+                  onChange={async (v) => {
+                    const newRole = v as WeddingRole;
+                    try {
+                      await updateWeddingAccessRole(m.id, newRole);
+                      setMembers((l) => l.map((x) => x.id === m.id ? { ...x, role: newRole } : x));
+                      toast("Rôle mis à jour");
+                    } catch {
+                      toast("Erreur lors de la mise à jour", "err");
+                    }
+                  }}
+                  options={[
+                    { value: "admin",  label: "Administrateur" },
+                    { value: "editor", label: "Éditeur" },
+                    { value: "viewer", label: "Lecteur" },
+                  ]}
+                  className="text-[12.5px] !py-1.5 !h-auto"
+                />
+                <button
+                  className="icon-btn w-8 h-8 text-coral"
+                  title={m.accepted ? "Révoquer l'accès" : "Annuler l'invitation"}
+                  onClick={async () => {
+                    try {
+                      await revokeWeddingAccess(m.id);
+                      setMembers((l) => l.filter((x) => x.id !== m.id));
+                      toast(m.accepted ? "Accès révoqué" : "Invitation annulée");
+                    } catch {
+                      toast("Erreur lors de la révocation", "err");
+                    }
+                  }}
+                >
+                  <Icon name="trash" size={16} />
+                </button>
+              </div>
             </div>
           );
         })}
@@ -329,7 +396,7 @@ function AccessSection() {
       </Card>
 
       {inviting && activeWeddingId && (
-        <InviteModal onClose={() => setInviting(false)} weddingId={activeWeddingId} />
+        <InviteModal onClose={() => setInviting(false)} weddingId={activeWeddingId} onInvited={refresh} />
       )}
     </>
   );

@@ -32,6 +32,8 @@ export interface Guest {
   group: string;
   note: string;
   rsvpToken?: string;
+  /** Message laissé par l'invité via la page RSVP (lecture seule côté app) */
+  rsvpMessage?: string;
 }
 
 export interface TableSeat { id: number; name: string; capacity: number; }

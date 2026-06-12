@@ -15,7 +15,7 @@ function guestToDb(g: Guest) {
   return { id: g.id, name: g.name, side: g.side, rsvp: g.rsvp, diet: g.diet, table_id: g.table, lodging: g.lodging, child: g.child, transport: g.transport, gift: g.gift, group_name: g.group, note: g.note };
 }
 function guestFromDb(r: Record<string, any>): Guest {
-  return { id: r.id, name: r.name, side: r.side, rsvp: r.rsvp, diet: r.diet, table: r.table_id, lodging: r.lodging, child: r.child, transport: r.transport, gift: r.gift, group: r.group_name, note: r.note, rsvpToken: r.rsvp_token ?? undefined };
+  return { id: r.id, name: r.name, side: r.side, rsvp: r.rsvp, diet: r.diet, table: r.table_id, lodging: r.lodging, child: r.child, transport: r.transport, gift: r.gift, group: r.group_name, note: r.note, rsvpToken: r.rsvp_token ?? undefined, rsvpMessage: r.rsvp_message ?? "" };
 }
 
 // ── Mappers Vendor ───────────────────────────────────────────
@@ -262,24 +262,69 @@ export async function updateProfile(data: { firstName?: string; lastName?: strin
 }
 
 // ── Gestion des accès partagés ───────────────────────────────
-export async function inviteToWedding(weddingId: number, email: string, role: WeddingRole) {
+export async function inviteToWedding(
+  weddingId: number,
+  email: string,
+  role: WeddingRole
+): Promise<{ error: string | null; inviteToken?: string }> {
   const c = createClient();
   const { data: { user } } = await c.auth.getUser();
   if (!user) return { error: "Non connecté" };
 
-  // Chercher l'utilisateur cible
-  const { data: target } = await c.from("profiles").select("id").eq("id", email).maybeSingle();
+  // Invitation par email : le compte sera lié à l'acceptation
+  // (via la RPC accept_wedding_invite sur la page /invite/[token])
+  const { data, error } = await c
+    .from("wedding_access")
+    .insert({
+      wedding_id: weddingId,
+      email:      email.trim().toLowerCase(),
+      role,
+      invited_by: user.id,
+      invited_at: new Date().toISOString(),
+    })
+    .select("invite_token")
+    .single();
 
-  // On insère une entrée d'accès (l'utilisateur peut s'inscrire plus tard)
-  const { error } = await c.from("wedding_access").upsert({
-    wedding_id:  weddingId,
-    user_id:     target?.id ?? email, // sera résolu à l'acceptation si nécessaire
-    role,
-    invited_by:  user.id,
-    invited_at:  new Date().toISOString(),
-  });
+  if (error) {
+    if (error.code === "23505") return { error: "Une invitation existe déjà pour cet email" };
+    return { error: error.message };
+  }
+  return { error: null, inviteToken: data.invite_token as string };
+}
 
-  return { error: error?.message ?? null };
+export async function getInviteInfo(token: string) {
+  const { data } = await createClient().rpc("get_invite_info", { p_token: token });
+  return data as {
+    wedding: { partner_a: string; partner_b: string; date: string; city: string };
+    role: WeddingRole;
+    email: string | null;
+    accepted: boolean;
+    inviter: string | null;
+  } | null;
+}
+
+export async function acceptWeddingInvite(token: string): Promise<number | null> {
+  const { data, error } = await createClient().rpc("accept_wedding_invite", { p_token: token });
+  if (error || !data?.wedding_id) return null;
+  return data.wedding_id as number;
+}
+
+export interface WeddingMember {
+  id: number;
+  role: WeddingRole;
+  email: string | null;
+  name: string | null;
+  accepted: boolean;
+  invite_token: string | null;
+}
+
+export async function loadWeddingMembers(weddingId: number): Promise<{
+  owner: { name: string | null; email: string | null } | null;
+  members: WeddingMember[];
+} | null> {
+  const { data, error } = await createClient().rpc("list_wedding_members", { p_wedding_id: weddingId });
+  if (error || !data) return null;
+  return { owner: data.owner ?? null, members: (data.members ?? []) as WeddingMember[] };
 }
 
 export async function revokeWeddingAccess(accessId: number) {

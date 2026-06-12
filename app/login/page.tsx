@@ -23,10 +23,18 @@ export default function LoginPage() {
   // Si connecté sans mariage → affiche un bouton de déconnexion
   const [loggedInNoWedding, setLoggedInNoWedding] = useState(false);
 
+  // Destination post-connexion (?next=/invite/xxx) — chemins internes uniquement
+  const nextPath = () => {
+    const n = new URLSearchParams(window.location.search).get("next");
+    return n && n.startsWith("/") && !n.startsWith("//") ? n : null;
+  };
+
   useEffect(() => {
     const sb = createClient();
     sb.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { setChecking(false); return; }
+      const next = nextPath();
+      if (next) { router.replace(next); return; }
       // Check mariage owned
       const { data: wedding } = await sb.from("wedding").select("id").eq("user_id", user.id).limit(1).maybeSingle();
       if (wedding) { router.replace("/dashboard"); return; }
@@ -44,7 +52,7 @@ export default function LoginPage() {
     setErr(""); setLoading(true);
     const { error } = await createClient().auth.signInWithPassword({ email, password: pw });
     if (error) { setErr("Email ou mot de passe incorrect"); setLoading(false); return; }
-    window.location.href = "/dashboard";
+    window.location.href = nextPath() ?? "/dashboard";
   };
 
   const sendMagicLink = async (e: React.FormEvent) => {

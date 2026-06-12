@@ -12,7 +12,7 @@ interface GuestInfo {
   name: string;
   rsvp: RsvpStatus;
   diet: Diet;
-  note: string;
+  message: string;
 }
 
 interface WeddingInfo {
@@ -81,7 +81,7 @@ export default function RsvpPage({ params }: { params: { token: string } }) {
       setGuest(g);
       setRsvp(g.rsvp);
       setDiet(g.diet || "none");
-      setNote(g.note || "");
+      setNote(g.message || "");
 
       if (data.wedding) setWedding(data.wedding as WeddingInfo);
       setStatus("found");

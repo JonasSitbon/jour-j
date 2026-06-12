@@ -46,7 +46,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const publicPaths = ["/", "/login", "/signup", "/onboarding", "/update-password", "/rsvp", "/share", "/auth"];
+    const publicPaths = ["/", "/login", "/signup", "/onboarding", "/update-password", "/rsvp", "/share", "/auth", "/invite"];
     const isPublic = publicPaths.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
     async function boot() {
@@ -56,7 +56,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
         setLoading(false);
         if (pathname === "/") router.push("/dashboard");
       } else if (!isPublic) {
-        router.push("/onboarding");
+        // Invitation en attente (parcours signup/confirmation email) → on y retourne
+        const pendingInvite = localStorage.getItem("jj_pending_invite");
+        router.push(pendingInvite ? `/invite/${pendingInvite}` : "/onboarding");
       } else {
         setLoading(false);
       }
