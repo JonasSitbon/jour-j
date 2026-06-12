@@ -19,9 +19,8 @@ const NAV_GROUPS = [
     id: "overview",
     label: "Vue d'ensemble",
     items: [
-      { id: "dashboard",     label: "Tableau de bord",     icon: "grid"         },
-      { id: "dates",         label: "Sélecteur de dates",  icon: "calendar"     },
-      { id: "mes-mariages",  label: "Mes mariages",        icon: "rings"        },
+      { id: "dashboard", label: "Tableau de bord",    icon: "grid"     },
+      { id: "dates",     label: "Sélecteur de dates", icon: "calendar" },
     ],
   },
   {
@@ -315,10 +314,14 @@ function WeddingSwitcher({ collapsed }: { collapsed: boolean }) {
 
   const color = active.coverColor || "#C96E2C";
 
-  // Format date in short French style
+  // Format date in short French style — hide day if it's an auto-generated period date (day=15)
   function fmtShort(dateStr: string) {
-    if (!dateStr) return "";
+    if (!dateStr) return "Date à définir";
     const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "Date à définir";
+    if (d.getDate() === 15) {
+      return d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+    }
     return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
   }
 
@@ -430,12 +433,23 @@ function WeddingSwitcher({ collapsed }: { collapsed: boolean }) {
               <button
                 onClick={() => {
                   setOpen(false);
+                  router.push("/mes-mariages");
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-left text-[12px]
+                           text-text-3 hover:bg-hover hover:text-text transition-colors"
+              >
+                <Icon name="grid" size={13} className="text-text-3" />
+                Voir tous mes mariages
+              </button>
+              <button
+                onClick={() => {
+                  setOpen(false);
                   router.push("/onboarding?new=1");
                 }}
                 className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-[12.5px] font-medium
-                           text-text-2 hover:bg-hover hover:text-text transition-colors"
+                           text-primary-700 hover:bg-primary-soft transition-colors"
               >
-                <Icon name="plus" size={15} className="text-text-3" />
+                <Icon name="plus" size={15} className="text-primary" />
                 Créer un mariage
               </button>
             </div>

@@ -330,54 +330,17 @@ function AccessSection() {
   );
 }
 
-// ── Modal confirmation suppression compte ─────────────────────────────────────
-
-function DeleteAccountModal({ onClose }: { onClose: () => void }) {
-  const toast = useToast();
-  const [confirm, setConfirm] = useState("");
-  const canDelete = confirm === "SUPPRIMER";
-
-  return (
-    <Modal
-      title="Supprimer mon compte"
-      onClose={onClose}
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>Annuler</Button>
-          <Button variant="danger" icon="trash" disabled={!canDelete} onClick={() => { toast("Suppression en cours…"); onClose(); }}>
-            Supprimer définitivement
-          </Button>
-        </>
-      }
-    >
-      <div className="flex flex-col gap-4">
-        <div className="bg-coral-soft border border-coral/20 rounded-card p-4 text-[13px] text-coral flex gap-2.5 items-start">
-          <Icon name="alert" size={16} className="shrink-0 mt-0.5" />
-          <div>
-            <div className="font-semibold mb-1">Cette action est irréversible</div>
-            <div className="text-[12.5px] opacity-80">Toutes vos données (mariage, invités, prestataires, budget) seront définitivement supprimées.</div>
-          </div>
-        </div>
-        <Field label={'Tapez "SUPPRIMER" pour confirmer'}>
-          <Input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="SUPPRIMER" />
-        </Field>
-      </div>
-    </Modal>
-  );
-}
-
 // ── Section Compte ────────────────────────────────────────────────────────────
 
 function AccountSection() {
   const toast = useToast();
-  const [deletingAccount, setDeletingAccount] = useState(false);
 
   const handleResetPassword = async () => {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.email) { toast("Email introuvable", "err"); return; }
     const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${window.location.origin}/auth/callback`,
     });
     if (error) { toast("Erreur lors de l'envoi", "err"); return; }
     toast("Email de réinitialisation envoyé");
@@ -391,42 +354,27 @@ function AccountSection() {
   };
 
   return (
-    <>
-      <div className="flex flex-col gap-5">
-        <Card>
-          <div className="sec-title mb-4"><Icon name="key" size={17} className="text-text-3" />Sécurité</div>
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-4 py-4 border-b border-line">
-              <div>
-                <div className="text-sm font-medium">Changer le mot de passe</div>
-                <div className="text-[12.5px] text-text-2 mt-0.5">Un email de réinitialisation sera envoyé à votre adresse</div>
-              </div>
-              <Button variant="secondary" size="sm" icon="key" onClick={handleResetPassword}>Envoyer le lien</Button>
-            </div>
-            <div className="flex items-center justify-between gap-4 py-4">
-              <div>
-                <div className="text-sm font-medium">Se déconnecter de tous les appareils</div>
-                <div className="text-[12.5px] text-text-2 mt-0.5">Invalide toutes vos sessions actives</div>
-              </div>
-              <Button variant="secondary" size="sm" icon="logout" onClick={handleSignOutAll}>Se déconnecter</Button>
-            </div>
-          </div>
-        </Card>
-
-        <Card>
-          <div className="sec-title mb-4 text-coral"><Icon name="alert" size={17} />Zone de danger</div>
-          <div className="flex items-center justify-between gap-4">
+    <div className="flex flex-col gap-5">
+      <Card>
+        <div className="sec-title mb-4"><Icon name="key" size={17} className="text-text-3" />Sécurité</div>
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-4 py-4 border-b border-line">
             <div>
-              <div className="text-sm font-medium">Supprimer mon compte</div>
-              <div className="text-[12.5px] text-text-2 mt-0.5">Supprime définitivement votre compte et toutes vos données</div>
+              <div className="text-sm font-medium">Changer le mot de passe</div>
+              <div className="text-[12.5px] text-text-2 mt-0.5">Un email de réinitialisation sera envoyé à votre adresse</div>
             </div>
-            <Button variant="danger" size="sm" icon="trash" onClick={() => setDeletingAccount(true)}>Supprimer</Button>
+            <Button variant="secondary" size="sm" icon="key" onClick={handleResetPassword}>Envoyer le lien</Button>
           </div>
-        </Card>
-      </div>
-
-      {deletingAccount && <DeleteAccountModal onClose={() => setDeletingAccount(false)} />}
-    </>
+          <div className="flex items-center justify-between gap-4 py-4">
+            <div>
+              <div className="text-sm font-medium">Se déconnecter de tous les appareils</div>
+              <div className="text-[12.5px] text-text-2 mt-0.5">Invalide toutes vos sessions actives</div>
+            </div>
+            <Button variant="secondary" size="sm" icon="logout" onClick={handleSignOutAll}>Se déconnecter</Button>
+          </div>
+        </div>
+      </Card>
+    </div>
   );
 }
 

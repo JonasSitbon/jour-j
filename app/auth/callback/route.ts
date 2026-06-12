@@ -23,8 +23,14 @@ export async function GET(request: NextRequest) {
       }
     );
 
+    const type = searchParams.get("type");
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      // Password recovery flow → redirect to set-new-password page
+      if (type === "recovery") {
+        return NextResponse.redirect(`${origin}/update-password`);
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: ownedWedding } = await supabase
