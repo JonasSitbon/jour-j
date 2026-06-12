@@ -82,6 +82,83 @@ export interface Notification { id: number; type: NotifType; title: string; body
 export type AccessLevel = "owner" | "edit" | "read";
 export interface Member { id: number; name: string; role: string; email: string; access: AccessLevel; }
 
+export type CeremonyCategory = "ouverture" | "procession" | "lecture" | "musique" | "vceux" | "echange-anneaux" | "signature" | "sortie" | "autre";
+export interface CeremonyEvent {
+  id: number;
+  weddingId: number;
+  orderIdx: number;
+  category: CeremonyCategory;
+  title: string;
+  durationMin: number;
+  who: string;
+  music: string;
+  note: string;
+  createdAt: string;
+}
+
+export interface Gift {
+  id: number;
+  weddingId: number;
+  giverName: string;
+  item: string;
+  amount: number | null;
+  note: string;
+  received: boolean;
+  thankYouSent: boolean;
+  createdAt: string;
+}
+
+export type SongMoment =
+  | "entree-cortege"
+  | "entree-marie"
+  | "entree-mariee"
+  | "sortie"
+  | "cocktail"
+  | "premiere-danse"
+  | "danse-parents"
+  | "diner"
+  | "soiree"
+  | "autre";
+
+export interface Song {
+  id: number;
+  weddingId: number;
+  moment: SongMoment;
+  title: string;
+  artist: string;
+  duration: string;
+  link: string;
+  note: string;
+  approved: boolean;
+  createdAt: string;
+}
+
+export type ContactRole =
+  | "temoin-a"
+  | "temoin-b"
+  | "officiant"
+  | "traiteur"
+  | "photographe"
+  | "videaste"
+  | "fleuriste"
+  | "chauffeur"
+  | "organisatrice"
+  | "famille-a"
+  | "famille-b"
+  | "autre";
+
+export interface KeyContact {
+  id: number;
+  weddingId: number;
+  name: string;
+  role: ContactRole;
+  phone: string;
+  email: string;
+  note: string;
+  isBridalParty: boolean;
+  createdAt: string;
+}
+
 export interface JournalEntry {
   id: number;
   weddingId: number;
@@ -98,6 +175,7 @@ export interface Wedding {
   venue: string; city: string; theme: string; guestTarget: number;
   selectedStyle?: string;
   customStyleNote?: string;
+  shareToken?: string;
 }
 
 // ── Multi-mariage & profils ─────────────────────────────────────────────────

@@ -31,12 +31,18 @@ function CheckIcon() {
 }
 
 const FEATURES = [
-  { icon: "💍", title: "Sélecteur de dates", desc: "Météo réelle sur 5 ans, jours fériés, disponibilités. Choisissez la date parfaite avec des données concrètes." },
-  { icon: "👥", title: "Gestion des invités", desc: "Liste, RSVP, plan de table, régimes alimentaires. Chaque invité géré sans effort." },
-  { icon: "💰", title: "Budget intelligent", desc: "Suivi par poste, répartition du couple, comparatif aux moyennes françaises." },
-  { icon: "📋", title: "Checklist J‑24 mois", desc: "180+ tâches pré-remplies classées par catégorie. Ne rien oublier, vraiment." },
-  { icon: "🎭", title: "Prestataires", desc: "Devis, scores, contrats, gestion des paiements. Tous vos prestataires au même endroit." },
-  { icon: "🗓", title: "Déroulé du Jour J", desc: "Heure par heure, depuis les préparatifs jusqu'au bal. Votre journée, orchestrée." },
+  { icon: "💍", title: "Sélecteur de dates", desc: "Météo réelle sur 5 ans (Open-Meteo), jours fériés, disponibilités. Choisissez la date parfaite avec des données concrètes." },
+  { icon: "👥", title: "Gestion des invités", desc: "Liste, RSVP par QR code, plan de table visuel, régimes alimentaires. Import CSV et export PDF." },
+  { icon: "💰", title: "Budget intelligent", desc: "Suivi par poste, alertes de dépassement, paiements échéancés. Export PDF complet." },
+  { icon: "📋", title: "Checklist J‑24 mois", desc: "180+ tâches pré-remplies classées par catégorie. Tâches en retard détectées automatiquement." },
+  { icon: "🎭", title: "Prestataires", desc: "Devis, scores, comparaison de devis, gestion des paiements et relances. Contact direct par email." },
+  { icon: "🗓", title: "Déroulé du Jour J", desc: "Heure par heure, depuis les préparatifs jusqu'au bal. Mode Jour J optimisé mobile." },
+  { icon: "🎵", title: "Musique & playlist", desc: "Gérez vos musiques de cérémonie, cocktail, première danse et soirée. Avec liens Spotify/YouTube." },
+  { icon: "💌", title: "Programme de cérémonie", desc: "Civil, laïque ou religieux — planifiez chaque étape de votre cérémonie avec durées et participants." },
+  { icon: "🎁", title: "Suivi des cadeaux", desc: "Enregistrez les cadeaux reçus, les montants, et gérez les remerciements à envoyer." },
+  { icon: "📔", title: "Journal de bord", desc: "Capturez vos inspirations, décisions et souvenirs au fil de la préparation. Toujours retrouvable." },
+  { icon: "🎨", title: "Mood Board", desc: "Créez votre univers visuel : palettes de couleurs, inspirations, style de votre mariage." },
+  { icon: "📤", title: "Suite d'exports PDF", desc: "Rapport complet, cartons de placement, plan de table, planning, budget — tout en PDF prêt à imprimer." },
 ];
 
 const STEPS = [
@@ -46,9 +52,12 @@ const STEPS = [
 ];
 
 const DIFFERENTIATORS = [
-  { icon: "🌦", title: "Météo réelle", desc: "Comparez vos dates candidates avec 5 ans d'historique météo réel (Open-Meteo). Pas des estimations." },
-  { icon: "📤", title: "RSVP personnalisés", desc: "Un lien unique par invité. Ils répondent en un clic, vous voyez tout en temps réel." },
-  { icon: "📊", title: "Benchmark budgétaire", desc: "Comparez votre budget aux moyennes françaises par catégorie. Sachez où vous vous situez vraiment." },
+  { icon: "🌦", title: "Météo réelle historique", desc: "Comparez vos dates avec 5 ans d'archives météo (Open-Meteo). Ensoleillement, pluie, température — par ville, au degré près." },
+  { icon: "📤", title: "RSVP avec QR code", desc: "Un lien + QR code unique par invité. Ils répondent en un clic. Vous suivez en temps réel avec notifications automatiques." },
+  { icon: "📊", title: "Exports PDF complets", desc: "Rapport complet, checklist, budget, cartons de placement, programme de cérémonie — tout s'exporte en un clic." },
+  { icon: "🔔", title: "Notifications intelligentes", desc: "Alertes automatiques : paiements en retard, prestataires à relancer, RSVP en attente, compte à rebours." },
+  { icon: "🤝", title: "Accès multi-utilisateurs", desc: "Partagez votre espace avec votre partenaire, votre famille ou votre wedding planner avec des rôles personnalisés." },
+  { icon: "🔒", title: "100% privé & sécurisé", desc: "Hébergement européen, chiffrement bout-en-bout, aucune donnée revendue. Votre mariage reste le vôtre." },
 ];
 
 export default function LandingPage() {
@@ -178,7 +187,7 @@ export default function LandingPage() {
 
               {/* Mini feature list */}
               <div className="a4" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 24px" }}>
-                {["Checklist 180+ tâches", "Plan de table visuel", "Météo réelle par date", "RSVP par invité", "Budget par poste", "Déroulé Jour J"].map(f => (
+                {["Checklist 180+ tâches", "Plan de table visuel", "Météo réelle par date", "RSVP + QR code", "Budget & paiements", "Déroulé Jour J", "Musique & cérémonie", "Exports PDF complets"].map(f => (
                   <div key={f} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "rgba(56,47,35,.62)", fontWeight: 450 }}>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
                       <circle cx="8" cy="8" r="8" fill="rgba(201,110,44,.12)" />
@@ -247,9 +256,9 @@ export default function LandingPage() {
         <div className="stats-wrap" style={{ maxWidth: 1160, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "center", gap: 60, flexWrap: "wrap" }}>
           {[
             { n: "180+", label: "tâches checklist" },
-            { n: "100%", label: "des fonctionnalités gratuites" },
-            { n: "5 ans", label: "d'historique météo" },
-            { n: "0€", label: "sans surprise" },
+            { n: "12+", label: "modules de planification" },
+            { n: "5 ans", label: "d'historique météo réel" },
+            { n: "0€", label: "sans surprise ni abonnement" },
           ].map(s => (
             <div key={s.n} style={{ textAlign: "center" }}>
               <div style={{ fontSize: 30, fontWeight: 800, color: CREAM, letterSpacing: "-.05em", lineHeight: 1 }}>{s.n}</div>
@@ -271,7 +280,7 @@ export default function LandingPage() {
               Une suite complète pensée pour les mariages français, de la première date jusqu'au Jour J.
             </p>
           </div>
-          <div className="features-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
+          <div className="features-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20, gridAutoRows: "auto" }}>
             {FEATURES.map(f => (
               <div key={f.title} className="feature-card">
                 <div style={{ width: 48, height: 48, borderRadius: 13, background: "#F5E4D4", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, marginBottom: 18 }}>{f.icon}</div>
@@ -316,7 +325,7 @@ export default function LandingPage() {
               Conçu pour aller plus loin
             </h2>
           </div>
-          <div className="diff-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
+          <div className="diff-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20, gridAutoRows: "auto" }}>
             {DIFFERENTIATORS.map(d => (
               <div key={d.title} className="diff-card">
                 <div style={{ fontSize: 38, marginBottom: 20 }}>{d.icon}</div>
@@ -430,7 +439,7 @@ export default function LandingPage() {
           </div>
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-            <span style={{ fontSize: 13, color: "rgba(244,236,221,.35)" }}>© 2025 Jour J · Made with love in France 🇫🇷</span>
+            <span style={{ fontSize: 13, color: "rgba(244,236,221,.35)" }}>© 2026 The Cockpit · Made with love in France 🇫🇷</span>
             <span style={{ fontSize: 12.5, color: "rgba(244,236,221,.28)" }}>Données sécurisées · Hébergement européen</span>
           </div>
         </div>

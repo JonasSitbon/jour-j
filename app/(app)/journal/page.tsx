@@ -4,8 +4,10 @@ import { useState, useEffect, useMemo } from "react";
 import { Icon } from "@/components/icon";
 import { Card, Badge, Button, Empty, Search, Field, Textarea } from "@/components/ui";
 import { PageHead } from "@/components/shell";
+import { useStore } from "@/components/providers";
 import type { JournalEntry } from "@/lib/types";
 import { getWeddingId, loadJournal, addJournalEntry, updateJournalEntry, deleteJournalEntry } from "@/lib/db";
+import { exportJournalPDF } from "@/lib/pdf-journal";
 
 type Category = JournalEntry["category"] | "all";
 
@@ -42,7 +44,12 @@ function relativeTime(iso: string): string {
 
 const EMPTY_FORM = { title: "", text: "", category: "general" as JournalEntry["category"] };
 
+function normalize(s: string) {
+  return s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+}
+
 export default function JournalPage() {
+  const { state } = useStore();
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [mounted, setMounted] = useState(false);
   const [weddingId, setWeddingId] = useState<number | null>(null);
@@ -70,6 +77,16 @@ export default function JournalPage() {
         setMounted(true);
       });
   }, []);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && search) {
+        setSearch("");
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [search]);
 
   const addEntry = async () => {
     if (!form.text.trim() || !weddingId) return;
@@ -139,10 +156,14 @@ export default function JournalPage() {
   };
 
   const filtered = useMemo(() => {
-    const q = search.toLowerCase();
+    const q = normalize(search);
     return entries
       .filter((e) => (activeFilter === "all" ? true : e.category === activeFilter))
-      .filter((e) => (q ? (e.title ?? "").toLowerCase().includes(q) || e.text.toLowerCase().includes(q) : true))
+      .filter((e) =>
+        q
+          ? normalize(e.title ?? "").includes(q) || normalize(e.text).includes(q)
+          : true
+      )
       .sort((a, b) => {
         if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -171,7 +192,27 @@ export default function JournalPage() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto pb-24">
-      <PageHead title="Journal de bord" sub="Notes et décisions" />
+      <PageHead
+        title="Journal de bord"
+        sub="Notes et décisions"
+        actions={
+          entries.length > 0 && (
+            <Button
+              variant="secondary"
+              icon="download"
+              onClick={() =>
+                exportJournalPDF(
+                  entries,
+                  state.wedding.partnerA || "Partenaire A",
+                  state.wedding.partnerB || "Partenaire B"
+                )
+              }
+            >
+              Export PDF
+            </Button>
+          )
+        }
+      />
 
       <div className="flex flex-col lg:flex-row gap-6 mt-2">
         {/* Sidebar */}
@@ -239,6 +280,28 @@ export default function JournalPage() {
 
         {/* Main */}
         <div className="flex-1 min-w-0 flex flex-col gap-4">
+          {/* Stats compact */}
+          {entries.length > 0 && (
+            <div className="flex items-center gap-1.5 text-[12.5px] text-text-3 px-0.5">
+              <Icon name="list" size={13} className="shrink-0" />
+              <span className="font-medium text-text-2">{entries.length}</span>
+              <span>entrée{entries.length !== 1 ? "s" : ""}</span>
+              {pinned > 0 && (
+                <>
+                  <span className="text-line">·</span>
+                  <Icon name="flag" size={13} className="text-primary shrink-0" />
+                  <span className="font-medium text-primary">{pinned}</span>
+                  <span>épinglée{pinned !== 1 ? "s" : ""}</span>
+                </>
+              )}
+              {lastUpdated && (
+                <>
+                  <span className="text-line">·</span>
+                  <span>Dernière&nbsp;: {lastUpdated}</span>
+                </>
+              )}
+            </div>
+          )}
           {/* Toolbar */}
           <div className="flex items-center gap-3 flex-wrap">
             <Search value={search} onChange={setSearch} placeholder="Rechercher dans les notes…" className="flex-1 min-w-48" />

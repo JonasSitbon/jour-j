@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
+import { exportWeddingReport } from "@/lib/pdf-report";
 import {
   motion, useMotionValue, useSpring, useTransform,
   useMotionTemplate, animate,
@@ -469,9 +470,16 @@ function UpcomingSnapshot({ state }: { state: AppState }) {
   return (
     <motion.div variants={fadeUp} className="mt-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {urgentTasks.length > 0 && (
-          <Card>
-            <div className="sec-title mb-3"><Icon name="check-circle" size={15} className="text-primary" />Tâches prioritaires</div>
+        <Card>
+          <div className="sec-title mb-3"><Icon name="check-circle" size={15} className="text-primary" />Tâches prioritaires</div>
+          {urgentTasks.length === 0 ? (
+            <div className="flex items-center gap-3 py-3 text-text-2 text-sm">
+              <div className="w-8 h-8 rounded-[8px] bg-sage-soft flex items-center justify-center shrink-0">
+                <Icon name="check-circle" size={16} className="text-sage" />
+              </div>
+              Aucune tâche urgente — tout est sous contrôle !
+            </div>
+          ) : (
             <div className="flex flex-col gap-2">
               {urgentTasks.map((t) => {
                 const isLate = t.due < today;
@@ -492,8 +500,8 @@ function UpcomingSnapshot({ state }: { state: AppState }) {
                 );
               })}
             </div>
-          </Card>
-        )}
+          )}
+        </Card>
         {upcomingPayments.length > 0 && (
           <Card>
             <div className="sec-title mb-3"><Icon name="card" size={15} className="text-primary" />Paiements à venir</div>
@@ -521,6 +529,329 @@ function UpcomingSnapshot({ state }: { state: AppState }) {
         )}
       </div>
     </motion.div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* BudgetHealthWidget                                                  */
+/* ------------------------------------------------------------------ */
+function BudgetHealthWidget({ state }: { state: AppState }) {
+  const totalBudget = state.budget.reduce((s, p) => s + p.planned, 0);
+  const totalSpent  = state.budget.reduce((s, p) => s + p.spent,   0);
+  if (totalBudget === 0 && state.budget.length === 0) return null;
+
+  const pct      = totalBudget > 0 ? Math.min(Math.round((totalSpent / totalBudget) * 100), 999) : 0;
+  const isOver   = totalSpent > totalBudget && totalBudget > 0;
+  const barWidth = totalBudget > 0 ? Math.min(100, (totalSpent / totalBudget) * 100) : 0;
+
+  const topPosts = [...state.budget]
+    .sort((a, b) => b.planned - a.planned)
+    .slice(0, 3);
+
+  return (
+    <Reveal delay={0.04} className="mb-5">
+      <Card>
+        <div className="flex items-center justify-between mb-4">
+          <div className="sec-title">
+            <Icon name="wallet" size={17} className="text-text-3" />
+            Santé du budget
+          </div>
+          <Link href="/budget" className="link text-[13px]">Voir le détail</Link>
+        </div>
+
+        {/* Progress bar */}
+        <div className="h-2.5 rounded-full overflow-hidden bg-surface-3 mb-2">
+          <div
+            className={`h-full rounded-full transition-[width] duration-700 ${isOver ? "bg-coral" : "bg-sage"}`}
+            style={{ width: `${barWidth}%` }}
+          />
+        </div>
+
+        {/* Summary text */}
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-[12.5px] text-text-2">
+            <span className="font-mono font-semibold text-text">{fmt.eur(totalSpent)}</span>
+            {" dépensés sur "}
+            <span className="font-mono font-semibold text-text">{fmt.eur(totalBudget)}</span>
+            {" prévus"}
+            {totalBudget > 0 && <span className="text-text-3"> ({pct}%)</span>}
+          </span>
+          {isOver && (
+            <span className="text-[12px] font-semibold text-coral flex items-center gap-1">
+              <Icon name="alert" size={13} />
+              Budget dépassé
+            </span>
+          )}
+        </div>
+
+        {/* Top 3 posts */}
+        {topPosts.length > 0 && (
+          <div className="flex flex-col gap-2.5">
+            {topPosts.map((post) => {
+              const postPct    = post.planned > 0 ? Math.min(100, (post.spent / post.planned) * 100) : 0;
+              const postIsOver = post.spent > post.planned && post.planned > 0;
+              return (
+                <div key={post.id}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[12.5px] text-text-2 truncate max-w-[55%]">{post.label}</span>
+                    <span className="font-mono text-[12px] font-semibold text-text-2 shrink-0 ml-2">
+                      {fmt.eur(post.spent)}
+                      {" / "}
+                      {fmt.eur(post.planned)}
+                    </span>
+                  </div>
+                  <div className="h-[4px] bg-surface-3 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-[width] duration-700 ${postIsOver ? "bg-coral" : "bg-primary"}`}
+                      style={{ width: `${Math.max(0, postPct)}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Card>
+    </Reveal>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* VendorsToReachWidget                                                */
+/* ------------------------------------------------------------------ */
+function VendorsToReachWidget({ state }: { state: AppState }) {
+  const today = Date.now();
+  const MS_14_DAYS = 14 * 24 * 60 * 60 * 1000;
+
+  const toReach = state.vendors.filter((v) => {
+    if (v.status !== "pending") return false;
+    if (!v.lastContact) return false;
+    const last = new Date(v.lastContact).getTime();
+    return today - last > MS_14_DAYS;
+  });
+
+  if (toReach.length === 0) return null;
+
+  const shown = toReach.slice(0, 3);
+
+  return (
+    <Reveal delay={0.05} className="mb-5">
+      <Card>
+        <div className="flex items-center justify-between mb-3">
+          <div className="sec-title">
+            <Icon name="alert" size={17} className="text-[var(--gold-ink)]" />
+            Prestataires à relancer
+          </div>
+          <Link href="/vendors" className="link text-[13px]">Voir tout</Link>
+        </div>
+
+        {/* Alert badge */}
+        <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg bg-amber-soft border border-amber/30">
+          <Icon name="bell" size={14} className="text-[var(--gold-ink)] shrink-0" />
+          <span className="text-[12.5px] font-semibold text-[var(--gold-ink)]">
+            {toReach.length} prestataire{toReach.length > 1 ? "s" : ""} sans contact depuis +14 jours
+          </span>
+        </div>
+
+        <div className="flex flex-col gap-2 mb-3">
+          {shown.map((v) => {
+            const daysSince = Math.round((today - new Date(v.lastContact).getTime()) / 86400000);
+            return (
+              <div key={v.id} className="flex items-center gap-3 px-3 py-2 rounded-lg border border-line bg-surface">
+                <div className="w-8 h-8 rounded-[8px] bg-amber-soft flex items-center justify-center shrink-0">
+                  <Icon name="phone" size={14} className="text-[var(--gold-ink)]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13px] font-medium truncate">{v.name}</div>
+                  <div className="text-[11.5px] text-text-3">Dernier contact il y a {daysSince}j</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <Link href="/vendors">
+          <Button variant="secondary" size="sm" icon="phone">Voir les prestataires</Button>
+        </Link>
+      </Card>
+    </Reveal>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* GiftsLinkWidget                                                     */
+/* ------------------------------------------------------------------ */
+function GiftsLinkWidget() {
+  return (
+    <Reveal delay={0.06} className="mb-5">
+      <Card>
+        <div className="flex items-center justify-between">
+          <div className="sec-title">
+            <Icon name="gift" size={17} className="text-text-3" />
+            Cadeaux &amp; remerciements
+          </div>
+          <Link href="/gifts" className="link text-[13px] flex items-center gap-1 font-semibold">
+            Suivi des cadeaux <Icon name="chevronR" size={13} />
+          </Link>
+        </div>
+      </Card>
+    </Reveal>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* useWeddingWeather hook                                              */
+/* ------------------------------------------------------------------ */
+interface WeatherData {
+  type: "forecast" | "climate";
+  temp: number | null;
+  precip: number | null;
+  description: string;
+  emoji: string;
+}
+
+function weatherEmoji(code: number): string {
+  if (code === 0) return "☀️";
+  if (code <= 2) return "⛅";
+  if (code <= 3) return "☁️";
+  if (code <= 48) return "🌫️";
+  if (code <= 67) return "🌧️";
+  if (code <= 77) return "🌨️";
+  if (code <= 82) return "🌦️";
+  if (code <= 99) return "⛈️";
+  return "🌤️";
+}
+
+function weatherDesc(code: number): string {
+  if (code === 0) return "Ensoleillé";
+  if (code <= 2) return "Partiellement nuageux";
+  if (code <= 3) return "Nuageux";
+  if (code <= 48) return "Brumeux";
+  if (code <= 67) return "Pluvieux";
+  if (code <= 77) return "Neigeux";
+  if (code <= 82) return "Averses";
+  if (code <= 99) return "Orageux";
+  return "Variable";
+}
+
+function useWeddingWeather(date: string, city: string) {
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!date || !city) return;
+
+    async function load() {
+      setLoading(true);
+      try {
+        // Step 1: geocode the city with Nominatim
+        const geo = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=1&countrycodes=fr,be,ch`,
+          { headers: { "Accept-Language": "fr", "User-Agent": "TheCockpit/1.0" } }
+        ).then((r) => r.json());
+
+        if (!geo?.[0]) { setLoading(false); return; }
+        const { lat, lon } = geo[0];
+
+        const weddingDate = new Date(date + "T00:00:00");
+        const now = new Date(); now.setHours(0, 0, 0, 0);
+        const daysUntil = Math.round((weddingDate.getTime() - now.getTime()) / 86400000);
+
+        if (daysUntil >= 0 && daysUntil <= 16) {
+          // Forecast: Open-Meteo forecast API
+          const fc = await fetch(
+            `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,precipitation_sum,weathercode&timezone=Europe%2FParis&forecast_days=16`
+          ).then((r) => r.json());
+
+          const idx = fc.daily?.time?.findIndex((t: string) => t === date);
+          if (idx >= 0) {
+            const code = fc.daily.weathercode[idx];
+            setWeather({
+              type: "forecast",
+              temp: Math.round(fc.daily.temperature_2m_max[idx]),
+              precip: Math.round(fc.daily.precipitation_sum[idx] * 10) / 10,
+              description: weatherDesc(code),
+              emoji: weatherEmoji(code),
+            });
+          }
+        } else if (daysUntil > 16) {
+          // Climate normals: use archive API for same date of previous year
+          const prevYear = weddingDate.getFullYear() - 1;
+          const startDate = new Date(prevYear, weddingDate.getMonth(), Math.max(1, weddingDate.getDate() - 7)).toISOString().split("T")[0];
+          const endDate = new Date(prevYear, weddingDate.getMonth(), Math.min(28, weddingDate.getDate() + 7)).toISOString().split("T")[0];
+
+          const arch = await fetch(
+            `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${endDate}&daily=temperature_2m_max,precipitation_sum&timezone=Europe%2FParis`
+          ).then((r) => r.json());
+
+          if (arch.daily?.temperature_2m_max?.length > 0) {
+            const temps = arch.daily.temperature_2m_max.filter((t: number | null) => t !== null) as number[];
+            const precips = arch.daily.precipitation_sum.filter((p: number | null) => p !== null) as number[];
+            const avgTemp = temps.length > 0 ? Math.round(temps.reduce((a, b) => a + b, 0) / temps.length) : null;
+            const avgPrecip = precips.length > 0 ? Math.round((precips.reduce((a, b) => a + b, 0) / precips.length) * 10) / 10 : null;
+
+            setWeather({
+              type: "climate",
+              temp: avgTemp,
+              precip: avgPrecip,
+              description: avgPrecip !== null && avgPrecip > 5 ? "Risque de pluie" : "Généralement ensoleillé",
+              emoji: avgPrecip !== null && avgPrecip > 5 ? "🌦️" : "☀️",
+            });
+          }
+        }
+      } catch { /* silently fail */ }
+      setLoading(false);
+    }
+
+    load();
+  }, [date, city]);
+
+  return { weather, loading };
+}
+
+/* ------------------------------------------------------------------ */
+/* WeatherWidget                                                        */
+/* ------------------------------------------------------------------ */
+function WeatherWidget({ date, city }: { date: string; city: string }) {
+  const { weather, loading } = useWeddingWeather(date, city);
+
+  if (!date || !city) return null;
+
+  const daysUntil = Math.round((new Date(date + "T00:00:00").getTime() - Date.now()) / 86400000);
+  if (daysUntil < -1) return null; // Mariage passé depuis plus d'un jour
+
+  if (loading) {
+    return (
+      <div className="mt-4 px-4 py-3 rounded-xl border border-line bg-surface flex items-center gap-3">
+        <div className="w-5 h-5 border-2 border-t-transparent border-primary rounded-full animate-spin shrink-0" />
+        <span className="text-[13px] text-text-3">Chargement des prévisions météo…</span>
+      </div>
+    );
+  }
+
+  if (!weather) return null;
+
+  return (
+    <div className={`mt-4 rounded-xl border flex items-center gap-4 px-5 py-4 ${weather.precip !== null && weather.precip > 5 ? "border-amber/30 bg-amber-soft/30" : "border-primary/20 bg-primary-soft/20"}`}>
+      <span className="text-4xl shrink-0">{weather.emoji}</span>
+      <div className="flex-1 min-w-0">
+        <div className="text-[13.5px] font-semibold text-text">
+          {weather.type === "forecast" ? "Météo prévue le Jour J" : "Météo habituelle à cette période"}
+        </div>
+        <div className="text-[12.5px] text-text-2 mt-0.5">{weather.description} · {city}</div>
+      </div>
+      <div className="text-right shrink-0">
+        {weather.temp !== null && (
+          <div className="font-mono text-[22px] font-semibold text-text">{weather.temp}°C</div>
+        )}
+        {weather.precip !== null && weather.precip > 0 && (
+          <div className="text-[11.5px] text-text-3">{weather.precip}mm de pluie</div>
+        )}
+        {weather.type === "climate" && (
+          <div className="text-[10.5px] text-text-3 mt-0.5">Moyenne historique</div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -666,7 +997,7 @@ export default function DashboardPage() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           transition={{ delay: 0.12, duration: 0.3 }}
           className="flex gap-2 items-center flex-wrap">
-          <Button variant="secondary" icon="download">Exporter</Button>
+          <Button variant="secondary" icon="download" onClick={() => exportWeddingReport(state)}>Rapport complet</Button>
           <Link href="/vendors"><Button variant="primary" icon="plus">Ajouter un devis</Button></Link>
         </motion.div>
       </div>
@@ -883,6 +1214,18 @@ export default function DashboardPage() {
 
       {/* ── Upcoming snapshot ─────────────────────────────────── */}
       <UpcomingSnapshot state={state} />
+
+      {/* ── Weather widget ────────────────────────────────────── */}
+      <WeatherWidget date={w.date} city={w.city ?? ""} />
+
+      {/* ── Budget health ─────────────────────────────────────── */}
+      <BudgetHealthWidget state={state} />
+
+      {/* ── Vendors to reach ──────────────────────────────────── */}
+      <VendorsToReachWidget state={state} />
+
+      {/* ── Gifts link ────────────────────────────────────────── */}
+      <GiftsLinkWidget />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useStore, useToast } from "@/components/providers";
 import { Icon } from "@/components/icon";
 import { Card, Badge, Button, Search, Select, Segmented, Field, Input, Textarea, Avatar, Drawer, Modal, Empty, Tabs } from "@/components/ui";
@@ -8,6 +8,13 @@ import { PageHead } from "@/components/shell";
 import { PageTutorial } from "@/components/tutorial";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import type { Guest, Diet } from "@/lib/types";
+import { exportGuestListPDF } from "@/lib/pdf-guests";
+import { exportElementAsPNG } from "@/lib/export-canvas";
+import { exportPlaceCardsPDF, exportSeatingListPDF } from "@/lib/pdf-placecards";
+import Papa from "papaparse";
+import { QRCodeSVG } from "qrcode.react";
+import { createClient } from "@/lib/supabase";
+import { getWeddingId } from "@/lib/db";
 
 const RSVP: Record<string, { label: string; tone: any; dot: string }> = {
   yes: { label: "Confirmé", tone: "sage", dot: "var(--sage)" },
@@ -165,6 +172,22 @@ function RsvpPicker({ value, onChange }: { value: string; onChange: (v: string) 
 }
 
 // ─────────────────────────────────────────────────────────────────
+// QRCodeButton — inline button that opens QRModal
+// ─────────────────────────────────────────────────────────────────
+function QRCodeButton({ guest }: { guest: Guest }) {
+  const [showQR, setShowQR] = useState(false);
+  if (!guest.rsvpToken) return null;
+  return (
+    <>
+      <Button variant="secondary" size="sm" icon="qr-code" onClick={() => setShowQR(true)}>
+        QR Code RSVP
+      </Button>
+      {showQR && <QRModal guest={guest} onClose={() => setShowQR(false)} />}
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
 // GuestDrawer
 // ─────────────────────────────────────────────────────────────────
 function GuestDrawer({ guest, onClose }: { guest: Guest; onClose: () => void }) {
@@ -234,10 +257,61 @@ function GuestDrawer({ guest, onClose }: { guest: Guest; onClose: () => void }) 
               }}>Copier</Button>
             </div>
             <p className="text-[11.5px] text-text-3 mt-1.5">Partagez ce lien par WhatsApp ou email pour recevoir la réponse directement.</p>
+            <div className="mt-2">
+              <QRCodeButton guest={g} />
+            </div>
           </div>
         )}
       </div>
     </Drawer>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// QRModal
+// ─────────────────────────────────────────────────────────────────
+function QRModal({ guest, onClose }: { guest: { name: string; rsvpToken?: string }; onClose: () => void }) {
+  const url = typeof window !== "undefined"
+    ? `${window.location.origin}/rsvp/${guest.rsvpToken}`
+    : `/rsvp/${guest.rsvpToken}`;
+
+  const print = () => window.print();
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
+      <div className="bg-surface rounded-2xl p-6 max-w-[340px] w-full flex flex-col items-center gap-5 shadow-2xl">
+        <div className="w-full flex items-center justify-between">
+          <span className="text-[15px] font-semibold">QR Code — {guest.name}</span>
+          <button onClick={onClose} className="icon-btn w-8 h-8"><Icon name="x" size={16} /></button>
+        </div>
+
+        <div className="p-4 bg-white rounded-xl border border-line">
+          <QRCodeSVG
+            value={url}
+            size={200}
+            level="M"
+            includeMargin={false}
+            fgColor="#1C1C1E"
+          />
+        </div>
+
+        <p className="text-[12px] text-text-3 text-center">
+          Imprimez ce QR code sur votre invitation.<br />
+          En le scannant, {guest.name} pourra confirmer sa présence.
+        </p>
+
+        <div className="text-[11px] font-mono text-text-3 break-all text-center bg-surface-2 px-3 py-2 rounded-lg w-full">{url}</div>
+
+        <div className="flex gap-2 w-full">
+          <Button variant="secondary" size="sm" className="flex-1" onClick={() => { navigator.clipboard?.writeText(url); }}>
+            Copier le lien
+          </Button>
+          <Button variant="primary" size="sm" className="flex-1" icon="download" onClick={print}>
+            Imprimer
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -742,7 +816,7 @@ function TablePlan() {
         </div>
 
         {/* Visual room */}
-        <div>
+        <div id="seating-plan-export">
           {state.tables.length === 0 ? (
             <Empty icon="table" title="Aucune table configurée" action={
               <Button variant="primary" icon="plus" onClick={() => setManaging(true)}>Configurer les tables</Button>
@@ -841,10 +915,278 @@ function Lodging() {
 }
 
 // ─────────────────────────────────────────────────────────────────
+// GroupsTab
+// ─────────────────────────────────────────────────────────────────
+function GroupsTab({ onViewGroup }: { onViewGroup: (groupName: string) => void }) {
+  const { state, update, SIDES } = useStore();
+  const toast = useToast();
+
+  // Derive unique group names
+  const groups = useMemo(() => {
+    const names = new Set<string>();
+    state.guests.forEach((g) => { if (g.group && g.group.trim()) names.add(g.group.trim()); });
+    return Array.from(names).sort((a, b) => a.localeCompare(b));
+  }, [state.guests]);
+
+  const withGroup = state.guests.filter((g) => g.group && g.group.trim()).length;
+  const withoutGroup = state.guests.length - withGroup;
+
+  // Inline rename state: key = current group name, value = draft
+  const [renaming, setRenaming] = useState<Record<string, string>>({});
+
+  const startRename = (name: string) => {
+    setRenaming((prev) => ({ ...prev, [name]: name }));
+  };
+
+  const commitRename = (oldName: string) => {
+    const newName = (renaming[oldName] ?? "").trim();
+    if (!newName || newName === oldName) {
+      setRenaming((prev) => { const n = { ...prev }; delete n[oldName]; return n; });
+      return;
+    }
+    update("guests", (list) =>
+      list.map((g) => g.group === oldName ? { ...g, group: newName } : g)
+    );
+    toast(`Groupe renommé en "${newName}"`);
+    setRenaming((prev) => { const n = { ...prev }; delete n[oldName]; return n; });
+  };
+
+  const cancelRename = (name: string) => {
+    setRenaming((prev) => { const n = { ...prev }; delete n[name]; return n; });
+  };
+
+  // Build card data for a group name (pass null for "Autres")
+  const buildCard = (groupName: string | null) => {
+    const members = groupName === null
+      ? state.guests.filter((g) => !g.group || !g.group.trim())
+      : state.guests.filter((g) => g.group === groupName);
+    const confirmed = members.filter((g) => g.rsvp === "yes").length;
+    const sideA = members.filter((g) => g.side === "A").length;
+    const sideB = members.filter((g) => g.side === "B").length;
+    const preview = members.slice(0, 5);
+    const extra = Math.max(0, members.length - 5);
+    return { members, confirmed, sideA, sideB, preview, extra };
+  };
+
+  if (state.guests.length === 0 || groups.length === 0) {
+    return (
+      <div className="flex flex-col gap-5">
+        {/* Stats row — always visible */}
+        <div className="grid grid-cols-3 gap-px bg-line border border-line rounded-card overflow-hidden">
+          {[
+            { v: groups.length, l: "Groupes" },
+            { v: withGroup, l: "Avec groupe" },
+            { v: withoutGroup, l: "Sans groupe" },
+          ].map((it, i) => (
+            <div key={i} className="bg-surface px-4 py-4 flex flex-col gap-0.5">
+              <span className="font-mono text-2xl font-semibold tracking-[-.02em]">{it.v}</span>
+              <span className="text-[12.5px] text-text-2">{it.l}</span>
+            </div>
+          ))}
+        </div>
+        <Card>
+          <div className="flex flex-col items-center gap-4 py-10 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-primary-soft flex items-center justify-center">
+              <Icon name="users" size={26} className="text-primary-700" />
+            </div>
+            <div>
+              <div className="font-semibold text-[16px] mb-2">Aucun groupe défini</div>
+              <p className="text-text-2 text-[13.5px] max-w-[380px] leading-relaxed">
+                Assignez des groupes à vos invités pour les organiser (famille, amis, collègues…).<br />
+                Ouvrez la fiche d&apos;un invité et renseignez le champ <strong>Groupe familial</strong>.
+              </p>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Stats row */}
+      <div className="grid grid-cols-3 gap-px bg-line border border-line rounded-card overflow-hidden">
+        {[
+          { v: groups.length, l: "Groupes" },
+          { v: withGroup, l: "Avec groupe" },
+          { v: withoutGroup, l: "Sans groupe" },
+        ].map((it, i) => (
+          <div key={i} className="bg-surface px-4 py-4 flex flex-col gap-0.5">
+            <span className="font-mono text-2xl font-semibold tracking-[-.02em]">{it.v}</span>
+            <span className="text-[12.5px] text-text-2">{it.l}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Group cards */}
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
+        {groups.map((groupName) => {
+          const { members, confirmed, sideA, sideB, preview, extra } = buildCard(groupName);
+          const isRenaming = groupName in renaming;
+
+          return (
+            <Card key={groupName} className="p-4 flex flex-col gap-3">
+              {/* Header: group name (editable) */}
+              <div className="flex items-start justify-between gap-2">
+                {isRenaming ? (
+                  <input
+                    autoFocus
+                    value={renaming[groupName]}
+                    onChange={(e) =>
+                      setRenaming((prev) => ({ ...prev, [groupName]: e.target.value }))
+                    }
+                    onBlur={() => commitRename(groupName)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") commitRename(groupName);
+                      if (e.key === "Escape") cancelRename(groupName);
+                    }}
+                    className="flex-1 text-[15px] font-semibold bg-surface-2 border border-primary rounded-md px-2 py-0.5 outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    title="Cliquez pour renommer"
+                    onClick={() => startRename(groupName)}
+                    className="flex-1 text-left text-[15px] font-semibold hover:text-primary transition-colors truncate"
+                  >
+                    {groupName}
+                  </button>
+                )}
+                <div className="flex items-center gap-1 shrink-0">
+                  {!isRenaming && (
+                    <button
+                      type="button"
+                      onClick={() => startRename(groupName)}
+                      className="icon-btn w-7 h-7 text-text-3 hover:text-primary"
+                      title="Renommer"
+                    >
+                      <Icon name="edit" size={13} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Confirmed / total */}
+              <div className="flex items-center gap-2">
+                <span className="text-[12.5px] text-text-2">
+                  <span className="font-semibold text-sage">{confirmed}</span>
+                  <span className="text-text-3"> / {members.length} confirmés</span>
+                </span>
+                <div className="flex-1 h-1.5 bg-surface-3 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-sage rounded-full transition-all"
+                    style={{ width: members.length > 0 ? `${(confirmed / members.length) * 100}%` : "0%" }}
+                  />
+                </div>
+              </div>
+
+              {/* Side breakdown */}
+              <div className="text-[12px] text-text-3">
+                {SIDES.A}: <span className="font-semibold text-text">{sideA}</span>
+                {" · "}
+                {SIDES.B}: <span className="font-semibold text-text">{sideB}</span>
+              </div>
+
+              {/* Guest name pills */}
+              <div className="flex flex-wrap gap-1.5">
+                {preview.map((g) => (
+                  <span
+                    key={g.id}
+                    className="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-2 border border-line text-[11.5px] text-text-2 font-medium truncate max-w-[140px]"
+                  >
+                    {g.name}
+                  </span>
+                ))}
+                {extra > 0 && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-3 text-[11.5px] text-text-3 font-medium">
+                    +{extra} autres
+                  </span>
+                )}
+              </div>
+
+              {/* View button */}
+              <div className="pt-1 border-t border-line">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon="users"
+                  onClick={() => onViewGroup(groupName)}
+                >
+                  Voir ce groupe
+                </Button>
+              </div>
+            </Card>
+          );
+        })}
+
+        {/* "Autres" card for guests without a group */}
+        {withoutGroup > 0 && (() => {
+          const { members, confirmed, sideA, sideB, preview, extra } = buildCard(null);
+          return (
+            <Card key="__autres__" className="p-4 flex flex-col gap-3 border-dashed">
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-[15px] font-semibold text-text-2">Autres</span>
+                <Badge tone="neutral">{members.length}</Badge>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-[12.5px] text-text-2">
+                  <span className="font-semibold text-sage">{confirmed}</span>
+                  <span className="text-text-3"> / {members.length} confirmés</span>
+                </span>
+                <div className="flex-1 h-1.5 bg-surface-3 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-sage rounded-full transition-all"
+                    style={{ width: members.length > 0 ? `${(confirmed / members.length) * 100}%` : "0%" }}
+                  />
+                </div>
+              </div>
+
+              <div className="text-[12px] text-text-3">
+                {SIDES.A}: <span className="font-semibold text-text">{sideA}</span>
+                {" · "}
+                {SIDES.B}: <span className="font-semibold text-text">{sideB}</span>
+              </div>
+
+              <div className="flex flex-wrap gap-1.5">
+                {preview.map((g) => (
+                  <span
+                    key={g.id}
+                    className="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-2 border border-line text-[11.5px] text-text-2 font-medium truncate max-w-[140px]"
+                  >
+                    {g.name}
+                  </span>
+                ))}
+                {extra > 0 && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-3 text-[11.5px] text-text-3 font-medium">
+                    +{extra} autres
+                  </span>
+                )}
+              </div>
+
+              <div className="pt-1 border-t border-line">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon="users"
+                  onClick={() => onViewGroup("__no_group__")}
+                >
+                  Voir ces invités
+                </Button>
+              </div>
+            </Card>
+          );
+        })()}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
 // GuestsPage
 // ─────────────────────────────────────────────────────────────────
 export default function GuestsPage() {
-  const { state, SIDES } = useStore();
+  const { state, update, SIDES } = useStore();
   const toast = useToast();
   const [tab, setTab] = useState("list");
   const [view, setView] = useState<"table" | "cards">("table");
@@ -854,11 +1196,121 @@ export default function GuestsPage() {
   const [editing, setEditing] = useState<Guest | null>(null);
   const [importing, setImporting] = useState(false);
   const [bulkImporting, setBulkImporting] = useState(false);
+  const [csvImporting, setCsvImporting] = useState(false);
+  const csvInputRef = useRef<HTMLInputElement>(null);
+  // Group filter: set when navigating from GroupsTab → list
+  const [groupFilter, setGroupFilter] = useState<string | null>(null);
 
-  const filtered = useMemo(() => state.guests.filter((g) =>
-    (q === "" || g.name.toLowerCase().includes(q.toLowerCase()) || g.group.toLowerCase().includes(q.toLowerCase())) &&
-    (side === "all" || g.side === side) && (rsvp === "all" || g.rsvp === rsvp)
-  ), [state.guests, q, side, rsvp]);
+  const exportCSV = () => {
+    const rows = state.guests.map((g) => ({
+      "Nom": g.name,
+      "Côté": g.side === "A" ? state.wedding.partnerA : state.wedding.partnerB,
+      "RSVP": g.rsvp === "yes" ? "Confirmé" : g.rsvp === "declined" ? "Décliné" : "En attente",
+      "Régime": g.diet || "Standard",
+      "Enfant": g.child ? "Oui" : "Non",
+      "Table": g.table ?? "",
+      "Groupe": g.group || "",
+      "Note": g.note || "",
+    }));
+    const csv = Papa.unparse(rows, { delimiter: ";", quotes: true });
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `invités-${state.wedding.partnerA}-${state.wedding.partnerB}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast("Liste exportée en CSV");
+  };
+
+  const downloadTemplate = () => {
+    const template = Papa.unparse([
+      { "Nom": "Exemple: Marie Dupont", "Côté": state.wedding.partnerA, "RSVP": "En attente", "Régime": "Standard", "Enfant": "Non", "Groupe": "Famille", "Note": "" },
+    ], { delimiter: ";", quotes: true });
+    const blob = new Blob(["﻿" + template], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "modele-invites.csv"; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleCSVImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCsvImporting(true);
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        const rows = results.data as Record<string, string>[];
+        const wId = getWeddingId();
+        let imported = 0;
+
+        for (const row of rows) {
+          const name = row["Nom"] || row["name"] || row["Name"] || "";
+          if (!name.trim()) continue;
+
+          const sideRaw = (row["Côté"] || row["side"] || row["Side"] || "A").toLowerCase();
+          const guestSide: "A" | "B" = (sideRaw === "b" || sideRaw === state.wedding.partnerB.toLowerCase()) ? "B" : "A";
+          const rsvpRaw = (row["RSVP"] || row["rsvp"] || "").toLowerCase();
+          const guestRsvp: "yes" | "pending" | "declined" =
+            rsvpRaw === "yes" || rsvpRaw === "oui" || rsvpRaw === "confirmé" ? "yes"
+            : rsvpRaw === "no" || rsvpRaw === "non" || rsvpRaw === "décliné" ? "declined"
+            : "pending";
+
+          const newGuest: Guest = {
+            id: Date.now() + imported,
+            name: name.trim(),
+            side: guestSide,
+            rsvp: guestRsvp,
+            diet: (row["Régime"] || row["diet"] || "standard") as Diet,
+            table: null,
+            lodging: row["Hébergement"] || row["lodging"] || "",
+            child: ["oui", "yes", "true", "1"].includes((row["Enfant"] || row["child"] || "").toLowerCase()),
+            transport: false,
+            gift: false,
+            group: row["Groupe"] || row["group"] || "",
+            note: row["Note"] || row["note"] || "",
+          };
+
+          if (wId) {
+            const { data } = await createClient().from("guests").insert({
+              ...newGuest,
+              table_id: null,
+              wedding_id: wId,
+            }).select("id").single();
+            if (data) newGuest.id = (data as { id: number }).id;
+          }
+
+          update("guests", (prev) => [...prev, newGuest]);
+          imported++;
+        }
+
+        toast(`${imported} invité${imported > 1 ? "s" : ""} importé${imported > 1 ? "s" : ""}`);
+        setCsvImporting(false);
+        e.target.value = "";
+      },
+      error: () => {
+        toast("Erreur lors de l'import CSV", "err");
+        setCsvImporting(false);
+      }
+    });
+  };
+
+  const filtered = useMemo(() => state.guests.filter((g) => {
+    if (groupFilter !== null) {
+      if (groupFilter === "__no_group__") {
+        if (g.group && g.group.trim()) return false;
+      } else {
+        if (g.group !== groupFilter) return false;
+      }
+    }
+    return (
+      (q === "" || g.name.toLowerCase().includes(q.toLowerCase()) || g.group.toLowerCase().includes(q.toLowerCase())) &&
+      (side === "all" || g.side === side) &&
+      (rsvp === "all" || g.rsvp === rsvp)
+    );
+  }), [state.guests, q, side, rsvp, groupFilter]);
 
   const newGuest: Guest = { id: 0, name: "", side: "A", rsvp: "pending", diet: "standard", table: null, lodging: "", child: false, transport: false, gift: false, group: "", note: "" };
 
@@ -866,9 +1318,23 @@ export default function GuestsPage() {
     <div className="mx-auto w-full max-w-[1320px] px-5 md:px-8 py-6 md:py-8 pb-28 md:pb-12">
       <PageHead title="Invités" sub={`${state.guests.length} personnes · ${state.guests.filter((g) => g.rsvp === "yes").length} confirmées`}
         actions={<>
+          <Button variant="ghost" size="sm" onClick={downloadTemplate}>Modèle CSV</Button>
+          <Button variant="secondary" icon="download" onClick={exportCSV}>Exporter CSV</Button>
+          <Button variant="secondary" icon="upload" onClick={() => csvInputRef.current?.click()} disabled={csvImporting}>
+            {csvImporting ? "Import…" : "Importer CSV"}
+          </Button>
+          <input
+            ref={csvInputRef}
+            type="file"
+            accept=".csv"
+            className="hidden"
+            onChange={handleCSVImport}
+          />
           <Button variant="secondary" icon="mail" onClick={() => toast(`Rappels RSVP envoyés à ${state.guests.filter((g) => g.rsvp === "pending").length} invités`)}>Relancer les RSVP</Button>
-          <Button variant="secondary" icon="upload" onClick={() => setImporting(true)}>Importer</Button>
-          <Button variant="secondary" icon="download" onClick={() => toast("Export du plan de table en PDF…")}>Plan de table PDF</Button>
+          <Button variant="secondary" icon="download" onClick={() => exportGuestListPDF(state.guests, state.wedding.partnerA, state.wedding.partnerB)}>Export PDF</Button>
+          <Button variant="secondary" icon="download" onClick={() => exportSeatingListPDF(state.guests, state.tables, state.wedding.partnerA || "A", state.wedding.partnerB || "B")}>Plan de table PDF</Button>
+          <Button variant="secondary" icon="download" onClick={() => exportPlaceCardsPDF(state.guests, state.tables, state.wedding.partnerA || "A", state.wedding.partnerB || "B")}>Cartons placement</Button>
+          <Button variant="secondary" icon="download" onClick={() => exportElementAsPNG("seating-plan-export", "plan-de-table.png")}>Exporter PNG</Button>
           <Button variant="secondary" onClick={() => setBulkImporting(true)}>📥 Ajout en lot</Button>
           <Button variant="primary" icon="plus" onClick={() => setEditing(newGuest)}>Ajouter</Button>
         </>} />
@@ -885,10 +1351,26 @@ export default function GuestsPage() {
       </ScrollReveal>
 
       <ScrollReveal delay={0.05}>
-      <div className="mb-5"><Tabs value={tab} onChange={setTab} tabs={[{ id: "list", label: "Liste" }, { id: "plan", label: "Plan de table" }, { id: "lodge", label: "Hébergements" }]} /></div>
+      <div className="mb-5"><Tabs value={tab} onChange={(t) => { setTab(t); if (t !== "list") { setGroupFilter(null); } }} tabs={[{ id: "list", label: "Liste" }, { id: "groups", label: "Groupes" }, { id: "plan", label: "Plan de table" }, { id: "lodge", label: "Hébergements" }]} /></div>
       </ScrollReveal>
 
       {tab === "list" && <>
+        {groupFilter !== null && (
+          <div className="flex items-center gap-2.5 mb-3 px-3.5 py-2.5 rounded-card bg-primary-soft border border-primary/20 text-[13px]">
+            <Icon name="users" size={15} className="text-primary-700 shrink-0" />
+            <span className="flex-1 font-medium text-primary-700">
+              Filtre actif : groupe <strong>{groupFilter === "__no_group__" ? "Autres (sans groupe)" : groupFilter}</strong>
+            </span>
+            <button
+              type="button"
+              onClick={() => setGroupFilter(null)}
+              className="icon-btn w-7 h-7 text-primary-700 hover:text-primary"
+              title="Supprimer le filtre"
+            >
+              <Icon name="x" size={14} />
+            </button>
+          </div>
+        )}
         <ScrollReveal delay={0.1}>
         <div className="flex items-center gap-2.5 flex-wrap mb-4">
           <Search value={q} onChange={setQ} placeholder="Rechercher un invité, un groupe…" className="flex-1 min-w-[200px]" />
@@ -990,6 +1472,14 @@ export default function GuestsPage() {
         </ScrollReveal>
       </>}
 
+      {tab === "groups" && (
+        <GroupsTab
+          onViewGroup={(groupName) => {
+            setGroupFilter(groupName);
+            setTab("list");
+          }}
+        />
+      )}
       {tab === "plan" && <TablePlan />}
       {tab === "lodge" && <Lodging />}
 

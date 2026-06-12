@@ -41,6 +41,16 @@ interface SharedTask {
   who: string;
 }
 
+interface SharedCeremonyEvent {
+  id: number;
+  order_idx: number;
+  category: string;
+  title: string;
+  duration_min: number;
+  who: string;
+  music: string;
+}
+
 function fmtDate(iso: string): string {
   if (!iso) return "";
   try {
@@ -74,6 +84,7 @@ export default function SharePage({ params }: { params: { token: string } }) {
   const [guests, setGuests] = useState<SharedGuest[]>([]);
   const [vendors, setVendors] = useState<SharedVendor[]>([]);
   const [tasks, setTasks] = useState<SharedTask[]>([]);
+  const [ceremony, setCeremony] = useState<SharedCeremonyEvent[]>([]);
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -91,15 +102,17 @@ export default function SharePage({ params }: { params: { token: string } }) {
       if (error || !wData) { setStatus("notfound"); return; }
       setWedding(wData as SharedWedding);
 
-      const [gRes, vRes, tRes] = await Promise.all([
+      const [gRes, vRes, tRes, cRes] = await Promise.all([
         supabase.from("guests").select("id, name, rsvp, side, diet").eq("wedding_id", wData.id),
         supabase.from("vendors").select("id, cat, name, status, total").eq("wedding_id", wData.id),
         supabase.from("tasks").select("id, title, cat, due, done, who").eq("wedding_id", wData.id),
+        supabase.from("ceremony_events").select("id, order_idx, category, title, duration_min, who, music").eq("wedding_id", wData.id).order("order_idx"),
       ]);
 
       setGuests((gRes.data ?? []) as SharedGuest[]);
       setVendors((vRes.data ?? []) as SharedVendor[]);
       setTasks((tRes.data ?? []) as SharedTask[]);
+      setCeremony((cRes.data ?? []) as SharedCeremonyEvent[]);
       setStatus("found");
     }
     load();
@@ -294,10 +307,46 @@ export default function SharePage({ params }: { params: { token: string } }) {
 
         </div>
 
+        {/* Programme de cérémonie */}
+        {ceremony.length > 0 && (
+          <div style={{ background: "#fff", borderRadius: 16, padding: "24px", border: "1px solid #EDE6DA", marginTop: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: "#FBF1E3", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>💍</div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: "#382F23" }}>Programme de la cérémonie</div>
+                <div style={{ fontSize: 12, color: "#9C8E76" }}>{ceremony.reduce((s, e) => s + (e.duration_min || 0), 0)} min · {ceremony.length} moments</div>
+              </div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+              {ceremony.map((ev, i) => (
+                <div key={ev.id} style={{ display: "flex", gap: 14, position: "relative" }}>
+                  {/* Timeline line */}
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 20, flexShrink: 0, paddingTop: 4 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#C96E2C", border: "2px solid #F4ECDD", zIndex: 1, flexShrink: 0 }} />
+                    {i < ceremony.length - 1 && (
+                      <div style={{ flex: 1, width: 2, background: "#F0EAE0", marginTop: 2, minHeight: 20 }} />
+                    )}
+                  </div>
+                  <div style={{ flex: 1, paddingBottom: i < ceremony.length - 1 ? 12 : 0 }}>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "#382F23" }}>{ev.title}</span>
+                      {ev.duration_min > 0 && (
+                        <span style={{ fontSize: 11, color: "#9C8E76", background: "#F5EEE4", padding: "1px 7px", borderRadius: 99 }}>{ev.duration_min} min</span>
+                      )}
+                    </div>
+                    {ev.who && <div style={{ fontSize: 11.5, color: "#9C8E76", marginTop: 2 }}>{ev.who}</div>}
+                    {ev.music && <div style={{ fontSize: 11.5, color: "#B07A2C", marginTop: 1 }}>🎵 {ev.music}</div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Footer */}
         <div style={{ textAlign: "center", marginTop: 40, paddingTop: 24, borderTop: "1px solid #E8DFD0" }}>
           <div style={{ display: "inline-block", background: "#382F23", padding: "7px 16px", borderRadius: 9, color: "#F4ECDD", fontSize: 13, fontWeight: 800, letterSpacing: 3, textTransform: "lowercase", marginBottom: 10 }}>
-            jour j
+            the cockpit
           </div>
           <p style={{ margin: 0, fontSize: 12, color: "#BBA98A" }}>Vue en lecture seule · Partagé par {w.partner_a} &amp; {w.partner_b}</p>
         </div>

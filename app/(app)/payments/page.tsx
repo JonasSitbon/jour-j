@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useStore, useToast } from "@/components/providers";
 import { fmt } from "@/lib/format";
 import { Icon } from "@/components/icon";
@@ -8,6 +8,7 @@ import { Card, Badge, Button, Select, Segmented, Drawer, Field, Input, Empty, Ta
 import { PageHead } from "@/components/shell";
 import { PageTutorial } from "@/components/tutorial";
 import type { Payment } from "@/lib/types";
+import { exportPaymentsPDF } from "@/lib/pdf-payments";
 import { createClient } from "@/lib/supabase";
 import { getWeddingId } from "@/lib/db";
 import { ScrollReveal } from "@/components/scroll-reveal";
@@ -356,13 +357,27 @@ function StatsBar({ payments }: { payments: Payment[] }) {
 /* ─── Page ───────────────────────────────────────────────────────────────── */
 
 export default function PaymentsPage() {
-  const { state } = useStore();
+  const { state, update } = useStore();
   const toast = useToast();
   const [tab, setTab] = useState("list");
   const [method, setMethod] = useState("all");
   const [status, setStatus] = useState("all");
   const [viewing, setViewing] = useState<Payment | null>(null);
   const [adding, setAdding] = useState(false);
+
+  // Auto-detect overdue payments on load
+  useEffect(() => {
+    const today = new Date().toISOString().split("T")[0];
+    const hasLate = state.payments.some((p) => p.status === "upcoming" && p.due < today);
+    if (hasLate) {
+      update("payments", (list) =>
+        list.map((p) =>
+          p.status === "upcoming" && p.due < today ? { ...p, status: "late" as const } : p
+        )
+      );
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const filtered = state.payments.filter((p) => (method === "all" || p.method === method) && (status === "all" || p.status === status)).slice().sort((a, b) => a.due.localeCompare(b.due));
   const byMonth = useMemo(() => {
@@ -382,7 +397,7 @@ export default function PaymentsPage() {
     <div className="mx-auto w-full max-w-[1320px] px-5 md:px-8 py-6 md:py-8 pb-28 md:pb-12">
       <PageHead title="Suivi des paiements" sub={`${fmt.eur(paid)} réglés · ${fmt.eur(due)} à venir`}
         actions={<>
-          <Button variant="secondary" icon="download" onClick={() => toast("Export comptable — fonctionnalité à venir")}>Export comptable</Button>
+          <Button variant="secondary" icon="download" onClick={() => exportPaymentsPDF(state.payments, state.wedding.partnerA || "Partenaire A", state.wedding.partnerB || "Partenaire B")}>Export comptable</Button>
           <Button variant="primary" icon="plus" onClick={() => setAdding(true)}>Paiement</Button>
         </>} />
 

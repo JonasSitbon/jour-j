@@ -12,6 +12,7 @@ import { getWeddingId } from "@/lib/db";
 import { seedDefaultTasks, seedDefaultDayJ } from "@/lib/seed";
 import type { Task, SubTask } from "@/lib/types";
 import { ScrollReveal } from "@/components/scroll-reveal";
+import { exportChecklistPDF } from "@/lib/pdf-checklist";
 
 // ─── Assignee types ───────────────────────────────────────────────────────────
 type Assignee = "all" | "a" | "b" | "both" | "vendor";
@@ -548,6 +549,24 @@ export default function ChecklistPage() {
     setDragOverCat(null);
   };
 
+  // ── Mark all tasks in current category as done ───────────────────────────
+  const markAllCatDone = (catId: string) => {
+    update("tasks", (l) => l.map((t) => t.cat === catId ? { ...t, done: true } : t));
+    toast("Toutes les tâches marquées comme terminées");
+  };
+
+  // ── Delete all done tasks ─────────────────────────────────────────────────
+  const clearDoneTasks = async () => {
+    const doneTasks = state.tasks.filter((t) => t.done);
+    if (doneTasks.length === 0) { toast("Aucune tâche terminée à supprimer"); return; }
+    if (!confirm(`Supprimer les ${doneTasks.length} tâches terminées ?`)) return;
+    const doneIds = doneTasks.map((t) => t.id);
+    const wId = getWeddingId();
+    if (wId) await createClient().from("tasks").delete().in("id", doneIds);
+    update("tasks", (l) => l.filter((t) => !t.done));
+    toast(`${doneTasks.length} tâche${doneTasks.length > 1 ? "s" : ""} supprimée${doneTasks.length > 1 ? "s" : ""}`);
+  };
+
   // ── Inline add task ───────────────────────────────────────────────────────
   const handleInlineAdd = (catId: string, title: string) => {
     const today = isoToday();
@@ -730,9 +749,10 @@ export default function ChecklistPage() {
           <div className="flex-1 min-w-0 cursor-pointer" onClick={() => hasSubs && setExpanded((e) => ({ ...e, [t.id]: !e[t.id] }))}>
             <div className={`text-sm font-medium ${t.done ? "text-text-3 line-through" : ""}`}>{t.title}</div>
             <div className="flex items-center gap-3 text-xs text-text-2 mt-0.5 flex-wrap">
-              <span className={late ? "text-coral font-semibold" : ""}><Icon name="clock" size={13} className="inline align-[-2px] mr-1" />{late ? "En retard · " + fmt.dateShort(t.due) : `Échéance ${fmt.dateShort(t.due)}`}</span>
+              <span className={late ? "text-coral font-semibold" : ""}><Icon name="clock" size={13} className="inline align-[-2px] mr-1" />{late ? fmt.dateShort(t.due) : `Échéance ${fmt.dateShort(t.due)}`}</span>
+              {late && <span className="badge text-white font-semibold" style={{ background: "var(--coral, #e87059)" }}>En retard</span>}
               <span className="flex items-center gap-1.5"><Avatar name={t.who === "A" ? A : B} side={t.who} size="sm" />{t.who === "A" ? A : B}</span>
-              {soon && <span className="badge bg-amber-soft text-[var(--gold-ink)]"><span className="w-1.5 h-1.5 rounded-full bg-current" />Bientôt</span>}
+              {soon && !late && <span className="badge bg-amber-soft text-[var(--gold-ink)]"><span className="w-1.5 h-1.5 rounded-full bg-current" />Bientôt</span>}
               {hasSubs && <span className="text-text-3">{t.subs.filter((s) => s.d).length}/{t.subs.length} sous-tâches</span>}
             </div>
           </div>
@@ -813,6 +833,15 @@ export default function ChecklistPage() {
               <ProgressRing done={cDone} total={cTotal} />
               <span className="font-mono text-text-2 text-[12.5px]">{cDone}/{cTotal} terminées</span>
             </div>
+            {cDone < cTotal && (
+              <button
+                onClick={() => markAllCatDone(cid)}
+                className="text-[11.5px] px-2.5 py-1 rounded-full border border-sage text-sage bg-surface-2 hover:bg-sage hover:text-white transition flex items-center gap-1"
+                title="Marquer toutes les tâches comme terminées"
+              >
+                <Icon name="check" size={12} /> Tout cocher
+              </button>
+            )}
             <button
               onClick={() => bulkSuggest(cid, catObj.label)}
               className="text-[11.5px] px-2.5 py-1 rounded-full border border-line text-text-2 bg-surface-2 hover:bg-primary-soft hover:text-primary hover:border-primary transition flex items-center gap-1"
@@ -877,6 +906,10 @@ export default function ChecklistPage() {
     <div className="mx-auto w-full max-w-[1320px] px-5 md:px-8 py-6 md:py-8 pb-28 md:pb-12">
       <PageHead title="Checklist" sub={`${done} / ${state.tasks.length} tâches complétées · ${globalPct}%`}
         actions={<>
+          <Button variant="ghost" icon="download" onClick={() => exportChecklistPDF(state.tasks, cats, A || "Partenaire A", B || "Partenaire B")}>Export PDF</Button>
+          {state.tasks.some((t) => t.done) && (
+            <Button variant="ghost" icon="trash" onClick={clearDoneTasks}>Nettoyer les terminées</Button>
+          )}
           <Button variant="secondary" icon="sparkle" onClick={() => setCat("jourj")}>Mode Jour J</Button>
           <Button variant="primary" icon="plus" onClick={() => setAddingTask(true)}>Ajouter une tâche</Button>
         </>} />
@@ -957,9 +990,21 @@ export default function ChecklistPage() {
           </Card>
           <div className="flex md:flex-col gap-1 flex-wrap md:sticky md:top-20">
             <button onClick={() => setCat("all")} className={`flex items-center gap-3 px-3 py-2.5 rounded-sm text-[13.5px] font-medium transition ${cat === "all" ? "bg-primary-soft text-primary-700" : "text-text-2 hover:bg-hover hover:text-text"}`}><Icon name="list" size={17} />Toutes<span className="ml-auto font-mono text-xs text-text-3">{state.tasks.length}</span></button>
-            {cats.map((c) => (
-              <button key={c.id} onClick={() => setCat(c.id)} className={`flex items-center gap-3 px-3 py-2.5 rounded-sm text-[13.5px] font-medium transition ${cat === c.id ? "bg-primary-soft text-primary-700" : "text-text-2 hover:bg-hover hover:text-text"}`}><Icon name={c.icon} size={17} />{c.label}<span className="ml-auto font-mono text-xs text-text-3">{catPct(c.id)}%</span></button>
-            ))}
+            {cats.map((c) => {
+              const pct = catPct(c.id);
+              const barColor = pct > 80 ? "var(--sage)" : pct >= 50 ? "var(--gold)" : "var(--coral, #e87059)";
+              return (
+                <button key={c.id} onClick={() => setCat(c.id)} className={`flex flex-col gap-1 px-3 py-2.5 rounded-sm text-[13.5px] font-medium transition w-full text-left ${cat === c.id ? "bg-primary-soft text-primary-700" : "text-text-2 hover:bg-hover hover:text-text"}`}>
+                  <span className="flex items-center gap-3 w-full">
+                    <Icon name={c.icon} size={17} />{c.label}
+                    <span className="ml-auto font-mono text-xs text-text-3">{pct}%</span>
+                  </span>
+                  <span className="block h-[3px] rounded-full w-full overflow-hidden" style={{ background: "var(--line)" }}>
+                    <span className="block h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: barColor }} />
+                  </span>
+                </button>
+              );
+            })}
             <button onClick={() => setCat("jourj")} className={`flex items-center gap-3 px-3 py-2.5 rounded-sm text-[13.5px] font-medium mt-2 text-gold ${cat === "jourj" ? "bg-primary-soft" : "hover:bg-hover"}`}><Icon name="rings" size={17} />Mode Jour J</button>
           </div>
         </div>

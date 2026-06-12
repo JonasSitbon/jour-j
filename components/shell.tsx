@@ -8,6 +8,7 @@ import { Icon, Logo } from "./icon";
 import { Badge, IconButton, Avatar } from "./ui";
 import { useStore, useTheme } from "./providers";
 import { NotificationsPanel } from "./notifications-panel";
+import { SearchPalette } from "./search-palette";
 import { createClient } from "@/lib/supabase";
 import type { WeddingRole } from "@/lib/types";
 
@@ -30,6 +31,8 @@ const NAV_GROUPS = [
       { id: "checklist",  label: "Checklist",           icon: "check-circle" },
       { id: "timeline",   label: "Timeline",             icon: "list"         },
       { id: "dayj",       label: "Déroulé du Jour J",   icon: "clock"        },
+      { id: "ceremony",   label: "Programme cérémonie",  icon: "rings"        },
+      { id: "music",      label: "Musique & playlist",   icon: "music"        },
     ],
   },
   {
@@ -38,6 +41,8 @@ const NAV_GROUPS = [
     items: [
       { id: "guests",     label: "Invités",              icon: "users"        },
       { id: "vendors",    label: "Prestataires",         icon: "file"         },
+      { id: "gifts",      label: "Cadeaux",              icon: "sparkle"      },
+      { id: "contacts",   label: "Personnes clés",       icon: "key"          },
     ],
   },
   {
@@ -537,6 +542,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { state } = useStore();
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const [collapsed, setCollapsed] = useState(() => readLS("sidebar-collapsed", "false") === "true");
 
@@ -551,6 +557,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const unread = state.notifications.filter((n) => !n.read).length;
   const cur = ALL_NAV.concat([{ id: "settings", label: "Paramètres", icon: "settings" }])
     .find((n) => n.id === current);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchOpen((o) => !o);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   return (
     <div className="relative z-[1] min-h-screen flex">
@@ -620,6 +637,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span className="text-text font-semibold">{cur?.label ?? "—"}</span>
           </div>
           <div className="flex-1" />
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="hidden lg:flex items-center gap-2 px-3 h-8 rounded-md border border-line bg-surface text-text-3 text-[13px] hover:border-primary/50 hover:text-text transition-colors"
+          >
+            <Icon name="search" size={14} />
+            Rechercher…
+            <kbd className="ml-1 text-[10px] font-mono bg-surface-3 px-1.5 py-0.5 rounded border border-line">⌘K</kbd>
+          </button>
+          <IconButton name="search" title="Rechercher" className="lg:hidden" onClick={() => setSearchOpen(true)} />
           <IconButton name="bell" title="Notifications" badge={unread > 0} onClick={() => setNotifOpen(true)} />
         </header>
 
@@ -673,6 +699,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </nav>
 
       <NotificationsPanel isOpen={notifOpen} onClose={() => setNotifOpen(false)} />
+      <SearchPalette isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
 
       {/* ── Mobile menu sheet ── */}
       <AnimatePresence>

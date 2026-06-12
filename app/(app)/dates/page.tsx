@@ -13,6 +13,7 @@ import { seedDefaultDateCandidates } from "@/lib/seed";
 import { geocodeCity, fetchDateWeather, fetchMonthlyWeather } from "@/lib/weather";
 import { PageTutorial } from "@/components/tutorial";
 import { ScrollReveal } from "@/components/scroll-reveal";
+import { exportDatesPDF } from "@/lib/pdf-dates";
 
 const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 const DOW = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
@@ -158,6 +159,7 @@ export default function DatesPage() {
   const toast = useToast();
   const [seeding, setSeeding] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
 
   // City / weather refresh (global monthly chart)
   const [cityInput, setCityInput] = useState(state.weatherCity || state.wedding.city);
@@ -236,6 +238,9 @@ export default function DatesPage() {
               {refreshing ? "…" : "Graphique"}
             </Button>
           </div>
+          <Button variant="secondary" icon="download" onClick={() => exportDatesPDF(state.dateCandidates, state.selectedDate, state.wedding.partnerA, state.wedding.partnerB)} disabled={state.dateCandidates.length === 0}>
+            Export PDF
+          </Button>
           <Button variant="primary" icon="plus" onClick={() => setAdding(true)}>Date candidate</Button>
         </>} />
 
@@ -245,6 +250,15 @@ export default function DatesPage() {
           { icon: "sun", title: "Comparez la météo réelle", desc: "Ensoleillement, risque de pluie (≥5mm) et température sont basés sur les archives Open-Meteo, pas des estimations." },
           { icon: "calendar", title: "Sélectionnez votre date", desc: "Cliquez sur une carte pour la choisir. Cliquez à nouveau pour désélectionner. Vous pouvez laisser toutes les dates en attente." },
         ]} />
+
+      <div className="flex gap-1 mb-4">
+        <button onClick={() => setViewMode("cards")} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${viewMode === "cards" ? "bg-primary text-white" : "hover:bg-hover text-text-2"}`}>
+          <Icon name="grid" size={14} className="inline mr-1.5" />Cartes
+        </button>
+        <button onClick={() => setViewMode("table")} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${viewMode === "table" ? "bg-primary text-white" : "hover:bg-hover text-text-2"}`}>
+          <Icon name="table" size={14} className="inline mr-1.5" />Tableau
+        </button>
+      </div>
 
       <ScrollReveal delay={0}>
       <div className="flex items-center justify-between mb-4"><div className="sec-title"><Icon name="star" size={17} className="text-text-3" />Dates candidates</div></div>
@@ -281,91 +295,178 @@ export default function DatesPage() {
       </ScrollReveal>
 
       <ScrollReveal delay={0.05}>
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(230px,1fr))] gap-4 mb-6">
-        {state.dateCandidates.map((d) => {
-          const dt = new Date(d.date + "T00:00:00");
-          const sc = scoreOf(d);
-          const isBest = best !== null && d.id === best.id;
-          const isSelected = d.id === state.selectedDate;
-          const hasRealWeather = d.lat != null;
 
-          return (
-            <Card key={d.id} hover pad={false}
-              onClick={() => {
-                setSelDate(d.date);
-                if (isSelected) {
-                  update("selectedDate", 0);
-                  toast("Sélection annulée");
-                } else {
-                  update("selectedDate", d.id);
-                  toast("Date sélectionnée : " + fmt.date(d.date));
-                }
-              }}
-              className={`group ${isSelected ? "border-sage ring-2 ring-sage-soft" : isBest ? "border-primary ring-2 ring-primary-soft" : ""}`}>
-              <div className="p-[18px] pb-3.5 relative">
-                <div className="absolute top-3 right-3 flex flex-col items-end gap-1.5">
-                  {isSelected && <Badge tone="sage" icon="check">Choisie</Badge>}
-                  {isBest && !isSelected && <Badge tone="primary" icon="sparkle">Meilleur choix</Badge>}
-                </div>
-                {/* Delete button — appears on card hover */}
-                <button onClick={(e) => { e.stopPropagation(); removeDate(d.id); }}
-                  className="absolute bottom-3 right-3 icon-btn w-6 h-6 opacity-0 group-hover:opacity-100 text-text-3 hover:text-coral transition-opacity"
-                  title="Supprimer cette date">
-                  <Icon name="x" size={14} />
-                </button>
-                <div className="text-[12.5px] text-text-2 capitalize">{dt.toLocaleDateString("fr-FR", { weekday: "long" })}</div>
-                <div className="text-[19px] font-semibold tracking-[-.01em]">{dt.getDate()} {MONTHS[dt.getMonth()].toLowerCase()} {dt.getFullYear()}</div>
-                <div className="flex items-center gap-2.5 mt-3">
-                  <Ring value={sc} size={56} stroke={6}><span className="font-mono font-semibold text-sm">{sc}</span></Ring>
-                  <div className="text-[12.5px] text-text-2">Score global<br /><b className="text-text">{sc >= 85 ? "Excellent" : sc >= 70 ? "Très bon" : "Correct"}</b></div>
-                </div>
-              </div>
+      {viewMode === "cards" ? (
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(230px,1fr))] gap-4 mb-6">
+          {state.dateCandidates.map((d) => {
+            const dt = new Date(d.date + "T00:00:00");
+            const sc = scoreOf(d);
+            const isBest = best !== null && d.id === best.id;
+            const isSelected = d.id === state.selectedDate;
+            const hasRealWeather = d.lat != null;
 
-              <div className="px-[18px] pb-[18px] flex flex-col gap-2.5">
-                {/* City badge if set */}
-                {d.city && (
-                  <div className="flex items-center gap-1.5 text-[11.5px] text-text-2 pb-2 border-b border-line">
-                    <Icon name="pin" size={12} className="text-text-3" />
-                    <span className="truncate">{d.city.split(",")[0]}</span>
-                    {hasRealWeather && (
-                      <span className="ml-auto shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-sage-soft text-sage text-[10px] font-medium">
-                        <Icon name="check" size={9} />réel
-                      </span>
-                    )}
+            return (
+              <Card key={d.id} hover pad={false}
+                onClick={() => {
+                  setSelDate(d.date);
+                  if (isSelected) {
+                    update("selectedDate", 0);
+                    toast("Sélection annulée");
+                  } else {
+                    update("selectedDate", d.id);
+                    toast("Date sélectionnée : " + fmt.date(d.date));
+                  }
+                }}
+                className={`group ${isSelected ? "border-sage ring-2 ring-sage-soft" : isBest ? "border-primary ring-2 ring-primary-soft" : ""}`}>
+                <div className="p-[18px] pb-3.5 relative">
+                  <div className="absolute top-3 right-3 flex flex-col items-end gap-1.5">
+                    {isSelected && <Badge tone="sage" icon="check">Choisie</Badge>}
+                    {isBest && !isSelected && <Badge tone="primary" icon="sparkle">Meilleur choix</Badge>}
+                  </div>
+                  {/* Delete button — appears on card hover */}
+                  <button onClick={(e) => { e.stopPropagation(); removeDate(d.id); }}
+                    className="absolute bottom-3 right-3 icon-btn w-6 h-6 opacity-0 group-hover:opacity-100 text-text-3 hover:text-coral transition-opacity"
+                    title="Supprimer cette date">
+                    <Icon name="x" size={14} />
+                  </button>
+                  <div className="text-[12.5px] text-text-2 capitalize">{dt.toLocaleDateString("fr-FR", { weekday: "long" })}</div>
+                  <div className="text-[19px] font-semibold tracking-[-.01em]">{dt.getDate()} {MONTHS[dt.getMonth()].toLowerCase()} {dt.getFullYear()}</div>
+                  <div className="flex items-center gap-2.5 mt-3">
+                    <Ring value={sc} size={56} stroke={6}><span className="font-mono font-semibold text-sm">{sc}</span></Ring>
+                    <div className="text-[12.5px] text-text-2">Score global<br /><b className="text-text">{sc >= 85 ? "Excellent" : sc >= 70 ? "Très bon" : "Correct"}</b></div>
+                  </div>
+                </div>
+
+                <div className="px-[18px] pb-[18px] flex flex-col gap-2.5">
+                  {/* City badge if set */}
+                  {d.city && (
+                    <div className="flex items-center gap-1.5 text-[11.5px] text-text-2 pb-2 border-b border-line">
+                      <Icon name="pin" size={12} className="text-text-3" />
+                      <span className="truncate">{d.city.split(",")[0]}</span>
+                      {hasRealWeather && (
+                        <span className="ml-auto shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-sage-soft text-sage text-[10px] font-medium">
+                          <Icon name="check" size={9} />réel
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Stats */}
+                  {[
+                    ["sun", "Ensoleillement", `${d.weather}%`],
+                    ["droplet", "Risque de pluie", `${d.rain}%`],
+                    ["temp", "Température moy.", `${d.temp}°C`],
+                    ["star", "Disponibilité", `${d.availability}%`],
+                    ["flag", "Pont / week-end", d.longWeekend ? "Oui" : "Non"],
+                  ].map(([ic, l, v]) => (
+                    <div key={l} className="flex items-center gap-2.5 text-[12.5px]">
+                      <span className="text-text-2 flex-1 flex items-center gap-1.5"><Icon name={ic} size={14} className="text-text-3" />{l}</span>
+                      <span className="font-mono font-semibold whitespace-nowrap">{v}</span>
+                    </div>
+                  ))}
+
+                  {hasRealWeather && (
+                    <div className="text-[10.5px] text-text-3 text-center pt-1 border-t border-line">
+                      5 ans d'historique · Open-Meteo
+                    </div>
+                  )}
+                </div>
+
+                {/* Deselect hint on selected card */}
+                {isSelected && (
+                  <div className="px-[18px] pb-3 text-[11px] text-text-3 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    Cliquez pour désélectionner
                   </div>
                 )}
-
-                {/* Stats */}
-                {[
-                  ["sun", "Ensoleillement", `${d.weather}%`],
-                  ["droplet", "Risque de pluie", `${d.rain}%`],
-                  ["temp", "Température moy.", `${d.temp}°C`],
-                  ["star", "Disponibilité", `${d.availability}%`],
-                  ["flag", "Pont / week-end", d.longWeekend ? "Oui" : "Non"],
-                ].map(([ic, l, v]) => (
-                  <div key={l} className="flex items-center gap-2.5 text-[12.5px]">
-                    <span className="text-text-2 flex-1 flex items-center gap-1.5"><Icon name={ic} size={14} className="text-text-3" />{l}</span>
-                    <span className="font-mono font-semibold whitespace-nowrap">{v}</span>
-                  </div>
+              </Card>
+            );
+          })}
+        </div>
+      ) : (
+        /* ── Table view ─────────────────────────────────────────────────────── */
+        <Card pad={false} className="mb-6 overflow-x-auto">
+          <table className="w-full text-[13px]">
+            <thead>
+              <tr className="border-b border-line">
+                {["Date", "Ville", "Score", "☀", "🌧", "🌡", "Dispo", "Statut", ""].map((h) => (
+                  <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold text-text-3 uppercase tracking-wide whitespace-nowrap first:rounded-tl-xl last:rounded-tr-xl">
+                    {h}
+                  </th>
                 ))}
+              </tr>
+            </thead>
+            <tbody>
+              {state.dateCandidates.map((d) => {
+                const sc = scoreOf(d);
+                const isBest = best !== null && d.id === best.id;
+                const isSelected = d.id === state.selectedDate;
+                const dt = new Date(d.date + "T00:00:00");
 
-                {hasRealWeather && (
-                  <div className="text-[10.5px] text-text-3 text-center pt-1 border-t border-line">
-                    5 ans d'historique · Open-Meteo
-                  </div>
-                )}
-              </div>
+                let rowCls = "border-b border-line last:border-0 cursor-pointer transition-colors hover:bg-hover";
+                if (isSelected) rowCls += " bg-sage-soft";
+                else if (isBest) rowCls += " bg-primary-softer";
 
-              {/* Deselect hint on selected card */}
-              {isSelected && (
-                <div className="px-[18px] pb-3 text-[11px] text-text-3 text-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  Cliquez pour désélectionner
-                </div>
-              )}
-            </Card>
-          );
-        })}
-      </div>
+                return (
+                  <tr key={d.id} className={rowCls}
+                    onClick={() => {
+                      setSelDate(d.date);
+                      if (isSelected) {
+                        update("selectedDate", 0);
+                        toast("Sélection annulée");
+                      } else {
+                        update("selectedDate", d.id);
+                        toast("Date sélectionnée : " + fmt.date(d.date));
+                      }
+                    }}>
+                    {/* Date */}
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="font-semibold">{dt.getDate()} {MONTHS[dt.getMonth()].toLowerCase()} {dt.getFullYear()}</div>
+                      <div className="text-[11px] text-text-3 capitalize">{dt.toLocaleDateString("fr-FR", { weekday: "long" })}</div>
+                    </td>
+                    {/* Ville */}
+                    <td className="px-4 py-3 text-text-2 max-w-[140px]">
+                      <span className="truncate block">{d.city ? d.city.split(",")[0] : "—"}</span>
+                    </td>
+                    {/* Score */}
+                    <td className="px-4 py-3 text-center">
+                      <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full font-mono font-semibold text-[12px] ${sc >= 85 ? "bg-sage-soft text-sage" : sc >= 70 ? "bg-amber-soft text-[var(--gold-ink)]" : "bg-surface-3 text-text-2"}`}>
+                        {sc}
+                      </span>
+                    </td>
+                    {/* Sun */}
+                    <td className="px-4 py-3 text-center font-mono text-text-2">{d.weather}%</td>
+                    {/* Rain */}
+                    <td className={`px-4 py-3 text-center font-mono ${d.rain > 30 ? "text-coral font-semibold" : "text-text-2"}`}>{d.rain}%</td>
+                    {/* Temp */}
+                    <td className="px-4 py-3 text-center font-mono text-text-2">{d.temp}°C</td>
+                    {/* Dispo */}
+                    <td className="px-4 py-3 text-center font-mono text-text-2">{d.availability}%</td>
+                    {/* Statut */}
+                    <td className="px-4 py-3 text-center">
+                      {isSelected ? (
+                        <Badge tone="sage" icon="check">Choisie ✓</Badge>
+                      ) : isBest ? (
+                        <Badge tone="primary" icon="sparkle">Meilleur</Badge>
+                      ) : (
+                        <span className="text-text-3">—</span>
+                      )}
+                    </td>
+                    {/* Delete */}
+                    <td className="px-3 py-3 text-center">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); removeDate(d.id); }}
+                        className="icon-btn w-6 h-6 text-text-3 hover:text-coral transition-colors"
+                        title="Supprimer cette date">
+                        <Icon name="x" size={14} />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </Card>
+      )}
 
       </ScrollReveal>
 

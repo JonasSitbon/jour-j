@@ -857,10 +857,146 @@ function EmailTemplatesModal({ onClose }: { onClose: () => void }) {
 
 // ───────────────────────────────────────────────────────────────────────────
 
+// ─── Comparison view (side-by-side table per category) ───────────────────────
+
+function ComparisonView({ vendors, cats }: { vendors: Vendor[]; cats: { id: string; label: string; icon: string }[] }) {
+  // Group vendors by category, keep only categories with ≥ 2
+  const grouped = useMemo(() => {
+    const g: Record<string, Vendor[]> = {};
+    vendors.forEach((v) => { (g[v.cat] = g[v.cat] || []).push(v); });
+    return Object.entries(g).filter(([, vs]) => vs.length >= 2);
+  }, [vendors]);
+
+  if (grouped.length === 0) {
+    return (
+      <Card>
+        <Empty icon="bars" title="Aucune catégorie à comparer">
+          Ajoutez au moins 2 prestataires dans la même catégorie pour activer la comparaison.
+        </Empty>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-8">
+      {grouped.map(([cid, vs]) => {
+        const catObj = cats.find((c) => c.id === cid);
+        return (
+          <div key={cid}>
+            <div className="sec-title mb-4">
+              <Icon name={catObj?.icon ?? "file" as any} size={17} className="text-text-3" />
+              {catObj?.label ?? cid}
+              <Badge tone="neutral">{vs.length}</Badge>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-[13px]" style={{ border: "1px solid var(--line)", borderRadius: 12 }}>
+                <thead>
+                  <tr>
+                    <th className="px-4 py-3 text-left text-[11px] uppercase tracking-wide font-semibold text-text-3 border-b border-r" style={{ borderColor: "var(--line)", background: "var(--bg)", minWidth: 140 }}>
+                      Critère
+                    </th>
+                    {vs.map((v) => (
+                      <th
+                        key={v.id}
+                        className="px-4 py-3 text-left text-[13px] font-semibold border-b"
+                        style={{
+                          borderColor: "var(--line)",
+                          background: v.status === "signed" ? "var(--sage-soft, #e8f0eb)" : "var(--surface)",
+                          borderLeft: "1px solid var(--line)",
+                          borderTop: v.status === "signed" ? "3px solid var(--sage, #4a7c5f)" : "3px solid transparent",
+                        }}
+                      >
+                        <div className="flex flex-col gap-1">
+                          <span className="truncate max-w-[180px]">{v.name}</span>
+                          {v.status === "signed" && (
+                            <Badge tone="sage" icon="check">Signé</Badge>
+                          )}
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* Prix total */}
+                  <tr>
+                    <td className="px-4 py-3 font-medium text-text-2 border-b border-r text-[12.5px]" style={{ borderColor: "var(--line)", background: "var(--bg)" }}>
+                      Prix total
+                    </td>
+                    {vs.map((v) => (
+                      <td key={v.id} className="px-4 py-3 border-b" style={{ borderColor: "var(--line)", borderLeft: "1px solid var(--line)" }}>
+                        <span className="font-mono font-semibold text-[15px]">{fmt.eur(v.total)}</span>
+                      </td>
+                    ))}
+                  </tr>
+                  {/* Statut */}
+                  <tr>
+                    <td className="px-4 py-3 font-medium text-text-2 border-b border-r text-[12.5px]" style={{ borderColor: "var(--line)", background: "var(--bg)" }}>
+                      Statut
+                    </td>
+                    {vs.map((v) => (
+                      <td key={v.id} className="px-4 py-3 border-b" style={{ borderColor: "var(--line)", borderLeft: "1px solid var(--line)" }}>
+                        <Badge tone={STATUS[v.status].tone} dot>{STATUS[v.status].label}</Badge>
+                      </td>
+                    ))}
+                  </tr>
+                  {/* Score global */}
+                  <tr>
+                    <td className="px-4 py-3 font-medium text-text-2 border-b border-r text-[12.5px]" style={{ borderColor: "var(--line)", background: "var(--bg)" }}>
+                      Score global
+                    </td>
+                    {vs.map((v) => {
+                      const score = avgScore(v.scores as unknown as Record<string, number>);
+                      return (
+                        <td key={v.id} className="px-4 py-3 border-b" style={{ borderColor: "var(--line)", borderLeft: "1px solid var(--line)" }}>
+                          {score > 0 ? <ScoreStarBadge score={score} /> : <span className="text-text-3 text-[12px]">—</span>}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                  {/* Inclus */}
+                  <tr>
+                    <td className="px-4 py-3 font-medium text-text-2 border-b border-r text-[12.5px]" style={{ borderColor: "var(--line)", background: "var(--bg)" }}>
+                      Inclus
+                    </td>
+                    {vs.map((v) => (
+                      <td key={v.id} className="px-4 py-3 border-b text-[12px] text-text-2 leading-relaxed" style={{ borderColor: "var(--line)", borderLeft: "1px solid var(--line)", maxWidth: 240 }}>
+                        {v.included ? <span className="line-clamp-3">{v.included}</span> : <span className="text-text-3">—</span>}
+                      </td>
+                    ))}
+                  </tr>
+                  {/* Contact */}
+                  <tr>
+                    <td className="px-4 py-3 font-medium text-text-2 border-r text-[12.5px]" style={{ borderColor: "var(--line)", background: "var(--bg)" }}>
+                      Contact
+                    </td>
+                    {vs.map((v) => (
+                      <td key={v.id} className="px-4 py-3 text-[12.5px]" style={{ borderColor: "var(--line)", borderLeft: "1px solid var(--line)" }}>
+                        <div className="flex flex-col gap-0.5">
+                          {v.contact && <span className="text-text-2">{v.contact}</span>}
+                          {v.phone && <span className="text-text-3">{v.phone}</span>}
+                          {v.email && <span className="text-text-3 truncate max-w-[200px]">{v.email}</span>}
+                          {!v.contact && !v.phone && !v.email && <span className="text-text-3">—</span>}
+                        </div>
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+
 export default function VendorsPage() {
   const { state, update } = useStore();
   const toast = useToast();
   const [cat, setCat] = useState("all");
+  const [comparisonMode, setComparisonMode] = useState(false);
   const [viewing, setViewing] = useState<Vendor | null>(null);
   const [comparing, setComparing] = useState<{ vendors: Vendor[]; label: string } | null>(null);
   const [showEmailTemplates, setShowEmailTemplates] = useState(false);
@@ -930,6 +1066,12 @@ export default function VendorsPage() {
   // Numeric score derived from letter score for the badge
   const scoreToNum = (score: "A" | "B" | "C"): number => score === "A" ? 4.5 : score === "B" ? 3.5 : 2;
 
+  // Budget summary
+  const signedVendors = state.vendors.filter((v) => v.status === "signed");
+  const pendingVendors = state.vendors.filter((v) => v.status === "pending");
+  const signedTotal = signedVendors.reduce((s, v) => s + (v.total || 0), 0);
+  const pendingTotal = pendingVendors.reduce((s, v) => s + (v.total || 0), 0);
+
   return (
     <div className="mx-auto w-full max-w-[1320px] px-5 md:px-8 py-6 md:py-8 pb-28 md:pb-12">
       <PageHead
@@ -953,21 +1095,61 @@ export default function VendorsPage() {
           { icon: "card", title: "Gérez les paiements", desc: "Une fois signé, créez les échéances de paiement directement depuis la fiche prestataire." },
         ]} />
 
+      {/* Budget summary */}
+      {state.vendors.length > 0 && (
+        <ScrollReveal delay={0}>
+          <div
+            className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3.5 rounded-xl mb-4 text-[13.5px]"
+            style={{ background: "var(--surface)", border: "1px solid var(--line)" }}
+          >
+            <Icon name="wallet" size={16} className="text-text-3 shrink-0" />
+            <span>
+              <span className="font-semibold font-mono">{fmt.eur(signedTotal)}</span>
+              <span className="text-text-2"> engagés </span>
+              <span className="text-text-3">({signedVendors.length} signé{signedVendors.length !== 1 ? "s" : ""})</span>
+            </span>
+            {pendingVendors.length > 0 && (
+              <>
+                <span className="text-text-3 select-none">·</span>
+                <span>
+                  <span className="font-semibold font-mono text-[var(--gold-ink)]">{fmt.eur(pendingTotal)}</span>
+                  <span className="text-text-2"> en cours de négociation </span>
+                  <span className="text-text-3">({pendingVendors.length} en attente)</span>
+                </span>
+              </>
+            )}
+          </div>
+        </ScrollReveal>
+      )}
+
       <ScrollReveal delay={0}>
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
-        <button onClick={() => setCat("all")} className={`inline-flex items-center gap-2 h-[38px] px-3.5 rounded-full border text-[13px] font-medium whitespace-nowrap transition ${cat === "all" ? "bg-text text-bg border-transparent" : "bg-surface border-line text-text-2 hover:border-line-strong"}`}>Tous <span className="text-[11px] opacity-70">{state.vendors.length}</span></button>
-        {cats.map((c) => {
-          const n = state.vendors.filter((v) => v.cat === c.id).length;
-          return (
-            <button key={c.id} onClick={() => setCat(c.id)} className={`inline-flex items-center gap-2 h-[38px] px-3.5 rounded-full border text-[13px] font-medium whitespace-nowrap transition ${cat === c.id ? "bg-text text-bg border-transparent" : "bg-surface border-line text-text-2 hover:border-line-strong"}`}>
-              <Icon name={c.icon} size={15} />{c.label}{n > 0 && <span className="text-[11px] opacity-70">{n}</span>}
-            </button>
-          );
-        })}
+      <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          <button onClick={() => setCat("all")} className={`inline-flex items-center gap-2 h-[38px] px-3.5 rounded-full border text-[13px] font-medium whitespace-nowrap transition ${cat === "all" ? "bg-text text-bg border-transparent" : "bg-surface border-line text-text-2 hover:border-line-strong"}`}>Tous <span className="text-[11px] opacity-70">{state.vendors.length}</span></button>
+          {cats.map((c) => {
+            const n = state.vendors.filter((v) => v.cat === c.id).length;
+            return (
+              <button key={c.id} onClick={() => setCat(c.id)} className={`inline-flex items-center gap-2 h-[38px] px-3.5 rounded-full border text-[13px] font-medium whitespace-nowrap transition ${cat === c.id ? "bg-text text-bg border-transparent" : "bg-surface border-line text-text-2 hover:border-line-strong"}`}>
+                <Icon name={c.icon as any} size={15} />{c.label}{n > 0 && <span className="text-[11px] opacity-70">{n}</span>}
+              </button>
+            );
+          })}
+        </div>
+        <button
+          onClick={() => setComparisonMode((v) => !v)}
+          className={`inline-flex items-center gap-2 h-[38px] px-4 rounded-full border text-[13px] font-medium whitespace-nowrap transition shrink-0 ${comparisonMode ? "bg-text text-bg border-transparent" : "bg-surface border-line text-text-2 hover:border-line-strong"}`}
+        >
+          <Icon name="bars" size={15} />
+          Vue comparaison
+        </button>
       </div>
       </ScrollReveal>
 
-      {Object.keys(grouped).length === 0 ? (
+      {comparisonMode ? (
+        <ScrollReveal delay={0}>
+          <ComparisonView vendors={filtered} cats={cats} />
+        </ScrollReveal>
+      ) : Object.keys(grouped).length === 0 ? (
         <Card>
           {cat !== "all" ? (
             <Empty icon="file" title="Aucun devis dans cette catégorie">
@@ -1068,6 +1250,16 @@ export default function VendorsPage() {
                           <Badge tone="coral" icon="alert">Relancer</Badge>
                         )}
                       </div>
+                      {v.lastContact && (() => {
+                        const days = daysSinceContact(v.lastContact);
+                        const isLate = days > 21 && v.status === "pending";
+                        return (
+                          <div className={`flex items-center gap-1.5 text-[11.5px] mt-0.5 ${isLate ? "text-[var(--gold-ink)]" : "text-text-3"}`}>
+                            {isLate && <Icon name="alert" size={12} className="shrink-0" />}
+                            Contacté il y a {days} jour{days !== 1 ? "s" : ""}
+                          </div>
+                        );
+                      })()}
                     </Card>
                   </div>
                 );

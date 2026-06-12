@@ -7,7 +7,12 @@ import { Icon } from "@/components/icon";
 import { Card, Badge, Button, Select, Donut, Drawer, Field, Input } from "@/components/ui";
 import { PageHead } from "@/components/shell";
 import { PageTutorial } from "@/components/tutorial";
-import type { BudgetPost } from "@/lib/types";
+import type { BudgetPost, Payment } from "@/lib/types";
+import { exportBudgetPDF } from "@/lib/pdf-budget";
+import {
+  PieChart, Pie, Cell, Tooltip as ReTooltip, Legend, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, AreaChart, Area,
+} from "recharts";
 import { createClient } from "@/lib/supabase";
 import { getWeddingId } from "@/lib/db";
 import { seedDefaultBudget } from "@/lib/seed";
@@ -598,6 +603,436 @@ function BudgetOptimizer({ totalBudget }: { totalBudget: number }) {
   );
 }
 
+/* ─── National Averages data ────────────────────────────────────────────── */
+const NATIONAL_AVERAGES: Record<string, { avg: number; min: number; max: number; label: string }> = {
+  "Traiteur":           { avg: 8500,  min: 5000,  max: 15000, label: "Traiteur & boissons" },
+  "Salle":              { avg: 3200,  min: 1500,  max: 8000,  label: "Salle / lieu de réception" },
+  "Photographe":        { avg: 2400,  min: 1500,  max: 4500,  label: "Photographe" },
+  "Fleurs":             { avg: 1800,  min: 800,   max: 3500,  label: "Fleurs & décoration" },
+  "Musique":            { avg: 1500,  min: 800,   max: 3000,  label: "Musique / DJ / groupe" },
+  "Robes & costumes":   { avg: 2200,  min: 800,   max: 5000,  label: "Tenues (robes + costumes)" },
+  "Transport":          { avg: 900,   min: 400,   max: 2000,  label: "Transport & voiture" },
+  "Gâteau":             { avg: 700,   min: 350,   max: 1500,  label: "Pièce montée / gâteau" },
+  "Faire-part":         { avg: 350,   min: 150,   max: 800,   label: "Faire-part & papeterie" },
+  "Vidéaste":           { avg: 1800,  min: 1000,  max: 3500,  label: "Vidéaste" },
+  "Bijoux":             { avg: 1200,  min: 500,   max: 3000,  label: "Bijoux & alliances" },
+};
+
+const NATIONAL_KEYWORDS: Record<string, string[]> = {
+  "Traiteur":           ["traiteur", "restaur", "repas", "cocktail", "buffet", "boisson"],
+  "Salle":              ["salle", "lieu", "réception", "domaine", "château", "chateau"],
+  "Photographe":        ["photo", "photographe"],
+  "Fleurs":             ["fleur", "déco", "deco", "bouquet", "floral"],
+  "Musique":            ["musique", "dj", "groupe", "animation", "orchestre"],
+  "Robes & costumes":   ["robe", "costume", "tenue", "habit", "marié", "marie"],
+  "Transport":          ["transport", "voiture", "limousine", "navette", "véhicule"],
+  "Gâteau":             ["gâteau", "gateau", "pièce montée", "wedding cake", "croquembouche"],
+  "Faire-part":         ["faire-part", "papeterie", "invitation", "menu"],
+  "Vidéaste":           ["vidéo", "video", "vidéaste", "film"],
+  "Bijoux":             ["bijoux", "alliance", "bague"],
+};
+
+const NATIONAL_AVG_TOTAL = Object.values(NATIONAL_AVERAGES).reduce((s, v) => s + v.avg, 0);
+
+/* ─── Comparaison Nationale Tab ─────────────────────────────────────────── */
+function ComparaisonNationaleTab() {
+  const { state } = useStore();
+
+  // For each category, find the user's planned amount by loose keyword match
+  const rows = Object.entries(NATIONAL_AVERAGES).map(([key, data]) => {
+    const keywords = NATIONAL_KEYWORDS[key] ?? [key.toLowerCase()];
+    const userAmt = state.budget
+      .filter((b) => keywords.some((kw) => b.label.toLowerCase().includes(kw)))
+      .reduce((s, b) => s + b.planned, 0);
+
+    const hasMatch = userAmt > 0;
+    // status relative to avg and max
+    const color: "green" | "amber" | "red" | "none" =
+      !hasMatch ? "none" :
+      userAmt <= data.avg ? "green" :
+      userAmt <= data.avg * 1.2 ? "amber" : "red";
+
+    return { key, ...data, userAmt, hasMatch, color };
+  });
+
+  const userTotal = state.budget.reduce((s, b) => s + b.planned, 0);
+
+  // Global comparison color
+  const globalColor: "green" | "amber" | "red" =
+    userTotal <= NATIONAL_AVG_TOTAL ? "green" :
+    userTotal <= NATIONAL_AVG_TOTAL * 1.2 ? "amber" : "red";
+
+  const globalColorClass = {
+    green: "text-sage",
+    amber: "text-[var(--gold-ink)]",
+    red: "text-coral",
+  }[globalColor];
+
+  const globalBgClass = {
+    green: "bg-sage-soft border-sage/20",
+    amber: "bg-amber-soft border-amber/20",
+    red: "bg-coral-soft border-coral/20",
+  }[globalColor];
+
+  const colorClass = {
+    green: "text-sage",
+    amber: "text-[var(--gold-ink)]",
+    red: "text-coral",
+    none: "text-text-3",
+  };
+
+  const markerBg = {
+    green: "bg-sage",
+    amber: "bg-[var(--gold)]",
+    red: "bg-coral",
+    none: "bg-line",
+  };
+
+  // Scale: range bar spans 0..max, on a capped display scale of max * 1.15
+  const getBarPositions = (min: number, avg: number, max: number, userAmt: number) => {
+    const scale = max * 1.15;
+    return {
+      minPct:  Math.min(100, (min  / scale) * 100),
+      maxPct:  Math.min(100, (max  / scale) * 100),
+      avgPct:  Math.min(100, (avg  / scale) * 100),
+      userPct: Math.min(100, (userAmt / scale) * 100),
+    };
+  };
+
+  return (
+    <div className="flex flex-col gap-5">
+
+      {/* ── 1. Header card ──────────────────────────────────────────────── */}
+      <Card className="flex flex-col gap-3">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-[12px] bg-primary-soft flex items-center justify-center shrink-0">
+            <Icon name="bars" size={19} className="text-primary-700" />
+          </div>
+          <div>
+            <div className="font-semibold text-[15px]">Mariage en France — Budget moyen</div>
+            <div className="text-[13.5px] text-text-2 mt-0.5">
+              De <span className="font-semibold text-text-1">15 000 €</span> à <span className="font-semibold text-text-1">20 000 €</span> selon les régions et le nombre d&apos;invités.
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-1">
+          <div className="rounded-[12px] bg-surface-2 px-4 py-3 flex flex-col gap-0.5">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-text-3">Cumul des postes types</div>
+            <div className="font-mono text-[22px] font-semibold tracking-[-.02em]">{NATIONAL_AVG_TOTAL.toLocaleString("fr-FR")} €</div>
+            <div className="text-[11.5px] text-text-3">moyenne nationale</div>
+          </div>
+          <div className={`rounded-[12px] px-4 py-3 flex flex-col gap-0.5 border ${globalBgClass}`}>
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-text-3">Votre budget prévu</div>
+            <div className={`font-mono text-[22px] font-semibold tracking-[-.02em] ${globalColorClass}`}>
+              {userTotal > 0 ? userTotal.toLocaleString("fr-FR") + " €" : "—"}
+            </div>
+            {userTotal > 0 && (
+              <div className={`text-[11.5px] font-medium ${globalColorClass}`}>
+                {userTotal <= NATIONAL_AVG_TOTAL
+                  ? `${Math.round((NATIONAL_AVG_TOTAL - userTotal) / NATIONAL_AVG_TOTAL * 100)} % sous la moyenne`
+                  : `+${Math.round((userTotal - NATIONAL_AVG_TOTAL) / NATIONAL_AVG_TOTAL * 100)} % au-dessus de la moyenne`}
+              </div>
+            )}
+          </div>
+          <div className="rounded-[12px] bg-surface-2 px-4 py-3 flex flex-col gap-0.5 hidden sm:flex">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-text-3">Fourchette courante</div>
+            <div className="font-mono text-[17px] font-semibold tracking-[-.02em] text-text-2">15 000 – 20 000 €</div>
+            <div className="text-[11.5px] text-text-3">régions hors Île-de-France</div>
+          </div>
+        </div>
+      </Card>
+
+      {/* ── 2. Comparison rows ──────────────────────────────────────────── */}
+      <Card pad={false}>
+        <div className="px-5 pt-5 pb-3">
+          <div className="sec-title"><Icon name="pie" size={17} className="text-text-3" />Comparaison poste par poste</div>
+          <p className="text-[12.5px] text-text-3 mt-1">
+            La barre montre la fourchette nationale (min → max). Le trait vertical est la moyenne nationale, le marqueur coloré est votre budget.
+          </p>
+        </div>
+
+        {/* Column headers — desktop */}
+        <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_2.5fr] gap-4 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-text-3 bg-surface-2">
+          <div>Catégorie</div>
+          <div className="text-right">Votre budget</div>
+          <div className="text-right">Moy. nationale</div>
+          <div className="pl-1">Fourchette nationale</div>
+        </div>
+
+        <div>
+          {rows.map((row) => {
+            const { minPct, maxPct, avgPct, userPct } = getBarPositions(row.min, row.avg, row.max, row.userAmt);
+
+            return (
+              <div
+                key={row.key}
+                className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_2.5fr] gap-x-4 gap-y-2 items-center px-5 py-4 border-b border-line last:border-0 hover:bg-hover transition-colors"
+              >
+                {/* Category label */}
+                <div>
+                  <div className="font-medium text-[13.5px]">{row.label}</div>
+                  <div className="text-[11.5px] text-text-3">
+                    {row.min.toLocaleString("fr-FR")} € – {row.max.toLocaleString("fr-FR")} €
+                  </div>
+                </div>
+
+                {/* User amount */}
+                <div className="text-right">
+                  {row.hasMatch ? (
+                    <span className={`font-mono text-[13.5px] font-semibold ${colorClass[row.color]}`}>
+                      {row.userAmt.toLocaleString("fr-FR")} €
+                    </span>
+                  ) : (
+                    <span className="text-[12.5px] text-text-3 italic">Non renseigné</span>
+                  )}
+                </div>
+
+                {/* National avg */}
+                <div className="hidden md:block text-right">
+                  <span className="font-mono text-[13px] text-text-2">{row.avg.toLocaleString("fr-FR")} €</span>
+                </div>
+
+                {/* Range bar */}
+                <div className="md:pl-1">
+                  <div className="relative h-4 flex items-center">
+                    {/* Full-width light gray base */}
+                    <div className="absolute inset-0 rounded-full bg-surface-2" />
+
+                    {/* Colored range segment: min% to max% */}
+                    <div
+                      className="absolute h-full rounded-full bg-line/60"
+                      style={{ left: `${minPct}%`, width: `${maxPct - minPct}%` }}
+                    />
+
+                    {/* Average marker — dark vertical line */}
+                    <div
+                      className="absolute top-0 bottom-0 w-[2px] rounded-full bg-text-2 z-10"
+                      style={{ left: `${avgPct}%`, marginLeft: "-1px" }}
+                      title={`Moy. : ${row.avg.toLocaleString("fr-FR")} €`}
+                    />
+
+                    {/* User marker — colored dot */}
+                    {row.hasMatch && (
+                      <div
+                        className={`absolute w-3 h-3 rounded-full border-2 border-surface z-20 shadow-sm ${markerBg[row.color]}`}
+                        style={{ left: `${userPct}%`, marginLeft: "-6px" }}
+                        title={`Votre budget : ${row.userAmt.toLocaleString("fr-FR")} €`}
+                      />
+                    )}
+                  </div>
+
+                  {/* Labels under bar */}
+                  <div className="flex justify-between mt-1">
+                    <span className="text-[10px] text-text-3">{row.min.toLocaleString("fr-FR")} €</span>
+                    <span className="text-[10px] text-text-3">moy. {row.avg.toLocaleString("fr-FR")} €</span>
+                    <span className="text-[10px] text-text-3">{row.max.toLocaleString("fr-FR")} €</span>
+                  </div>
+                </div>
+
+                {/* Mobile: avg + status badge */}
+                <div className="flex items-center justify-between md:hidden text-[12px] text-text-3 col-span-1">
+                  <span>Moy. nationale : <span className="font-mono font-medium text-text-2">{row.avg.toLocaleString("fr-FR")} €</span></span>
+                  {row.hasMatch && (
+                    <span className={`text-[11px] font-semibold ${colorClass[row.color]}`}>
+                      {row.color === "green" ? "Sous la moy." : row.color === "amber" ? "Dans la moy." : "Au-dessus"}
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Footer: source note */}
+        <div className="px-5 py-3 bg-surface-2 flex items-start gap-1.5 rounded-b-card">
+          <Icon name="info" size={13} className="text-text-3 shrink-0 mt-0.5" />
+          <p className="text-[11.5px] text-text-3">
+            Source : IFOP / études de marché 2023-2024. À titre indicatif.
+          </p>
+        </div>
+      </Card>
+
+      {/* ── 3. Global comparison ────────────────────────────────────────── */}
+      <Card className={`border ${globalBgClass}`}>
+        <div className="sec-title mb-3"><Icon name="wallet" size={17} className="text-text-3" />Comparaison globale</div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+          <div className="flex flex-col gap-0.5">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-text-3">Votre budget total prévu</div>
+            <div className={`font-mono text-[28px] font-semibold tracking-[-.02em] ${globalColorClass}`}>
+              {userTotal > 0 ? userTotal.toLocaleString("fr-FR") + " €" : "—"}
+            </div>
+          </div>
+          <div className="hidden sm:flex items-center justify-center text-text-3 text-[22px] font-thin">vs</div>
+          <div className="flex flex-col gap-0.5">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-text-3">Cumul des moyennes nationales</div>
+            <div className="font-mono text-[28px] font-semibold tracking-[-.02em] text-text-2">
+              {NATIONAL_AVG_TOTAL.toLocaleString("fr-FR")} €
+            </div>
+          </div>
+        </div>
+        {userTotal > 0 && (
+          <div className={`mt-4 rounded-[12px] border px-4 py-3 flex items-start gap-2.5 ${globalBgClass}`}>
+            <Icon
+              name={globalColor === "green" ? "check" : globalColor === "amber" ? "info" : "alert"}
+              size={15}
+              className={`${globalColorClass} mt-0.5 shrink-0`}
+            />
+            <p className={`text-[13px] leading-relaxed ${globalColorClass}`}>
+              {globalColor === "green" &&
+                `Votre budget (${userTotal.toLocaleString("fr-FR")} €) est inférieur à la somme des moyennes nationales. Vous êtes dans une enveloppe maîtrisée.`}
+              {globalColor === "amber" &&
+                `Votre budget (${userTotal.toLocaleString("fr-FR")} €) est légèrement supérieur à la somme des moyennes nationales (+${Math.round((userTotal - NATIONAL_AVG_TOTAL) / NATIONAL_AVG_TOTAL * 100)} %). Restez vigilant.`}
+              {globalColor === "red" &&
+                `Votre budget (${userTotal.toLocaleString("fr-FR")} €) dépasse nettement la somme des moyennes nationales (+${Math.round((userTotal - NATIONAL_AVG_TOTAL) / NATIONAL_AVG_TOTAL * 100)} %). Identifiez les postes à rééquilibrer.`}
+            </p>
+          </div>
+        )}
+      </Card>
+
+    </div>
+  );
+}
+
+/* ─── Charts Tab ───────────────────────────────────────────────────────────── */
+const CHART_COLORS = ["#C96E2C", "#7E9A63", "#B07A2C", "#5C8AC9", "#C05050", "#8B7FB5", "#D4956E", "#6DB5A0"];
+const MONTHS_FR = ["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
+
+function ChartsTab({ budget, payments, budgetTotal }: { budget: BudgetPost[]; payments: Payment[]; budgetTotal: number }) {
+  // ─── Données pie chart : répartition du budget par catégorie ───
+  const pieData = budget.reduce<{ name: string; planned: number; spent: number }[]>((acc, b) => {
+    const cat = acc.find((x) => x.name === b.cat) ?? (() => { const n = { name: b.cat, planned: 0, spent: 0 }; acc.push(n); return n; })();
+    cat.planned += b.planned;
+    cat.spent += b.spent;
+    return acc;
+  }, []).filter((d) => d.planned > 0 || d.spent > 0);
+
+  // ─── Bar chart : paiements mensuels (paid vs upcoming) ─────────
+  const payByMonth: Record<string, { month: string; payé: number; àVenir: number }> = {};
+  payments.forEach((p) => {
+    if (!p.due) return;
+    const d = new Date(p.due + "T00:00:00");
+    const k = `${d.getFullYear()}-${String(d.getMonth()).padStart(2,"0")}`;
+    if (!payByMonth[k]) payByMonth[k] = { month: MONTHS_FR[d.getMonth()] + " " + d.getFullYear(), payé: 0, àVenir: 0 };
+    if (p.status === "paid") payByMonth[k].payé += p.amount;
+    else payByMonth[k].àVenir += p.amount;
+  });
+  const barData = Object.values(payByMonth).sort((a, b) => a.month.localeCompare(b.month));
+
+  // ─── Area chart : dépenses cumulées vs budget cumulé ──────────
+  const sortedPayments = [...payments].filter((p) => p.status === "paid" && p.paidDate).sort((a, b) => (a.paidDate ?? "").localeCompare(b.paidDate ?? ""));
+  let cum = 0;
+  const areaData = sortedPayments.map((p) => {
+    cum += p.amount;
+    return {
+      date: new Date((p.paidDate ?? p.due) + "T00:00:00").toLocaleDateString("fr-FR", { month: "short", year: "2-digit" }),
+      dépenses: Math.round(cum),
+      budget: budgetTotal,
+    };
+  });
+  if (areaData.length > 0) areaData.unshift({ date: "Début", dépenses: 0, budget: budgetTotal });
+
+  const totalPlanned = budget.reduce((s, b) => s + b.planned, 0);
+  const totalSpent = budget.reduce((s, b) => s + b.spent, 0);
+  const pctSpent = totalPlanned > 0 ? Math.round((totalSpent / totalPlanned) * 100) : 0;
+  const overBudgetCount = budget.filter((b) => b.spent > b.planned).length;
+
+  const fmtEur = (v: number) => v.toLocaleString("fr-FR") + " €";
+
+  if (budget.length === 0 && payments.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center gap-4">
+        <div className="w-14 h-14 bg-primary-soft rounded-2xl flex items-center justify-center"><Icon name="wallet" size={26} className="text-primary-700" /></div>
+        <div className="text-[15px] font-semibold">Aucune donnée à afficher</div>
+        <p className="text-[13.5px] text-text-2 max-w-xs">Ajoutez des postes budgétaires et des paiements pour voir vos graphiques.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* ── Stat pills ── */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        {[
+          { label: "Budget total", value: fmtEur(budgetTotal), color: "text-text", extra: "" },
+          { label: "Prévu", value: fmtEur(totalPlanned), color: "text-primary-700", extra: "" },
+          { label: "Dépensé", value: fmtEur(totalSpent), color: "text-sage", extra: "" },
+          { label: "Avancement", value: `${pctSpent}%`, color: pctSpent > 100 ? "text-coral" : "text-text", extra: "" },
+          { label: "Postes dépassés", value: String(overBudgetCount), color: overBudgetCount > 0 ? "text-coral" : "text-sage", extra: overBudgetCount > 0 ? "bg-coral-soft border-coral/20" : "" },
+        ].map((s) => (
+          <div key={s.label} className={`bg-surface border border-line rounded-xl px-4 py-3.5 ${s.extra}`}>
+            <div className={`font-mono text-[18px] font-semibold ${s.color}`}>{s.value}</div>
+            <div className="text-[11.5px] text-text-3 mt-0.5">{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* ── Pie chart ── */}
+        {pieData.length > 0 && (
+          <Card>
+            <div className="sec-title mb-4"><Icon name="wallet" size={15} className="text-primary" />Répartition par catégorie</div>
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie data={pieData} dataKey="planned" nameKey="name" cx="50%" cy="50%" outerRadius={80} innerRadius={42}>
+                  {pieData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                </Pie>
+                <ReTooltip formatter={(v) => fmtEur(v as number)} />
+                <Legend iconSize={10} formatter={(v) => <span className="text-[12px]">{v}</span>} />
+              </PieChart>
+            </ResponsiveContainer>
+          </Card>
+        )}
+
+        {/* ── Bar chart paiements mensuel ── */}
+        {barData.length > 0 && (
+          <Card>
+            <div className="sec-title mb-4"><Icon name="card" size={15} className="text-primary" />Paiements par mois</div>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={barData} margin={{ top: 4, right: 8, bottom: 0, left: -10 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
+                <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => v >= 1000 ? Math.round(v / 1000) + "k" : v} />
+                <ReTooltip formatter={(v) => fmtEur(v as number)} />
+                <Bar dataKey="payé" fill="#7E9A63" radius={[3,3,0,0]} name="Payé" />
+                <Bar dataKey="àVenir" fill="#C96E2C" radius={[3,3,0,0]} name="À venir" />
+                <Legend iconSize={10} formatter={(v) => <span className="text-[12px]">{v}</span>} />
+              </BarChart>
+            </ResponsiveContainer>
+          </Card>
+        )}
+      </div>
+
+      {/* ── Area chart dépenses cumulées ── */}
+      {areaData.length > 1 && (
+        <Card>
+          <div className="sec-title mb-4"><Icon name="chart" size={15} className="text-primary" />Évolution des dépenses cumulées</div>
+          <ResponsiveContainer width="100%" height={220}>
+            <AreaChart data={areaData} margin={{ top: 4, right: 8, bottom: 0, left: -10 }}>
+              <defs>
+                <linearGradient id="gradDep" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#7E9A63" stopOpacity={0.25} />
+                  <stop offset="95%" stopColor="#7E9A63" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="gradBudget" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#C96E2C" stopOpacity={0.12} />
+                  <stop offset="95%" stopColor="#C96E2C" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
+              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => v >= 1000 ? Math.round(v / 1000) + "k€" : v + "€"} />
+              <ReTooltip formatter={(v) => fmtEur(v as number)} />
+              <Area type="monotone" dataKey="budget" stroke="#C96E2C" strokeDasharray="5 3" strokeWidth={1.5} fill="url(#gradBudget)" name="Budget" />
+              <Area type="monotone" dataKey="dépenses" stroke="#7E9A63" strokeWidth={2} fill="url(#gradDep)" name="Dépenses cumulées" />
+              <Legend iconSize={10} formatter={(v) => <span className="text-[12px]">{v}</span>} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </Card>
+      )}
+    </div>
+  );
+}
+
 /* ─────────────────────────────────────────────────────────────────────────── */
 export default function BudgetPage() {
   const { state, update, reloadAll } = useStore();
@@ -622,7 +1057,7 @@ export default function BudgetPage() {
     return acc;
   }, [state.budget, ga, gb]);
 
-  const [activeTab, setActiveTab] = useState<"overview" | "benchmark">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "benchmark" | "nationale" | "charts">("overview");
   const [seeding, setSeeding] = useState(false);
   const setRule = (id: number, rule: any) => update("budget", (l) => l.map((b) => b.id === id ? { ...b, rule, custom: rule === "custom" ? (b.custom || { A: 50, B: 50 }) : b.custom } : b));
   const deletePost = (id: number) => { update("budget", (l) => l.filter((b) => b.id !== id)); toast("Poste supprimé"); };
@@ -669,7 +1104,7 @@ export default function BudgetPage() {
     <div className="mx-auto w-full max-w-[1320px] px-5 md:px-8 py-6 md:py-8 pb-28 md:pb-12">
       <PageHead title="Budget" sub={`${fmt.eur(spent)} engagés sur ${fmt.eur(state.budgetTotal)} · ${state.budgetTotal ? Math.round(spent / state.budgetTotal * 100) : 0}%`}
         actions={<>
-          <Button variant="secondary" icon="download" onClick={() => toast("Export PDF — fonctionnalité à venir")}>Exporter PDF</Button>
+          <Button variant="secondary" icon="download" onClick={() => exportBudgetPDF(state.budget, state.payments, state.budgetTotal, state.wedding.partnerA, state.wedding.partnerB)}>Exporter PDF</Button>
           <Button variant="primary" icon="plus" onClick={() => setAddingPost(true)}>Nouveau poste</Button>
         </>} />
 
@@ -680,12 +1115,25 @@ export default function BudgetPage() {
           { icon: "bars", title: "Suivez l'avancement", desc: "Le montant engagé se met à jour automatiquement depuis vos devis signés et paiements effectués." },
         ]} />
 
+      {/* ── Global overspend banner ────────────────────────────────────── */}
+      {spent > planned && planned > 0 && (
+        <div className="flex items-center gap-3 rounded-[14px] border border-coral/20 bg-coral-soft px-4 py-3 mb-5 mt-2">
+          <Icon name="alert" size={17} className="text-coral shrink-0" />
+          <p className="text-[13.5px] text-coral font-medium leading-snug">
+            <span className="font-semibold">Budget dépassé de {fmt.eur(spent - planned)}</span>
+            {" "}— Vous avez dépensé {fmt.eur(spent)} pour un budget prévu de {fmt.eur(planned)}
+          </p>
+        </div>
+      )}
+
       {/* ── Tab navigation ─────────────────────────────────────────────── */}
       <ScrollReveal>
       <div className="flex gap-1 mb-5 bg-surface-2 p-1 rounded-[14px] w-fit">
         {([
-          { id: "overview" as const, label: "Aperçu", icon: "pie" },
-          { id: "benchmark" as const, label: "Benchmark", icon: "bars" },
+          { id: "overview" as const,  label: "Aperçu",               icon: "pie" },
+          { id: "benchmark" as const, label: "Benchmark",            icon: "bars" },
+          { id: "nationale" as const, label: "Comparaison nationale", icon: "star" },
+          { id: "charts" as const,    label: "Graphiques",            icon: "chart" },
         ]).map((tab) => (
           <button
             key={tab.id}
@@ -705,6 +1153,20 @@ export default function BudgetPage() {
 
       {/* ── Benchmark tab ──────────────────────────────────────────────── */}
       {activeTab === "benchmark" && <BenchmarkTab />}
+
+      {/* ── Comparaison nationale tab ───────────────────────────────────── */}
+      {activeTab === "nationale" && (
+        <ScrollReveal delay={0.05}>
+          <ComparaisonNationaleTab />
+        </ScrollReveal>
+      )}
+
+      {/* ── Charts tab ─────────────────────────────────────────────────── */}
+      {activeTab === "charts" && (
+        <ScrollReveal delay={0.05}>
+          <ChartsTab budget={state.budget} payments={state.payments} budgetTotal={state.budgetTotal} />
+        </ScrollReveal>
+      )}
 
       {/* ── Overview tab ───────────────────────────────────────────────── */}
       {activeTab === "overview" && state.budget.length === 0 && (
@@ -824,8 +1286,20 @@ export default function BudgetPage() {
                 </div>
                 <div className="flex items-center gap-2.5">
                   <span className="w-8 h-8 rounded-[9px] flex items-center justify-center shrink-0 bg-primary-soft text-primary-700"><Icon name={cat?.icon || "dots"} size={16} /></span>
-                  <div className="min-w-0"><div className="font-medium text-[13.5px] truncate">{b.label}</div>
-                    <div className="progress-track h-1.5 mt-1.5"><span className="block h-full rounded-full" style={{ width: `${pct}%`, background: over ? "var(--coral)" : "var(--sage)" }} /></div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <div className="font-medium text-[13.5px] truncate">{b.label}</div>
+                      {over && <span className="inline-flex items-center rounded-full bg-coral-soft border border-coral/20 px-2 py-0.5 text-[11px] font-semibold text-coral leading-none">Dépassé</span>}
+                    </div>
+                    {over && (
+                      <div className="text-[11.5px] font-semibold text-coral">+{fmt.eur(b.spent - b.planned)} au-delà du prévu</div>
+                    )}
+                    <div className="progress-track h-1.5 mt-1.5">
+                      <span className="block h-full rounded-full" style={{
+                        width: `${pct}%`,
+                        background: pct >= 100 ? "var(--coral)" : pct >= 70 ? "var(--amber, var(--gold))" : "var(--sage)",
+                      }} />
+                    </div>
                   </div>
                 </div>
                 <div className="font-mono text-[13.5px] tabular-nums">{fmt.eur(b.planned)}</div>

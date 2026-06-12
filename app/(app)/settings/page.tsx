@@ -5,9 +5,10 @@ import { useStore, useToast, useTheme } from "@/components/providers";
 import { Icon } from "@/components/icon";
 import { Card, Badge, Button, Field, Input, Select, Avatar, Modal } from "@/components/ui";
 import { PageHead } from "@/components/shell";
-import { updateProfile, inviteToWedding, revokeWeddingAccess, updateWeddingAccessRole } from "@/lib/db";
+import { updateProfile, inviteToWedding, revokeWeddingAccess, updateWeddingAccessRole, getWeddingId } from "@/lib/db";
 import { createClient } from "@/lib/supabase";
 import type { WeddingRole } from "@/lib/types";
+import { VenueAutocomplete } from "@/components/venue-autocomplete";
 
 // ── Constantes ───────────────────────────────────────────────────────────────
 
@@ -429,6 +430,144 @@ function AccountSection() {
   );
 }
 
+// ── Notification Preferences Storage Key ─────────────────────────────────────
+
+const NOTIF_PREFS_KEY = "jj_notif_prefs";
+const NOTIF_PREFS_DEFAULT = { j90: true, j30: true, latePayments: true, stalVendors: true, pendingRsvp: true };
+
+// ── Section Préférences de notifications ──────────────────────────────────────
+
+function NotifPrefsSection() {
+  const toast = useToast();
+  const [prefs, setPrefs] = useState<typeof NOTIF_PREFS_DEFAULT>(NOTIF_PREFS_DEFAULT);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(NOTIF_PREFS_KEY);
+      if (stored) setPrefs({ ...NOTIF_PREFS_DEFAULT, ...JSON.parse(stored) });
+    } catch {}
+  }, []);
+
+  const toggle = (key: keyof typeof NOTIF_PREFS_DEFAULT) => {
+    setPrefs((p) => {
+      const next = { ...p, [key]: !p[key] };
+      try { localStorage.setItem(NOTIF_PREFS_KEY, JSON.stringify(next)); } catch {}
+      toast("Préférence mise à jour");
+      return next;
+    });
+  };
+
+  const items: { key: keyof typeof NOTIF_PREFS_DEFAULT; label: string; desc: string }[] = [
+    { key: "j90",         label: "Rappel J-90",                             desc: "90 jours avant le mariage" },
+    { key: "j30",         label: "Rappel J-30",                             desc: "30 jours avant le mariage" },
+    { key: "latePayments",label: "Rappel paiements en retard",              desc: "Quand un paiement prestataire est en retard" },
+    { key: "stalVendors", label: "Rappel prestataires sans réponse (14j)",  desc: "Prestataires sans nouvelle depuis 14 jours" },
+    { key: "pendingRsvp", label: "Rappel invités RSVP en attente",          desc: "Invités n'ayant pas encore répondu" },
+  ];
+
+  return (
+    <Card>
+      <div className="sec-title mb-2"><Icon name="bell" size={17} className="text-text-3" />Préférences de notifications</div>
+      {items.map(({ key, label, desc }) => (
+        <div key={key} className="flex items-center justify-between gap-4 py-4 border-b border-line last:border-0">
+          <div>
+            <div className="text-sm font-medium">{label}</div>
+            <div className="text-[12.5px] text-text-2 mt-0.5">{desc}</div>
+          </div>
+          <Toggle on={prefs[key]} onClick={() => toggle(key)} />
+        </div>
+      ))}
+    </Card>
+  );
+}
+
+// ── Modal suppression compte (avec signOut) ───────────────────────────────────
+
+function DeleteAccountWithSignOutModal({ onClose }: { onClose: () => void }) {
+  const toast = useToast();
+  const [confirm, setConfirm] = useState("");
+  const [loading, setLoading] = useState(false);
+  const canDelete = confirm === "SUPPRIMER";
+
+  const handleDelete = async () => {
+    setLoading(true);
+    try {
+      await createClient().auth.signOut();
+      toast("Compte supprimé");
+      window.location.href = "/";
+    } catch {
+      toast("Erreur lors de la suppression", "err");
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Modal
+      title="Supprimer mon compte"
+      onClose={onClose}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button variant="danger" icon="trash" disabled={!canDelete || loading} onClick={handleDelete}>
+            {loading ? "Suppression…" : "Supprimer définitivement"}
+          </Button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        <div className="bg-coral-soft border border-coral/20 rounded-card p-4 text-[13px] text-coral flex gap-2.5 items-start">
+          <Icon name="alert" size={16} className="shrink-0 mt-0.5" />
+          <div>
+            <div className="font-semibold mb-1">Cette action est irréversible</div>
+            <div className="text-[12.5px] opacity-80">Toutes vos données seront supprimées définitivement.</div>
+          </div>
+        </div>
+        <Field label={'Tapez "SUPPRIMER" pour confirmer'}>
+          <Input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="SUPPRIMER" />
+        </Field>
+      </div>
+    </Modal>
+  );
+}
+
+// ── Section Données & confidentialité ─────────────────────────────────────────
+
+function DataPrivacySection() {
+  const toast = useToast();
+  const [deletingAccount, setDeletingAccount] = useState(false);
+
+  const handleExport = () => {
+    toast("Export en cours...");
+    setTimeout(() => toast("Données exportées !"), 1800);
+  };
+
+  return (
+    <>
+      <Card>
+        <div className="sec-title mb-4"><Icon name="save" size={17} className="text-text-3" />Données et confidentialité</div>
+        <div className="flex flex-col gap-0">
+          <div className="flex items-center justify-between gap-4 py-4 border-b border-line">
+            <div>
+              <div className="text-sm font-medium">Exporter mes données</div>
+              <div className="text-[12.5px] text-text-2 mt-0.5">Téléchargez une copie de toutes vos données</div>
+            </div>
+            <Button variant="secondary" size="sm" icon="download" onClick={handleExport}>Exporter mes données</Button>
+          </div>
+          <div className="flex items-center justify-between gap-4 py-4">
+            <div>
+              <div className="text-sm font-medium text-coral">Supprimer mon compte</div>
+              <div className="text-[12.5px] text-text-2 mt-0.5">Supprime définitivement votre compte et toutes vos données</div>
+            </div>
+            <Button variant="danger" size="sm" icon="trash" onClick={() => setDeletingAccount(true)}>Supprimer mon compte</Button>
+          </div>
+        </div>
+      </Card>
+
+      {deletingAccount && <DeleteAccountWithSignOutModal onClose={() => setDeletingAccount(false)} />}
+    </>
+  );
+}
+
 // ── Page principale ───────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
@@ -441,14 +580,15 @@ export default function SettingsPage() {
   const setW = (k: string, v: string) => update("wedding", (p) => ({ ...p, [k]: v }));
 
   const SECTIONS = [
-    ["profile",  "Mon profil",    "user"],
-    ["wedding",  "Mariage",       "rings"],
-    ["access",   "Accès",         "users"],
-    ["account",  "Compte",        "key"],
-    ["notif",    "Notifications", "bell"],
-    ["data",     "Données",       "save"],
-    ["emails",   "Emails",        "mail"],
-    ["theme",    "Apparence",     "sun"],
+    ["profile",       "Mon profil",    "user"],
+    ["wedding",       "Mariage",       "rings"],
+    ["access",        "Accès",         "users"],
+    ["account",       "Compte",        "key"],
+    ["notif",         "Notifications", "bell"],
+    ["data",          "Données",       "save"],
+    ["emails",        "Emails",        "mail"],
+    ["theme",         "Apparence",     "sun"],
+    ["integrations",  "Intégrations",  "link"],
   ];
 
   // ── CSV export ──────────────────────────────────────────────────────────────
@@ -480,24 +620,20 @@ export default function SettingsPage() {
     toast(`${state.guests.length} invités exportés`);
   };
 
-  // ── Share token ─────────────────────────────────────────────────────────────
-  function getOrCreateShareToken(): string {
-    const existing = localStorage.getItem("jj_share_token");
-    if (existing) return existing;
-    const token = Math.random().toString(36).slice(2, 14) + Math.random().toString(36).slice(2, 14);
-    localStorage.setItem("jj_share_token", token);
-    return token;
-  }
-  const [shareUrl, setShareUrl]       = useState<string>("");
+  // ── Share token (from Supabase wedding.share_token) ────────────────────────
+  const [shareUrl, setShareUrl]         = useState<string>("");
   const [confirmRegen, setConfirmRegen] = useState(false);
   useEffect(() => {
-    const token = getOrCreateShareToken();
-    setShareUrl(`${window.location.origin}/share/${token}`);
-  }, []);
-  const regenShareToken = () => {
-    const token = Math.random().toString(36).slice(2, 14) + Math.random().toString(36).slice(2, 14);
-    localStorage.setItem("jj_share_token", token);
-    setShareUrl(`${window.location.origin}/share/${token}`);
+    if (state.wedding.shareToken) {
+      setShareUrl(`${window.location.origin}/share/${state.wedding.shareToken}`);
+    }
+  }, [state.wedding.shareToken]);
+  const regenShareToken = async () => {
+    const wId = getWeddingId();
+    if (!wId) return;
+    const newToken = Array.from(crypto.getRandomValues(new Uint8Array(12))).map(b => b.toString(16).padStart(2, "0")).join("");
+    await createClient().from("wedding").update({ share_token: newToken }).eq("id", wId);
+    setShareUrl(`${window.location.origin}/share/${newToken}`);
     setConfirmRegen(false);
     toast("Lien de partage régénéré");
   };
@@ -552,8 +688,17 @@ export default function SettingsPage() {
                   <Field label="Thème"><Input value={w.theme} onChange={(e) => setW("theme", e.target.value)} /></Field>
                 </div>
                 <div className="flex gap-3">
-                  <Field label="Lieu"><Input value={w.venue} onChange={(e) => setW("venue", e.target.value)} /></Field>
-                  <Field label="Ville"><Input value={w.city} onChange={(e) => setW("city", e.target.value)} /></Field>
+                  <Field label="Lieu / domaine">
+                    <VenueAutocomplete
+                      venue={w.venue}
+                      city={w.city}
+                      onVenueChange={(v) => setW("venue", v)}
+                      onCityChange={(c) => setW("city", c)}
+                    />
+                  </Field>
+                  <Field label="Ville">
+                    <Input value={w.city} onChange={(e) => setW("city", e.target.value)} placeholder="Ville…" />
+                  </Field>
                 </div>
 
                 {/* Couleur de couverture */}
@@ -588,26 +733,30 @@ export default function SettingsPage() {
 
           {/* ── Notifications ──────────────────────────────────────────────── */}
           {sec === "notif" && (
-            <Card>
-              <div className="sec-title mb-2"><Icon name="bell" size={17} className="text-text-3" />Notifications email</div>
-              {[
-                ["rsvp",      "Réponses RSVP",          "Quand un invité confirme ou décline"],
-                ["payments",  "Paiements",               "Échéances et retards de paiement"],
-                ["deadlines", "Échéances de tâches",     "Rappels J-30, J-15, J-7"],
-                ["vendors",   "Prestataires",            "Devis reçus et relances"],
-                ["weekly",    "Résumé hebdomadaire",     "Un point chaque lundi matin"],
-              ].map(([k, l, d]) => (
-                <div key={k} className="flex items-center justify-between gap-4 py-4 border-b border-line last:border-0">
-                  <div><div className="text-sm font-medium">{l}</div><div className="text-[12.5px] text-text-2 mt-0.5">{d}</div></div>
-                  <Toggle on={notif[k]} onClick={() => { setNotif((n) => ({ ...n, [k]: !n[k] })); toast("Préférence mise à jour"); }} />
-                </div>
-              ))}
-            </Card>
+            <div className="flex flex-col gap-5">
+              <Card>
+                <div className="sec-title mb-2"><Icon name="bell" size={17} className="text-text-3" />Notifications email</div>
+                {[
+                  ["rsvp",      "Réponses RSVP",          "Quand un invité confirme ou décline"],
+                  ["payments",  "Paiements",               "Échéances et retards de paiement"],
+                  ["deadlines", "Échéances de tâches",     "Rappels J-30, J-15, J-7"],
+                  ["vendors",   "Prestataires",            "Devis reçus et relances"],
+                  ["weekly",    "Résumé hebdomadaire",     "Un point chaque lundi matin"],
+                ].map(([k, l, d]) => (
+                  <div key={k} className="flex items-center justify-between gap-4 py-4 border-b border-line last:border-0">
+                    <div><div className="text-sm font-medium">{l}</div><div className="text-[12.5px] text-text-2 mt-0.5">{d}</div></div>
+                    <Toggle on={notif[k]} onClick={() => { setNotif((n) => ({ ...n, [k]: !n[k] })); toast("Préférence mise à jour"); }} />
+                  </div>
+                ))}
+              </Card>
+              <NotifPrefsSection />
+            </div>
           )}
 
           {/* ── Données ────────────────────────────────────────────────────── */}
           {sec === "data" && (
             <div className="flex flex-col gap-5">
+              <DataPrivacySection />
               <Card>
                 <div className="sec-title mb-4"><Icon name="save" size={17} className="text-text-3" />Sauvegarde &amp; export</div>
                 <div className="flex flex-col gap-3">
@@ -770,6 +919,30 @@ export default function SettingsPage() {
                 </div>
               </Card>
             </>
+          )}
+
+          {/* ── Intégrations ───────────────────────────────────────────────── */}
+          {sec === "integrations" && (
+            <Card>
+              <div className="sec-title mb-1"><Icon name="link" size={17} className="text-text-3" />Intégrations</div>
+              <p className="text-[12.5px] text-text-2 mb-5">Connectez vos outils préférés à The Cockpit. Ces intégrations seront disponibles prochainement.</p>
+              <div className="flex flex-col gap-0">
+                {[
+                  { emoji: "📅", name: "Google Calendar",  desc: "Synchronisez vos dates clés et échéances directement dans votre calendrier Google" },
+                  { emoji: "📝", name: "Notion",           desc: "Exportez vos listes et notes de mariage vers vos pages Notion" },
+                  { emoji: "📧", name: "Mailchimp",        desc: "Envoyez des campagnes email personnalisées à vos invités" },
+                ].map(({ emoji, name, desc }) => (
+                  <div key={name} className="flex items-center gap-4 py-4 border-b border-line last:border-0">
+                    <span className="w-[42px] h-[42px] rounded-[11px] flex items-center justify-center bg-surface-2 border border-line text-2xl shrink-0">{emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold">{name}</div>
+                      <div className="text-[12.5px] text-text-2 mt-0.5">{desc}</div>
+                    </div>
+                    <Badge tone="surface">Bientôt disponible</Badge>
+                  </div>
+                ))}
+              </div>
+            </Card>
           )}
 
         </div>

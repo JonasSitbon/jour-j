@@ -1,5 +1,5 @@
 import { createClient } from "./supabase";
-import type { AppState, Guest, Vendor, Payment, DateCandidate, Profile, WeddingSummary, WeddingRole, AccountType, JournalEntry } from "./types";
+import type { AppState, Guest, Vendor, Payment, DateCandidate, Profile, WeddingSummary, WeddingRole, AccountType, JournalEntry, Gift, CeremonyEvent, Song, KeyContact } from "./types";
 
 // ID du mariage actif (persisté en localStorage côté client)
 let currentWeddingId: number | null = null;
@@ -188,7 +188,7 @@ export async function loadAll(weddingId?: number): Promise<Partial<AppState> | n
   const [myWeddings, profile] = await Promise.all([loadMyWeddings(), loadProfile()]);
 
   return {
-    wedding:      { partnerA: w.partner_a, partnerB: w.partner_b, date: w.date, venue: w.venue, city: w.city, theme: w.theme, guestTarget: w.guest_target, selectedStyle: w.selected_style ?? undefined, customStyleNote: w.custom_style_note ?? undefined },
+    wedding:      { partnerA: w.partner_a, partnerB: w.partner_b, date: w.date, venue: w.venue, city: w.city, theme: w.theme, guestTarget: w.guest_target, selectedStyle: w.selected_style ?? undefined, customStyleNote: w.custom_style_note ?? undefined, shareToken: w.share_token ?? undefined },
     guests:       (guests ?? []).map(guestFromDb),
     tables:       tables ?? [],
     vendors:      (vendors ?? []).map(vendorFromDb),
@@ -412,4 +412,233 @@ export async function upsertMoodCard(weddingId: number, card: MoodboardCard | Om
 
 export async function deleteMoodCard(id: number) {
   return createClient().from("moodboard_cards").delete().eq("id", id);
+}
+
+// ── Gifts ────────────────────────────────────────────────────
+
+export function giftFromDb(row: Record<string, unknown>): Gift {
+  return {
+    id: row.id as number,
+    weddingId: row.wedding_id as number,
+    giverName: row.giver_name as string,
+    item: (row.item as string) || "",
+    amount: row.amount != null ? Number(row.amount) : null,
+    note: (row.note as string) || "",
+    received: Boolean(row.received),
+    thankYouSent: Boolean(row.thank_you_sent),
+    createdAt: row.created_at as string,
+  };
+}
+
+export async function loadGifts(weddingId: number): Promise<Gift[]> {
+  const { data } = await createClient()
+    .from("gifts")
+    .select("*")
+    .eq("wedding_id", weddingId)
+    .order("created_at", { ascending: true });
+  return (data ?? []).map(giftFromDb);
+}
+
+export async function addGift(weddingId: number, g: Omit<Gift, "id" | "weddingId" | "createdAt">): Promise<Gift> {
+  const { data, error } = await createClient()
+    .from("gifts")
+    .insert({ wedding_id: weddingId, giver_name: g.giverName, item: g.item, amount: g.amount, note: g.note, received: g.received, thank_you_sent: g.thankYouSent })
+    .select()
+    .single();
+  if (error) throw error;
+  return giftFromDb(data);
+}
+
+export async function updateGift(id: number, patch: Partial<Omit<Gift, "id" | "weddingId" | "createdAt">>): Promise<void> {
+  const row: Record<string, unknown> = {};
+  if (patch.giverName !== undefined) row.giver_name = patch.giverName;
+  if (patch.item !== undefined) row.item = patch.item;
+  if (patch.amount !== undefined) row.amount = patch.amount;
+  if (patch.note !== undefined) row.note = patch.note;
+  if (patch.received !== undefined) row.received = patch.received;
+  if (patch.thankYouSent !== undefined) row.thank_you_sent = patch.thankYouSent;
+  await createClient().from("gifts").update(row).eq("id", id);
+}
+
+export async function deleteGift(id: number): Promise<void> {
+  await createClient().from("gifts").delete().eq("id", id);
+}
+
+// ── Ceremony Events ──────────────────────────────────────────
+
+export function ceremonyEventFromDb(row: Record<string, unknown>): CeremonyEvent {
+  return {
+    id: row.id as number,
+    weddingId: row.wedding_id as number,
+    orderIdx: (row.order_idx as number) ?? 0,
+    category: (row.category as CeremonyEvent["category"]) ?? "autre",
+    title: (row.title as string) || "",
+    durationMin: (row.duration_min as number) ?? 5,
+    who: (row.who as string) || "",
+    music: (row.music as string) || "",
+    note: (row.note as string) || "",
+    createdAt: row.created_at as string,
+  };
+}
+
+export async function loadCeremonyEvents(weddingId: number): Promise<CeremonyEvent[]> {
+  const { data } = await createClient()
+    .from("ceremony_events")
+    .select("*")
+    .eq("wedding_id", weddingId)
+    .order("order_idx", { ascending: true });
+  return (data ?? []).map(ceremonyEventFromDb);
+}
+
+export async function addCeremonyEvent(
+  weddingId: number,
+  e: Omit<CeremonyEvent, "id" | "weddingId" | "createdAt">
+): Promise<CeremonyEvent> {
+  const { data, error } = await createClient()
+    .from("ceremony_events")
+    .insert({
+      wedding_id: weddingId,
+      order_idx: e.orderIdx,
+      category: e.category,
+      title: e.title,
+      duration_min: e.durationMin,
+      who: e.who,
+      music: e.music,
+      note: e.note,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return ceremonyEventFromDb(data);
+}
+
+export async function updateCeremonyEvent(
+  id: number,
+  patch: Partial<Omit<CeremonyEvent, "id" | "weddingId" | "createdAt">>
+): Promise<void> {
+  const row: Record<string, unknown> = {};
+  if (patch.orderIdx !== undefined) row.order_idx = patch.orderIdx;
+  if (patch.category !== undefined) row.category = patch.category;
+  if (patch.title !== undefined) row.title = patch.title;
+  if (patch.durationMin !== undefined) row.duration_min = patch.durationMin;
+  if (patch.who !== undefined) row.who = patch.who;
+  if (patch.music !== undefined) row.music = patch.music;
+  if (patch.note !== undefined) row.note = patch.note;
+  await createClient().from("ceremony_events").update(row).eq("id", id);
+}
+
+export async function deleteCeremonyEvent(id: number): Promise<void> {
+  await createClient().from("ceremony_events").delete().eq("id", id);
+}
+
+export async function reorderCeremonyEvents(
+  events: { id: number; orderIdx: number }[]
+): Promise<void> {
+  await Promise.all(
+    events.map(({ id, orderIdx }) =>
+      createClient().from("ceremony_events").update({ order_idx: orderIdx }).eq("id", id)
+    )
+  );
+}
+
+// ── Songs ────────────────────────────────────────────────────
+
+function songFromDb(row: Record<string, unknown>): Song {
+  return {
+    id: row.id as number,
+    weddingId: row.wedding_id as number,
+    moment: (row.moment as Song["moment"]) ?? "autre",
+    title: (row.title as string) || "",
+    artist: (row.artist as string) || "",
+    duration: (row.duration as string) || "",
+    link: (row.link as string) || "",
+    note: (row.note as string) || "",
+    approved: Boolean(row.approved),
+    createdAt: row.created_at as string,
+  };
+}
+
+export async function loadSongs(weddingId: number): Promise<Song[]> {
+  const { data } = await createClient()
+    .from("songs")
+    .select("*")
+    .eq("wedding_id", weddingId)
+    .order("created_at", { ascending: true });
+  return (data ?? []).map(songFromDb);
+}
+
+export async function addSong(weddingId: number, s: Omit<Song, "id" | "weddingId" | "createdAt">): Promise<Song> {
+  const { data, error } = await createClient()
+    .from("songs")
+    .insert({ wedding_id: weddingId, moment: s.moment, title: s.title, artist: s.artist, duration: s.duration, link: s.link, note: s.note, approved: s.approved })
+    .select()
+    .single();
+  if (error) throw error;
+  return songFromDb(data);
+}
+
+export async function updateSong(id: number, patch: Partial<Omit<Song, "id" | "weddingId" | "createdAt">>): Promise<void> {
+  const row: Record<string, unknown> = {};
+  if (patch.moment !== undefined) row.moment = patch.moment;
+  if (patch.title !== undefined) row.title = patch.title;
+  if (patch.artist !== undefined) row.artist = patch.artist;
+  if (patch.duration !== undefined) row.duration = patch.duration;
+  if (patch.link !== undefined) row.link = patch.link;
+  if (patch.note !== undefined) row.note = patch.note;
+  if (patch.approved !== undefined) row.approved = patch.approved;
+  await createClient().from("songs").update(row).eq("id", id);
+}
+
+export async function deleteSong(id: number): Promise<void> {
+  await createClient().from("songs").delete().eq("id", id);
+}
+
+// ── Key Contacts ─────────────────────────────────────────────
+
+function contactFromDb(row: Record<string, unknown>): KeyContact {
+  return {
+    id: row.id as number,
+    weddingId: row.wedding_id as number,
+    name: (row.name as string) || "",
+    role: (row.role as KeyContact["role"]) ?? "autre",
+    phone: (row.phone as string) || "",
+    email: (row.email as string) || "",
+    note: (row.note as string) || "",
+    isBridalParty: Boolean(row.is_bridal_party),
+    createdAt: row.created_at as string,
+  };
+}
+
+export async function loadContacts(weddingId: number): Promise<KeyContact[]> {
+  const { data } = await createClient()
+    .from("key_contacts")
+    .select("*")
+    .eq("wedding_id", weddingId)
+    .order("created_at", { ascending: true });
+  return (data ?? []).map(contactFromDb);
+}
+
+export async function addContact(weddingId: number, c: Omit<KeyContact, "id" | "weddingId" | "createdAt">): Promise<KeyContact> {
+  const { data, error } = await createClient()
+    .from("key_contacts")
+    .insert({ wedding_id: weddingId, name: c.name, role: c.role, phone: c.phone, email: c.email, note: c.note, is_bridal_party: c.isBridalParty })
+    .select()
+    .single();
+  if (error) throw error;
+  return contactFromDb(data);
+}
+
+export async function updateContact(id: number, patch: Partial<Omit<KeyContact, "id" | "weddingId" | "createdAt">>): Promise<void> {
+  const row: Record<string, unknown> = {};
+  if (patch.name !== undefined) row.name = patch.name;
+  if (patch.role !== undefined) row.role = patch.role;
+  if (patch.phone !== undefined) row.phone = patch.phone;
+  if (patch.email !== undefined) row.email = patch.email;
+  if (patch.note !== undefined) row.note = patch.note;
+  if (patch.isBridalParty !== undefined) row.is_bridal_party = patch.isBridalParty;
+  await createClient().from("key_contacts").update(row).eq("id", id);
+}
+
+export async function deleteContact(id: number): Promise<void> {
+  await createClient().from("key_contacts").delete().eq("id", id);
 }

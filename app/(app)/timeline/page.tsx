@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { useStore } from "@/components/providers";
 import { Icon } from "@/components/icon";
 import { Card, Badge, Button, Empty, Segmented } from "@/components/ui";
 import { PageHead } from "@/components/shell";
 import { fmt } from "@/lib/format";
+import { exportTimelinePDF } from "@/lib/pdf-timeline";
 
 const cx = (...c: (string | false | undefined)[]) => c.filter(Boolean).join(" ");
 
 const MONTHS_FR = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+const MONTHS_SHORT = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"];
 
 type FilterType = "all" | "tasks" | "payments";
 
@@ -152,7 +154,7 @@ function ItemPill({ item, nameA, nameB }: { item: TimelineItem; nameA: string; n
   );
 }
 
-function MonthColumn({ monthKey, items, isToday, isWedding, isPast, nameA, nameB }: {
+function MonthColumn({ monthKey, items, isToday, isWedding, isPast, nameA, nameB, colRef }: {
   monthKey: string;
   items: TimelineItem[];
   isToday: boolean;
@@ -160,6 +162,7 @@ function MonthColumn({ monthKey, items, isToday, isWedding, isPast, nameA, nameB
   isPast: boolean;
   nameA: string;
   nameB: string;
+  colRef?: React.RefCallback<HTMLDivElement>;
 }) {
   const [expanded, setExpanded] = useState(false);
   const LIMIT = 4;
@@ -169,12 +172,21 @@ function MonthColumn({ monthKey, items, isToday, isWedding, isPast, nameA, nameB
   const [year, month] = monthKey.split("-").map(Number);
   const monthName = MONTHS_FR[month];
 
+  // Feature 4: all-done indicator
+  const allDone = items.length > 0 && items.every((item) =>
+    item.kind === "task" ? item.done : item.status === "paid"
+  );
+
   return (
-    <div className={cx(
-      "flex-shrink-0 w-[190px] rounded-xl border p-3 flex flex-col gap-2 transition",
-      isWedding ? "border-primary bg-primary-soft shadow-sm" : isToday ? "border-line-strong bg-surface-2" : "border-line bg-surface",
-      isPast && !isWedding && "opacity-60"
-    )}>
+    <div
+      id={`month-${monthKey}`}
+      ref={colRef}
+      className={cx(
+        "flex-shrink-0 w-[190px] rounded-xl border p-3 flex flex-col gap-2 transition",
+        isWedding ? "border-primary bg-primary-soft shadow-sm" : isToday ? "border-line-strong bg-surface-2" : "border-line bg-surface",
+        isPast && !isWedding && "opacity-60"
+      )}
+    >
       <div className="flex items-center justify-between gap-1.5 mb-0.5">
         <div className="flex flex-col">
           <span className={cx("text-[13px] font-semibold leading-tight capitalize", isWedding ? "text-primary-700" : "text-text")}>
@@ -183,6 +195,12 @@ function MonthColumn({ monthKey, items, isToday, isWedding, isPast, nameA, nameB
           <span className="text-[11px] text-text-3 font-mono">{year}</span>
         </div>
         <div className="flex items-center gap-1">
+          {allDone && (
+            <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-sage-soft text-sage border border-sage/20 leading-none flex items-center gap-0.5">
+              <Icon name="check" size={8} strokeWidth={2.5} />
+              <span>Tout fait</span>
+            </span>
+          )}
           {isWedding && <Icon name="rings" size={15} className="text-primary" />}
           {isToday && (
             <span className="text-[9.5px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-primary text-white leading-none">
@@ -240,6 +258,11 @@ function WeddingEndCard({ date, nameA, nameB }: { date: string; nameA: string; n
 export default function TimelinePage() {
   const { state, SIDES } = useStore();
   const [filter, setFilter] = useState<FilterType>("all");
+
+  // Refs for each month column element, keyed by monthKey
+  const colRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  // Ref for the horizontal scroll container
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const nameA = state.wedding.partnerA || "A";
   const nameB = state.wedding.partnerB || "B";
@@ -320,11 +343,70 @@ export default function TimelinePage() {
 
   const hasContent = allItems.length > 0;
 
+  // Feature 3: stats for the compact stat row (timeline-scoped items only)
+  const timelineTotal = filteredItems.length;
+  const timelineDone = filteredItems.filter((i) =>
+    i.kind === "task" ? i.done : i.status === "paid"
+  ).length;
+  const timelineLate = filteredItems.filter((i) =>
+    i.kind === "task" ? taskStatus(i) === "late" : i.status === "late"
+  ).length;
+
+  // Scrolls the horizontal timeline container to bring a month column into view
+  const scrollToMonth = useCallback((key: string) => {
+    const col = colRefs.current[key];
+    const container = scrollContainerRef.current;
+    if (!col || !container) return;
+    const containerLeft = container.getBoundingClientRect().left;
+    const colLeft = col.getBoundingClientRect().left;
+    const offset = colLeft - containerLeft + container.scrollLeft - 16; // 16px breathing room
+    container.scrollTo({ left: Math.max(0, offset), behavior: "smooth" });
+  }, []);
+
+  // Feature 2: scroll to the nearest upcoming (or today's) month
+  const scrollToToday = useCallback(() => {
+    if (monthKeys.length === 0) return;
+    // Find the first month key >= todayKey
+    const upcoming = monthKeys.find((k) => k >= todayKey) ?? monthKeys[monthKeys.length - 1];
+    scrollToMonth(upcoming);
+  }, [monthKeys, todayKey, scrollToMonth]);
+
+  // Feature 5: scroll to wedding month
+  const scrollToWedding = useCallback(() => {
+    if (!weddingMonthKey) return;
+    // Find the closest key to the wedding month in the list
+    const target = monthKeys.find((k) => k >= weddingMonthKey) ?? monthKeys[monthKeys.length - 1] ?? weddingMonthKey;
+    scrollToMonth(target);
+  }, [weddingMonthKey, monthKeys, scrollToMonth]);
+
   return (
     <div className="mx-auto w-full max-w-[1320px] px-5 md:px-8 py-6 md:py-8 pb-28 md:pb-12">
       <PageHead
         title="Chronologie"
         sub="Vue mensuelle de toutes vos échéances et paiements"
+        actions={
+          <div className="flex items-center gap-2">
+            {/* Feature 5: Jump to wedding date */}
+            {hasWeddingDate && hasContent && (
+              <Button
+                variant="secondary"
+                size="sm"
+                icon="rings"
+                onClick={scrollToWedding}
+              >
+                Aller au Jour J
+              </Button>
+            )}
+            <Button
+              variant="secondary"
+              size="sm"
+              icon="download"
+              onClick={() => exportTimelinePDF(allItems, nameA, nameB, weddingDate ?? "")}
+            >
+              Export PDF
+            </Button>
+          </div>
+        }
       />
 
       {/* Stats bar */}
@@ -356,8 +438,30 @@ export default function TimelinePage() {
         </div>
       </div>
 
+      {/* Feature 3: compact inline stats row */}
+      {hasContent && (
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
+          <div className="flex items-center gap-1.5 text-[12px]">
+            <span className="text-text-3">Total</span>
+            <span className="font-semibold tabular-nums text-text">{timelineTotal}</span>
+          </div>
+          <span className="text-line-strong select-none">·</span>
+          <div className="flex items-center gap-1.5 text-[12px]">
+            <span className="w-2 h-2 rounded-full bg-sage shrink-0" />
+            <span className="text-text-3">Terminés</span>
+            <span className="font-semibold tabular-nums text-sage">{timelineDone}</span>
+          </div>
+          <span className="text-line-strong select-none">·</span>
+          <div className="flex items-center gap-1.5 text-[12px]">
+            <span className="w-2 h-2 rounded-full bg-coral shrink-0" />
+            <span className="text-text-3">En retard</span>
+            <span className={cx("font-semibold tabular-nums", timelineLate > 0 ? "text-coral" : "text-text-3")}>{timelineLate}</span>
+          </div>
+        </div>
+      )}
+
       {/* Filter */}
-      <div className="flex items-center gap-3 mb-6 flex-wrap">
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
         <Segmented<FilterType>
           value={filter}
           onChange={setFilter}
@@ -367,6 +471,16 @@ export default function TimelinePage() {
             { value: "payments", label: "Paiements", icon: "card" },
           ]}
         />
+        {/* Feature 2: Today button */}
+        {hasContent && monthKeys.length > 0 && (
+          <button
+            onClick={scrollToToday}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-line bg-surface-2 hover:bg-hover text-[12px] font-medium text-text-2 hover:text-text transition"
+          >
+            <Icon name="clock" size={12} />
+            Aujourd&apos;hui
+          </button>
+        )}
         <div className="flex-1" />
         <div className="flex items-center gap-2 text-[12px] text-text-3">
           <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-sage-soft border border-sage/20 inline-block" />Terminé</span>
@@ -375,6 +489,52 @@ export default function TimelinePage() {
           <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-amber-soft border border-amber/20 inline-block" />Paiement</span>
         </div>
       </div>
+
+      {/* Feature 1: Month jump navigation strip */}
+      {hasContent && monthKeys.length > 1 && (
+        <div className="mb-4 -mx-1 px-1">
+          <div className="flex gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+            {monthKeys.map((key) => {
+              const [y, m] = key.split("-").map(Number);
+              const count = (itemsByMonth[key] ?? []).length;
+              const isCurrentMonth = key === todayKey;
+              const isWeddingMonth = key === weddingMonthKey;
+              return (
+                <button
+                  key={key}
+                  onClick={() => scrollToMonth(key)}
+                  className={cx(
+                    "flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[12px] font-medium transition whitespace-nowrap",
+                    isWeddingMonth
+                      ? "bg-primary-soft border-primary/30 text-primary-700 hover:bg-primary/20"
+                      : isCurrentMonth
+                      ? "bg-surface-3 border-line-strong text-text hover:bg-hover"
+                      : "bg-surface-3 border-line text-text-2 hover:bg-primary-soft hover:text-primary-700 hover:border-primary/20"
+                  )}
+                >
+                  <span>{MONTHS_SHORT[m]} {y}</span>
+                  {count > 0 && (
+                    <span className={cx(
+                      "min-w-[16px] h-4 rounded-full text-[9.5px] font-bold flex items-center justify-center px-1 leading-none",
+                      isWeddingMonth
+                        ? "bg-primary text-white"
+                        : isCurrentMonth
+                        ? "bg-line-strong text-text"
+                        : "bg-line text-text-3"
+                    )}>
+                      {count}
+                    </span>
+                  )}
+                  {isWeddingMonth && <Icon name="rings" size={11} className="text-primary" />}
+                  {isCurrentMonth && !isWeddingMonth && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Empty state */}
       {!hasContent && (
@@ -400,7 +560,7 @@ export default function TimelinePage() {
 
       {/* Timeline */}
       {hasContent && monthKeys.length > 0 && (
-        <div className="overflow-x-auto pb-4 -mx-1 px-1">
+        <div ref={scrollContainerRef} className="overflow-x-auto pb-4 -mx-1 px-1">
           <div className="flex gap-3 min-w-max">
             {monthKeys.map((key) => {
               const [y, m] = key.split("-").map(Number);
@@ -420,6 +580,7 @@ export default function TimelinePage() {
                   isPast={isPast}
                   nameA={nameA}
                   nameB={nameB}
+                  colRef={(el) => { colRefs.current[key] = el; }}
                 />
               );
             })}

@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Jour J — Organisez votre mariage",
-    short_name: "Jour J",
-    description: "L'application tout-en-un pour organiser votre mariage parfait",
+    name: "The Cockpit — Organisez votre mariage",
+    short_name: "The Cockpit",
+    description: "L'application tout-en-un pour organiser votre mariage parfait. Budget, invités, prestataires, planning, musique et Jour J.",
     start_url: "/dashboard",
     display: "standalone",
     background_color: "#F4ECDD",
@@ -19,9 +19,12 @@ export default function manifest(): MetadataRoute.Manifest {
     dir: "ltr",
     scope: "/",
     shortcuts: [
-      { name: "Invités", short_name: "Invités", description: "Gérer la liste d'invités", url: "/guests", icons: [{ src: "/icon-192.png", sizes: "192x192" }] },
-      { name: "Checklist", short_name: "Checklist", description: "Voir les tâches à faire", url: "/checklist", icons: [{ src: "/icon-192.png", sizes: "192x192" }] },
-      { name: "Budget", short_name: "Budget", description: "Suivre les dépenses", url: "/budget", icons: [{ src: "/icon-192.png", sizes: "192x192" }] },
+      { name: "Tableau de bord",    short_name: "Accueil",    description: "Vue d'ensemble du mariage",      url: "/dashboard",  icons: [{ src: "/icon-192.png", sizes: "192x192" }] },
+      { name: "Invités & RSVP",     short_name: "Invités",    description: "Gérer la liste d'invités",       url: "/guests",     icons: [{ src: "/icon-192.png", sizes: "192x192" }] },
+      { name: "Checklist",          short_name: "Checklist",  description: "Tâches à accomplir",             url: "/checklist",  icons: [{ src: "/icon-192.png", sizes: "192x192" }] },
+      { name: "Budget & paiements", short_name: "Budget",     description: "Suivre les dépenses",            url: "/budget",     icons: [{ src: "/icon-192.png", sizes: "192x192" }] },
+      { name: "Déroulé Jour J",     short_name: "Jour J",     description: "Planning de la journée",         url: "/dayj",       icons: [{ src: "/icon-192.png", sizes: "192x192" }] },
+      { name: "Musique",            short_name: "Musique",    description: "Playlist et chansons",           url: "/music",      icons: [{ src: "/icon-192.png", sizes: "192x192" }] },
     ],
   };
 }
