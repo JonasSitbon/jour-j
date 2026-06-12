@@ -385,7 +385,6 @@ function MockDates() {
           </div>
         ))}
       </div>
-      <div className="mt-2 text-[8px] text-[#8a7a6a] text-center">Données météo Open-Meteo en temps réel</div>
     </div>
   );
 }
@@ -1035,7 +1034,7 @@ const FEATURES = [
   { id: "vendors",    icon: "file",    title: "Prestataires",         desc: "CRM complet pour vos fournisseurs : devis, contrats, relances automatiques.", color: "#6B4A8C" },
   { id: "ceremony",   icon: "rings",   title: "Programme cérémonie",  desc: "Construisez votre programme civil, laïc ou religieux avec musiques et intervenants.", color: TC },
   { id: "music",      icon: "music",   title: "Musique & Playlist",   desc: "10 moments clés, approbation par les mariés, export PDF pour le DJ/orchestre.", color: "#3B6EA5" },
-  { id: "dates",      icon: "calendar",title: "Sélecteur de dates",   desc: "Comparez vos dates avec météo réelle Open-Meteo, score automatique et export tableau.", color: "#1F7A5C" },
+  { id: "dates",      icon: "calendar",title: "Sélecteur de dates",   desc: "Comparez vos dates candidates avec la météo prévisionnelle, un score automatique et un export tableau.", color: "#1F7A5C" },
   { id: "contacts",   icon: "key",     title: "Personnes clés",       desc: "Contacts d'urgence, témoins, cortège — toujours accessibles depuis l'app.", color: "#B5586E" },
   { id: "gifts",      icon: "gift",    title: "Cadeaux",              desc: "Liste de mariage digitale avec suivi des remerciements envoyés.", color: GOLD },
   { id: "journal",    icon: "edit",    title: "Journal de bord",      desc: "Capturez vos inspirations, décisions et souvenirs tout au long de la préparation.", color: SAGE },
@@ -1348,7 +1347,7 @@ function Hero() {
 // ─── Marquee strip ─────────────────────────────────────────────────────────────
 
 function MarqueeStrip() {
-  const items = ["16 modules tout-en-un", "Météo en temps réel", "Plan de table drag & drop", "Collaboration multi-utilisateurs", "Export PDF", "Partage lecture seule", "Planner ou couple", "100% gratuit", "Données sécurisées", "Application mobile"];
+  const items = ["16 modules tout-en-un", "Aide au choix de date", "Plan de table visuel", "Collaboration en temps réel", "Export PDF", "Partage avec vos proches", "Pour les mariés et les planners", "100% gratuit", "Données sécurisées", "Accessible sur mobile"];
   const doubled = [...items, ...items];
   return (
     <div className="py-5 overflow-hidden border-y" style={{ background: "#F9EDE3", borderColor: `${TC}20` }}>
@@ -1416,8 +1415,8 @@ const ORDERED_MODULES = [
   {
     id: "dates",    step: "01", emoji: "📅", name: "Dates & Météo",    color: TC,
     tagline: "Choisissez la date parfaite",
-    desc: "Comparez vos dates candidates avec les données météo historiques d'Open-Meteo — aucune clé API requise. Un score 0-100 automatique vous guide vers la meilleure option.",
-    features: ["Météo historique par ville", "Score automatique pluie / chaleur", "Vue tableau comparatif", "Confirmation et export PDF"],
+    desc: "Comparez vos dates candidates côte à côte avec la météo prévisionnelle pour votre région. Température, risque de pluie, ensoleillement — un score automatique vous guide vers la meilleure option.",
+    features: ["Météo prévisionnelle par ville", "Score automatique 0-100", "Vue tableau comparatif", "Confirmation et export PDF"],
     Preview: DemoDates,
   },
   {
@@ -1830,7 +1829,7 @@ function PricingCTA() {
                 "16 modules complets", "Invités illimités",
                 "Collaboration multi-users", "Exports PDF",
                 "Partage lecture seule", "Plan de table visuel",
-                "Météo en temps réel", "Données sécurisées Supabase",
+                "Météo pour choisir votre date", "Données sécurisées",
                 "Mode couple & wedding planner", "Mises à jour continues",
               ].map((f, i) => (
                 <div key={i} className="flex items-center gap-2.5 text-[13.5px]" style={{ color: TEXT_MID }}>
@@ -1865,10 +1864,10 @@ const FAQS = [
   { q: "The Cockpit est-il vraiment gratuit ?", a: "Oui, complètement et sans limite. Aucune carte bancaire n'est requise. Tous les modules sont accessibles dès la création de votre compte." },
   { q: "Combien de mariages puis-je gérer ?", a: "Jusqu'à 5 mariages par compte. Les wedding planners peuvent gérer plusieurs clients depuis le même tableau de bord avec une interface dédiée." },
   { q: "Puis-je collaborer avec mon partenaire ou ma wedding planner ?", a: "Oui ! Vous pouvez inviter des collaborateurs avec différents rôles : Administrateur, Éditeur ou Lecteur. Chaque rôle a des permissions précises." },
-  { q: "Mes données sont-elles sécurisées ?", a: "Vos données sont hébergées sur Supabase (infrastructure PostgreSQL sécurisée) avec chiffrement en transit et au repos. Seul vous et vos collaborateurs autorisés y ont accès." },
-  { q: "L'application fonctionne-t-elle sur mobile ?", a: "The Cockpit est une Progressive Web App (PWA) responsive, installable sur iOS et Android. La navigation est optimisée pour mobile avec une barre de navigation dédiée." },
+  { q: "Mes données sont-elles sécurisées ?", a: "Vos données sont hébergées sur des serveurs sécurisés et chiffrées. Seul vous et vos collaborateurs autorisés y ont accès — nous ne partageons jamais vos informations." },
+  { q: "L'application fonctionne-t-elle sur mobile ?", a: "Oui, The Cockpit fonctionne sur tous les appareils — téléphone, tablette, ordinateur. Vous pouvez même l'installer sur votre écran d'accueil iOS ou Android, comme une vraie application." },
   { q: "Puis-je exporter mes données ?", a: "Oui, vous pouvez exporter votre liste d'invités en CSV, votre budget en PDF, votre plan de table, votre playlist et bien plus. Toutes vos données vous appartiennent." },
-  { q: "La météo est-elle vraiment en temps réel ?", a: "Le sélecteur de dates utilise l'API Open-Meteo (données ECMWF) pour afficher des prévisions météo historiques et statistiques pour votre ville et vos dates candidates. Aucune clé API requise." },
+  { q: "Comment fonctionne la météo pour choisir ma date ?", a: "L'outil météo affiche automatiquement les prévisions pour votre ville et vos dates candidates : température, probabilité de pluie, ensoleillement. Vous obtenez un score pour chaque date afin de choisir sereinement." },
   { q: "Puis-je partager mon espace mariage avec ma famille ?", a: "Oui, via un lien de partage en lecture seule que vous générez depuis les paramètres. Vos proches voient les informations essentielles sans pouvoir modifier quoi que ce soit." },
 ];
 
