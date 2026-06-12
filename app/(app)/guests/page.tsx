@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useStore, useToast } from "@/components/providers";
 import { Icon } from "@/components/icon";
 import { Card, Badge, Button, Search, Select, Segmented, Field, Input, Textarea, Avatar, Drawer, Modal, Empty, Tabs } from "@/components/ui";
@@ -56,6 +57,22 @@ function dietEmoji(diet: Diet): string {
 }
 
 // ─────────────────────────────────────────────────────────────────
+// AnimatedCounter — chiffre qui pulse quand la valeur change
+// ─────────────────────────────────────────────────────────────────
+function AnimatedCounter({ value }: { value: number }) {
+  return (
+    <motion.span
+      key={value}
+      className="font-mono text-2xl font-semibold tracking-[-.02em]"
+      animate={{ scale: [1, 1.15, 1] }}
+      transition={{ duration: 0.3, type: "spring", stiffness: 400, damping: 20 }}
+    >
+      {value}
+    </motion.span>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
 // Counters
 // ─────────────────────────────────────────────────────────────────
 function Counters() {
@@ -77,11 +94,29 @@ function Counters() {
     <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-px bg-line border border-line rounded-card overflow-hidden">
       {items.map((it, i) => (
         <div key={i} className="bg-surface px-4 py-4 flex flex-col gap-0.5">
-          <span className="font-mono text-2xl font-semibold tracking-[-.02em]">{it.v}</span>
+          <AnimatedCounter value={it.v} />
           <span className="text-[12.5px] text-text-2 flex items-center gap-1.5"><span className="w-2 h-2 rounded-[3px]" style={{ background: it.c }} />{it.l}</span>
         </div>
       ))}
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// FlipBadge — badge RSVP avec flip horizontal au changement
+// ─────────────────────────────────────────────────────────────────
+function FlipBadge({ rsvp }: { rsvp: string }) {
+  const info = RSVP[rsvp] ?? RSVP["pending"];
+  return (
+    <motion.div
+      key={rsvp}
+      style={{ display: "inline-flex", perspective: 400 }}
+      initial={{ rotateY: 90, opacity: 0 }}
+      animate={{ rotateY: 0, opacity: 1 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
+    >
+      <Badge tone={info.tone} dot>{info.label}</Badge>
+    </motion.div>
   );
 }
 
@@ -1388,18 +1423,27 @@ export default function GuestsPage() {
         {filtered.length === 0 ? (
           <Card>
             {state.guests.length === 0 ? (
-              <div className="flex flex-col items-center gap-5 py-12 text-center">
-                <div className="w-16 h-16 rounded-2xl bg-primary-soft flex items-center justify-center">
-                  <Icon name="users" size={30} className="text-primary-700" />
-                </div>
+              <motion.div
+                className="flex flex-col items-center gap-5 py-12 text-center"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+              >
+                <motion.div
+                  className="text-5xl leading-none select-none"
+                  animate={{ rotate: [0, -8, 8, -4, 4, 0] }}
+                  transition={{ duration: 1.2, delay: 0.3, ease: "easeInOut" }}
+                >
+                  💌
+                </motion.div>
                 <div>
-                  <div className="font-semibold text-xl mb-2">Qui invitez-vous ?</div>
+                  <div className="font-semibold text-xl mb-2">Votre liste d&apos;invités vous attend</div>
                   <p className="text-text-2 text-[14px] max-w-[360px] leading-relaxed">
-                    Construisez votre liste d&apos;invités et suivez les confirmations (RSVP), les régimes alimentaires et le plan de table depuis un seul endroit.
+                    Ajoutez vos premiers invités pour commencer à planifier les tables, suivre les RSVP et organiser le repas.
                   </p>
                 </div>
                 <div className="flex flex-col items-center gap-3 w-full max-w-[280px]">
-                  <Button variant="primary" icon="plus" block onClick={() => setEditing(newGuest)}>Ajouter mon premier invité</Button>
+                  <Button variant="primary" icon="plus" block onClick={() => setEditing(newGuest)}>Ajouter le premier invité</Button>
                   <Button variant="secondary" block onClick={() => setBulkImporting(true)}>📥 Ajouter en lot</Button>
                   <Button variant="secondary" icon="upload" block onClick={() => setImporting(true)}>Importer une liste CSV</Button>
                 </div>
@@ -1407,7 +1451,7 @@ export default function GuestsPage() {
                   <Icon name="info" size={13} />
                   Conseil : commencez par votre liste A, les incontournables.
                 </div>
-              </div>
+              </motion.div>
             ) : (
               <Empty icon="users" title="Aucun invité trouvé">Modifiez vos filtres pour afficher d&apos;autres invités.</Empty>
             )}
@@ -1420,8 +1464,16 @@ export default function GuestsPage() {
                   <th>Nom</th><th>Côté</th><th>RSVP</th><th>Régime</th><th>Table</th><th>Hébergement</th><th>Enfant</th><th>Transport</th><th>Cadeau</th><th>Notes</th>
                 </tr></thead>
                 <tbody>
+                  <AnimatePresence initial={false}>
                   {filtered.map((g) => (
-                    <tr key={g.id} onClick={() => setEditing(g)} className="group cursor-pointer hover:bg-hover [&>td]:px-3.5 [&>td]:py-2.5 [&>td]:border-b [&>td]:border-line">
+                    <motion.tr
+                      key={g.id}
+                      layout
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3, ease: "easeOut" }}
+                      onClick={() => setEditing(g)} className="group cursor-pointer hover:bg-hover [&>td]:px-3.5 [&>td]:py-2.5 [&>td]:border-b [&>td]:border-line">
                       <td><span className="flex items-center gap-2.5 font-medium whitespace-nowrap">
                         <Avatar name={g.name} side={g.side} size="sm" />{g.name}
                         {g.rsvpToken && <button className="icon-btn w-6 h-6 opacity-0 group-hover:opacity-100 text-text-3 hover:text-primary ml-1" title="Copier lien RSVP"
@@ -1430,7 +1482,7 @@ export default function GuestsPage() {
                         </button>}
                       </span></td>
                       <td>{g.side === "A" ? SIDES.A : SIDES.B}</td>
-                      <td><Badge tone={RSVP[g.rsvp].tone} dot>{RSVP[g.rsvp].label}</Badge></td>
+                      <td><FlipBadge rsvp={g.rsvp} /></td>
                       <td>
                         {g.diet === "none" || !g.diet
                           ? <span className="text-text-3">—</span>
@@ -1446,27 +1498,40 @@ export default function GuestsPage() {
                       <td>{g.transport ? <Icon name="check" size={16} className="text-sage" /> : <span className="text-text-3">—</span>}</td>
                       <td>{g.gift ? <Icon name="check" size={16} className="text-sage" /> : <span className="text-text-3">—</span>}</td>
                       <td><span className="text-text-3 text-[12.5px] max-w-[160px] truncate inline-block">{g.note || "—"}</span></td>
-                    </tr>
+                    </motion.tr>
                   ))}
+                  </AnimatePresence>
                 </tbody>
               </table>
             </div>
           ) : (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(248px,1fr))] gap-3">
+              <AnimatePresence initial={false}>
               {filtered.map((g) => (
-                <Card key={g.id} hover className="p-4 flex flex-col gap-3" onClick={() => setEditing(g)}>
-                  <div className="flex items-center gap-2.5">
-                    <Avatar name={g.name} side={g.side} />
-                    <div className="min-w-0"><div className="text-[14.5px] font-semibold">{g.name}</div><div className="text-xs text-text-3">{g.group || (g.side === "A" ? SIDES.A : SIDES.B)}</div></div>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    <Badge tone={RSVP[g.rsvp].tone} dot>{RSVP[g.rsvp].label}</Badge>
-                    {g.diet && g.diet !== "none" && <Badge tone="gold">{dietEmoji(g.diet)} {dietLabel(g.diet)}</Badge>}
-                    {g.child && <Badge tone="primary" icon="baby">Enfant</Badge>}
-                    {g.table && <Badge tone="neutral" icon="table">{state.tables.find((t) => t.id === g.table)?.name}</Badge>}
-                  </div>
-                </Card>
+                <motion.div
+                  key={g.id}
+                  layout
+                  initial={{ opacity: 0, height: 0, scale: 0.97 }}
+                  animate={{ opacity: 1, height: "auto", scale: 1 }}
+                  exit={{ opacity: 0, height: 0, scale: 0.97 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  style={{ overflow: "hidden" }}
+                >
+                  <Card hover className="p-4 flex flex-col gap-3" onClick={() => setEditing(g)}>
+                    <div className="flex items-center gap-2.5">
+                      <Avatar name={g.name} side={g.side} />
+                      <div className="min-w-0"><div className="text-[14.5px] font-semibold">{g.name}</div><div className="text-xs text-text-3">{g.group || (g.side === "A" ? SIDES.A : SIDES.B)}</div></div>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      <FlipBadge rsvp={g.rsvp} />
+                      {g.diet && g.diet !== "none" && <Badge tone="gold">{dietEmoji(g.diet)} {dietLabel(g.diet)}</Badge>}
+                      {g.child && <Badge tone="primary" icon="baby">Enfant</Badge>}
+                      {g.table && <Badge tone="neutral" icon="table">{state.tables.find((t) => t.id === g.table)?.name}</Badge>}
+                    </div>
+                  </Card>
+                </motion.div>
               ))}
+              </AnimatePresence>
             </div>
           )}
         </ScrollReveal>

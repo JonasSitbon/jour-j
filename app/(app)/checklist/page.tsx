@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useStore, useToast } from "@/components/providers";
 import { fmt } from "@/lib/format";
 import { Icon } from "@/components/icon";
@@ -38,6 +39,39 @@ function getSuggestions(catLabel: string): string[] {
     (k) => k !== "default" && lower.includes(k)
   );
   return TASK_SUGGESTIONS[key ?? "default"] ?? TASK_SUGGESTIONS["default"];
+}
+
+// ─── CheckBurst ───────────────────────────────────────────────────────────────
+function CheckBurst({ active }: { active: boolean }) {
+  const dots = [
+    { angle: -45, color: "#C96E2C" },
+    { angle: 0,   color: "#D4A340" },
+    { angle: 45,  color: "#7E9A63" },
+    { angle: -90, color: "#D4A340" },
+    { angle: 90,  color: "#C96E2C" },
+  ];
+  return (
+    <AnimatePresence>
+      {active && (
+        <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+          {dots.map((d, i) => (
+            <motion.div key={i}
+              initial={{ opacity: 1, scale: 0, x: 0, y: 0 }}
+              animate={{
+                opacity: 0, scale: 1,
+                x: Math.cos((d.angle * Math.PI) / 180) * 18,
+                y: Math.sin((d.angle * Math.PI) / 180) * 18,
+              }}
+              exit={{}}
+              transition={{ duration: 0.5, delay: i * 0.04, ease: "easeOut" }}
+              className="absolute w-2 h-2 rounded-full"
+              style={{ background: d.color }}
+            />
+          ))}
+        </div>
+      )}
+    </AnimatePresence>
+  );
 }
 
 // ─── Progress ring ────────────────────────────────────────────────────────────
@@ -734,7 +768,17 @@ export default function ChecklistPage() {
             </div>
           )}
 
-          <div onClick={() => toggleTask(t.id)} className={`w-[22px] h-[22px] rounded-md border-2 flex items-center justify-center shrink-0 cursor-pointer transition ${t.done ? "bg-sage border-sage text-white" : "border-line-strong text-transparent"}`}><Icon name="check" size={14} /></div>
+          <div className="relative shrink-0" style={{ width: 22, height: 22 }}>
+            <motion.div
+              onClick={() => toggleTask(t.id)}
+              className={`w-[22px] h-[22px] rounded-md border-2 flex items-center justify-center cursor-pointer transition ${t.done ? "bg-sage border-sage text-white" : "border-line-strong text-transparent"}`}
+              animate={t.done ? { scale: [1, 0.8, 1.2, 1] } : { scale: 1 }}
+              transition={{ duration: 0.3, times: [0, 0.2, 0.6, 1] }}
+            >
+              <Icon name="check" size={14} />
+            </motion.div>
+            <CheckBurst active={t.done} />
+          </div>
 
           {/* Assignee badge */}
           {mounted && (
@@ -747,7 +791,18 @@ export default function ChecklistPage() {
           )}
 
           <div className="flex-1 min-w-0 cursor-pointer" onClick={() => hasSubs && setExpanded((e) => ({ ...e, [t.id]: !e[t.id] }))}>
-            <div className={`text-sm font-medium ${t.done ? "text-text-3 line-through" : ""}`}>{t.title}</div>
+            <div className="relative text-sm font-medium">
+              <span className={t.done ? "text-text-3" : ""}>{t.title}</span>
+              {t.done && (
+                <motion.span
+                  className="absolute left-0 top-1/2 -translate-y-1/2 h-[1.5px] bg-text-3 origin-left block"
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ duration: 0.25, ease: "easeOut" }}
+                  style={{ width: "100%" }}
+                />
+              )}
+            </div>
             <div className="flex items-center gap-3 text-xs text-text-2 mt-0.5 flex-wrap">
               <span className={late ? "text-coral font-semibold" : ""}><Icon name="clock" size={13} className="inline align-[-2px] mr-1" />{late ? fmt.dateShort(t.due) : `Échéance ${fmt.dateShort(t.due)}`}</span>
               {late && <span className="badge text-white font-semibold" style={{ background: "var(--coral, #e87059)" }}>En retard</span>}
@@ -878,7 +933,20 @@ export default function ChecklistPage() {
           </div>
         )}
 
-        {ts.map((t) => renderTask(t, cid))}
+        <AnimatePresence initial={false}>
+          {ts.map((t) => (
+            <motion.div
+              key={t.id}
+              layout
+              initial={{ opacity: 0, y: -12, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.97 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+            >
+              {renderTask(t, cid)}
+            </motion.div>
+          ))}
+        </AnimatePresence>
 
         {/* Inline add */}
         {inlineAdding === cid ? (
@@ -986,7 +1054,14 @@ export default function ChecklistPage() {
         <div>
           <Card className="mb-3 !p-4">
             <div className="flex items-center justify-between mb-2"><span className="font-semibold text-sm">Progression</span><span className="font-mono font-semibold">{globalPct}%</span></div>
-            <Progress value={globalPct} />
+            <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--line)" }}>
+              <motion.div
+                className="h-full rounded-full"
+                style={{ background: "var(--primary)" }}
+                animate={{ width: `${globalPct}%` }}
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              />
+            </div>
           </Card>
           <div className="flex md:flex-col gap-1 flex-wrap md:sticky md:top-20">
             <button onClick={() => setCat("all")} className={`flex items-center gap-3 px-3 py-2.5 rounded-sm text-[13.5px] font-medium transition ${cat === "all" ? "bg-primary-soft text-primary-700" : "text-text-2 hover:bg-hover hover:text-text"}`}><Icon name="list" size={17} />Toutes<span className="ml-auto font-mono text-xs text-text-3">{state.tasks.length}</span></button>
@@ -1085,6 +1160,25 @@ export default function ChecklistPage() {
           ) : (
             /* ── Category sections with drag & drop ─────────────────────────── */
             <>
+              {/* 🎉 100% celebration banner */}
+              <AnimatePresence>
+                {globalPct === 100 && state.tasks.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 28 }}
+                    className="rounded-xl p-4 flex items-center gap-3 mb-4"
+                    style={{ background: "linear-gradient(135deg, #7E9A63, #5E7A48)", color: "white" }}
+                  >
+                    <span className="text-2xl">🎉</span>
+                    <div>
+                      <div className="font-bold text-[15px]">Checklist complète !</div>
+                      <div className="text-[12px] opacity-80">Votre mariage est parfaitement organisé.</div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               {cat === "all"
                 ? cats
                     .filter((c) => groups[c.id] !== undefined || inlineAdding === c.id)

@@ -9,10 +9,18 @@ import {
 } from "framer-motion";
 import { Logo } from "@/components/icon";
 
-// ─── Constants ─────────────────────────────────────────────────────────────────
+// ─── Palette ────────────────────────────────────────────────────────────────────
 
-const TC = "#C96E2C";
-const GOLD = "#D4A340";
+const TC        = "#C96E2C";   // terracotta
+const GOLD      = "#D4A340";   // doré
+const SAGE      = "#7E9A63";   // vert sauge
+const BLUSH     = "#F2D4C8";   // rose blush
+const BG_CREAM  = "#FDFAF5";   // fond principal
+const WARM_SOFT = "#F4ECDD";   // sections alternées
+const TEXT_DARK = "#1C1208";   // titres
+const TEXT_MID  = "#6B5744";   // paragraphes
+const TEXT_LIGHT= "#A08B78";   // labels, captions
+const BROWN_DARK= "#382F23";   // éléments forts
 
 // ─── Lenis smooth scroll ───────────────────────────────────────────────────────
 
@@ -49,7 +57,7 @@ function Counter({ to, suffix = "", prefix = "" }: { to: number; suffix?: string
 
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 28 } },
+  visible: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 280, damping: 24 } },
 };
 
 const staggerContainer = {
@@ -382,51 +390,82 @@ function MockDates() {
   );
 }
 
-// ─── Browser Frame ─────────────────────────────────────────────────────────────
+// ─── App Frame (Light) ─────────────────────────────────────────────────────────
 
-function AppFrame({ children, url = "the-cockpit.fr/dashboard", dark = false }: { children: React.ReactNode; url?: string; dark?: boolean }) {
+function AppFrame({ children, url = "the-cockpit.fr/dashboard" }: { children: React.ReactNode; url?: string }) {
   return (
-    <div className={`rounded-2xl overflow-hidden shadow-2xl ${dark ? "bg-[#1a1219]" : "bg-[#2a2220]"}`}
-      style={{ boxShadow: "0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08)" }}>
-      {/* Browser chrome */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b" style={{ background: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.08)" }}>
-        <div className="w-3 h-3 rounded-full bg-[#FF605C]" />
-        <div className="w-3 h-3 rounded-full bg-[#FFBD44]" />
-        <div className="w-3 h-3 rounded-full bg-[#00CA4E]" />
-        <div className="flex-1 mx-3 bg-black/20 rounded-md px-3 py-1 flex items-center gap-1.5">
-          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth={2}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          <span className="text-[10px] font-mono" style={{ color: "rgba(255,255,255,0.35)" }}>{url}</span>
+    <div className="rounded-2xl overflow-hidden"
+      style={{
+        background: "#FFFFFF",
+        border: "1px solid rgba(201,110,44,0.15)",
+        boxShadow: "0 20px 60px rgba(56,47,35,0.12), 0 4px 16px rgba(56,47,35,0.08)",
+      }}>
+      {/* Topbar claire */}
+      <div style={{ background: WARM_SOFT, borderBottom: "1px solid rgba(201,110,44,0.12)", padding: "10px 16px" }}
+        className="flex items-center gap-2">
+        <div className="flex gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-full bg-[#FFB3AE]" />
+          <div className="w-2.5 h-2.5 rounded-full bg-[#FFD180]" />
+          <div className="w-2.5 h-2.5 rounded-full bg-[#A8D5A2]" />
+        </div>
+        <div style={{ background: "rgba(201,110,44,0.1)", borderRadius: 6, padding: "3px 12px" }}
+          className="flex-1 mx-2 text-center">
+          <span style={{ fontSize: 10, color: TEXT_LIGHT, fontFamily: "monospace" }}>{url}</span>
         </div>
       </div>
-      {/* Sidebar strip */}
-      <div className="flex">
-        <div className="w-9 shrink-0 py-3 flex flex-col items-center gap-3 border-r" style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.06)" }}>
-          <div className="w-5 h-5 rounded-md" style={{ background: TC }} />
-          {["grid", "users", "wallet", "check"].map((n, i) => (
-            <div key={i} className="w-4 h-4 rounded-sm opacity-30" style={{ background: "rgba(255,255,255,0.6)" }} />
-          ))}
-        </div>
-        <div className="flex-1 p-3 min-w-0">{children}</div>
-      </div>
+      <div className="p-3">{children}</div>
     </div>
   );
 }
 
 // ─── Floating badge ────────────────────────────────────────────────────────────
 
-function FloatingBadge({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+function FloatingBadge({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
   return (
     <motion.div
-      animate={{ y: [0, -8, 0] }}
-      transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-      className={`absolute z-10 bg-white/95 backdrop-blur-xl rounded-xl shadow-2xl border border-white/50 px-3 py-2.5 text-[#382F23] ${className}`}
+      animate={{ y: [0, -6, 0] }}
+      transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay }}
+      className={`absolute z-10 bg-white rounded-xl border px-3 py-2.5 text-[#382F23] ${className}`}
+      style={{ boxShadow: "0 8px 24px rgba(56,47,35,0.12)", borderColor: "rgba(201,110,44,0.12)" }}
     >
       {children}
     </motion.div>
   );
 }
 
-type FloatingBadgeProps = { children: React.ReactNode; className?: string };
+// ─── Decorative SVG elements ───────────────────────────────────────────────────
+
+function DecorRings() {
+  return (
+    <svg width="80" height="40" viewBox="0 0 80 40" fill="none" aria-hidden>
+      <circle cx="25" cy="20" r="16" stroke={TC} strokeWidth="2.5" strokeOpacity="0.4" />
+      <circle cx="55" cy="20" r="16" stroke={GOLD} strokeWidth="2.5" strokeOpacity="0.4" />
+    </svg>
+  );
+}
+
+function DecorDots() {
+  return (
+    <svg width="60" height="60" viewBox="0 0 60 60" fill="none" aria-hidden>
+      {[0, 1, 2].map(row => [0, 1, 2].map(col => (
+        <circle key={`${row}-${col}`} cx={10 + col * 20} cy={10 + row * 20} r="3"
+          fill={TC} fillOpacity={0.2 + col * 0.1} />
+      )))}
+    </svg>
+  );
+}
+
+function DecorFloral() {
+  return (
+    <svg width="120" height="120" viewBox="0 0 120 120" fill="none" aria-hidden>
+      <path d="M60 20 Q80 40 60 60 Q40 40 60 20Z" stroke={TC} strokeWidth="1.5" strokeOpacity="0.25" fill="none" />
+      <path d="M20 60 Q40 80 60 60 Q40 40 20 60Z" stroke={GOLD} strokeWidth="1.5" strokeOpacity="0.25" fill="none" />
+      <path d="M100 60 Q80 80 60 60 Q80 40 100 60Z" stroke={TC} strokeWidth="1.5" strokeOpacity="0.2" fill="none" />
+      <path d="M60 100 Q80 80 60 60 Q40 80 60 100Z" stroke={GOLD} strokeWidth="1.5" strokeOpacity="0.2" fill="none" />
+      <circle cx="60" cy="60" r="4" fill={TC} fillOpacity="0.3" />
+    </svg>
+  );
+}
 
 // ─── Feature card (bento) ──────────────────────────────────────────────────────
 
@@ -434,7 +473,7 @@ const FEATURES = [
   { id: "dashboard",  icon: "grid",    title: "Tableau de bord",      desc: "Vue d'ensemble de votre mariage avec countdown J-X, stats en temps réel et raccourcis intelligents.", color: TC },
   { id: "guests",     icon: "users",   title: "Invités & RSVP",       desc: "Gérez vos 150+ invités, suivez les réponses, les régimes alimentaires et l'hébergement.", color: "#3B6EA5" },
   { id: "budget",     icon: "wallet",  title: "Budget & Paiements",   desc: "Suivez chaque dépense, planifiez les échéances et comparez avec les moyennes nationales.", color: GOLD },
-  { id: "timeline",   icon: "list",    title: "Timeline",             desc: "Rétroplanning complet sur 12-18 mois avec navigation par mois et indicateurs de retard.", color: "#6B8C3E" },
+  { id: "timeline",   icon: "list",    title: "Timeline",             desc: "Rétroplanning complet sur 12-18 mois avec navigation par mois et indicateurs de retard.", color: SAGE },
   { id: "dayj",       icon: "clock",   title: "Déroulé Jour J",       desc: "Planifiez chaque minute de votre journée avec 3 templates, mode EN DIRECT et alertes.", color: "#B5586E" },
   { id: "checklist",  icon: "check",   title: "Checklist",            desc: "250+ tâches pré-remplies organisées par catégorie, avec filtres et export PDF.", color: "#1F7A5C" },
   { id: "seating",    icon: "grid",    title: "Plan de table",        desc: "Éditeur visuel drag & drop des tables avec gestion des conflits et contraintes régime.", color: "#8B6E3E" },
@@ -444,13 +483,12 @@ const FEATURES = [
   { id: "dates",      icon: "calendar",title: "Sélecteur de dates",   desc: "Comparez vos dates avec météo réelle Open-Meteo, score automatique et export tableau.", color: "#1F7A5C" },
   { id: "contacts",   icon: "key",     title: "Personnes clés",       desc: "Contacts d'urgence, témoins, cortège — toujours accessibles depuis l'app.", color: "#B5586E" },
   { id: "gifts",      icon: "gift",    title: "Cadeaux",              desc: "Liste de mariage digitale avec suivi des remerciements envoyés.", color: GOLD },
-  { id: "journal",    icon: "edit",    title: "Journal de bord",      desc: "Capturez vos inspirations, décisions et souvenirs tout au long de la préparation.", color: "#6B8C3E" },
+  { id: "journal",    icon: "edit",    title: "Journal de bord",      desc: "Capturez vos inspirations, décisions et souvenirs tout au long de la préparation.", color: SAGE },
   { id: "moodboard",  icon: "sparkle", title: "Mood Board",           desc: "Espace visuel pour votre style, couleurs et inspirations partagées avec vos prestataires.", color: "#8B6E3E" },
   { id: "sharing",    icon: "users",   title: "Collaboration",        desc: "Invitez votre famille, wedding planner et prestataires avec des rôles personnalisés.", color: "#6B4A8C" },
 ];
 
 function BentoCard({ f, index }: { f: typeof FEATURES[0]; index: number }) {
-  const [hovered, setHovered] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-40px" });
 
@@ -460,33 +498,31 @@ function BentoCard({ f, index }: { f: typeof FEATURES[0]; index: number }) {
       initial={{ opacity: 0, y: 30, scale: 0.96 }}
       animate={inView ? { opacity: 1, y: 0, scale: 1 } : {}}
       transition={{ duration: 0.55, delay: (index % 4) * 0.08, ease: [0.16, 1, 0.3, 1] }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      className="relative rounded-2xl border overflow-hidden cursor-default group"
-      style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)" }}
+      className="relative rounded-2xl border overflow-hidden cursor-default group transition-all duration-300"
+      style={{
+        background: "#FFFFFF",
+        borderColor: "rgba(201,110,44,0.1)",
+        boxShadow: "0 2px 12px rgba(56,47,35,0.06)",
+      }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)";
+        (e.currentTarget as HTMLDivElement).style.boxShadow = `0 8px 28px rgba(56,47,35,0.12), 0 0 0 1px ${f.color}30`;
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
+        (e.currentTarget as HTMLDivElement).style.boxShadow = "0 2px 12px rgba(56,47,35,0.06)";
+      }}
     >
-      <motion.div
-        animate={{ opacity: hovered ? 1 : 0 }}
-        transition={{ duration: 0.25 }}
-        className="absolute inset-0 rounded-2xl pointer-events-none"
-        style={{ background: `radial-gradient(circle at 50% 50%, ${f.color}15, transparent 70%)` }}
-      />
       <div className="p-5 flex flex-col gap-3 h-full">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-          style={{ background: `${f.color}20`, color: f.color }}>
+          style={{ background: `${f.color}18`, color: f.color }}>
           <Ic name={f.icon} size={20} />
         </div>
         <div>
-          <div className="text-[14px] font-semibold text-white mb-1">{f.title}</div>
-          <div className="text-[12.5px] leading-relaxed" style={{ color: "rgba(255,255,255,0.5)" }}>{f.desc}</div>
+          <div className="text-[14px] font-semibold mb-1" style={{ color: TEXT_DARK }}>{f.title}</div>
+          <div className="text-[12.5px] leading-relaxed" style={{ color: TEXT_MID }}>{f.desc}</div>
         </div>
       </div>
-      <motion.div
-        animate={{ scaleX: hovered ? 1 : 0 }}
-        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-        className="absolute bottom-0 left-0 right-0 h-[2px] origin-left"
-        style={{ background: f.color }}
-      />
     </motion.div>
   );
 }
@@ -514,24 +550,24 @@ function Nav() {
     <motion.nav
       className="fixed top-0 left-0 right-0 z-[500] transition-all duration-300"
       style={{
-        background: scrolled ? "rgba(8,6,10,0.85)" : "transparent",
-        backdropFilter: scrolled ? "blur(20px)" : "none",
-        borderBottom: scrolled ? "1px solid rgba(255,255,255,0.07)" : "1px solid transparent",
+        background: scrolled ? "rgba(253,250,245,0.92)" : "rgba(253,250,245,0.75)",
+        backdropFilter: "blur(20px)",
+        borderBottom: `1px solid rgba(201,110,44,${scrolled ? "0.12" : "0.06"})`,
       }}
     >
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center gap-8">
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
-          <div className="w-8 h-8 text-[#C96E2C]"><Logo size={30} /></div>
-          <span className="text-[16px] font-semibold text-white">The <b>Cockpit</b></span>
+          <div className="w-8 h-8" style={{ color: TC }}><Logo size={30} /></div>
+          <span className="text-[16px] font-semibold" style={{ color: BROWN_DARK }}>The <b>Cockpit</b></span>
         </Link>
 
         <div className="hidden md:flex items-center gap-6 flex-1">
           {links.map((l) => (
             <a key={l.href} href={l.href}
               className="text-[13.5px] font-medium transition-colors"
-              style={{ color: "rgba(255,255,255,0.6)" }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "white")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.6)")}
+              style={{ color: TEXT_MID }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = TC)}
+              onMouseLeave={(e) => (e.currentTarget.style.color = TEXT_MID)}
             >
               {l.label}
             </a>
@@ -539,17 +575,21 @@ function Nav() {
         </div>
 
         <div className="hidden md:flex items-center gap-3 ml-auto">
-          <Link href="/login" className="text-[13.5px] font-medium text-white/60 hover:text-white transition-colors px-4 py-2">
+          <Link href="/login" className="text-[13.5px] font-medium transition-colors px-4 py-2"
+            style={{ color: TEXT_MID }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = TC)}
+            onMouseLeave={(e) => (e.currentTarget.style.color = TEXT_MID)}>
             Connexion
           </Link>
           <Link href="/signup"
             className="px-5 py-2 rounded-lg text-[13.5px] font-semibold text-white transition-all hover:scale-105 active:scale-95"
-            style={{ background: `linear-gradient(135deg, ${TC}, #a85520)` }}>
+            style={{ background: TC, boxShadow: `0 4px 14px ${TC}40` }}>
             Commencer gratuitement
           </Link>
         </div>
 
-        <button className="md:hidden ml-auto text-white/70 hover:text-white transition-colors" onClick={() => setMobileOpen(!mobileOpen)}>
+        <button className="md:hidden ml-auto transition-colors" style={{ color: TEXT_MID }}
+          onClick={() => setMobileOpen(!mobileOpen)}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
             {mobileOpen ? <><path d="M18 6L6 18"/><path d="M6 6l12 12"/></> : <><path d="M3 12h18"/><path d="M3 6h18"/><path d="M3 18h18"/></>}
           </svg>
@@ -559,15 +599,17 @@ function Nav() {
       <AnimatePresence>
         {mobileOpen && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t overflow-hidden" style={{ background: "rgba(8,6,10,0.95)", borderColor: "rgba(255,255,255,0.08)" }}>
+            className="md:hidden border-t overflow-hidden"
+            style={{ background: "rgba(253,250,245,0.98)", borderColor: "rgba(201,110,44,0.1)" }}>
             <div className="px-6 py-4 flex flex-col gap-3">
               {links.map((l) => (
                 <a key={l.href} href={l.href} onClick={() => setMobileOpen(false)}
-                  className="text-[14px] font-medium text-white/70 hover:text-white transition-colors py-1">{l.label}</a>
+                  className="text-[14px] font-medium py-1 transition-colors"
+                  style={{ color: TEXT_MID }}>{l.label}</a>
               ))}
               <Link href="/signup" onClick={() => setMobileOpen(false)}
                 className="mt-2 py-3 rounded-xl text-center text-[14px] font-semibold text-white"
-                style={{ background: `linear-gradient(135deg, ${TC}, #a85520)` }}>
+                style={{ background: TC }}>
                 Commencer gratuitement →
               </Link>
             </div>
@@ -581,141 +623,137 @@ function Nav() {
 // ─── Hero ───────────────────────────────────────────────────────────────────────
 
 function Hero() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const mouseX = useMotionValue(0.5);
-  const mouseY = useMotionValue(0.5);
-  const rotateX = useSpring(useTransform(mouseY, [0, 1], [4, -4]), { stiffness: 100, damping: 25 });
-  const rotateY = useSpring(useTransform(mouseX, [0, 1], [-5, 5]), { stiffness: 100, damping: 25 });
-
-  const handleMouse = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const r = containerRef.current?.getBoundingClientRect();
-    if (!r) return;
-    mouseX.set((e.clientX - r.left) / r.width);
-    mouseY.set((e.clientY - r.top) / r.height);
-  }, [mouseX, mouseY]);
-
-  const words = ["Votre", "mariage.", "Organisé", "à", "la", "perfection."];
-
   return (
     <section
-      ref={containerRef}
-      onMouseMove={handleMouse}
       className="relative min-h-screen flex flex-col items-center justify-center pt-20 pb-16 px-6 overflow-hidden"
-      style={{ background: "#080610" }}
+      style={{ background: `radial-gradient(ellipse at 50% 0%, ${WARM_SOFT} 0%, ${BG_CREAM} 60%)` }}
     >
-      {/* Gradient blobs */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-[10%] left-[15%] w-[500px] h-[500px] rounded-full opacity-20 blur-[120px]" style={{ background: TC }} />
-        <div className="absolute bottom-[10%] right-[15%] w-[400px] h-[400px] rounded-full opacity-15 blur-[100px]" style={{ background: GOLD }} />
-        <div className="absolute top-[40%] right-[30%] w-[300px] h-[300px] rounded-full opacity-10 blur-[80px] bg-purple-600" />
-        {/* Grid pattern */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: "linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)",
-          backgroundSize: "60px 60px",
-        }} />
+      {/* Subtle depth circles */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-10%] left-[-5%] w-[600px] h-[600px] rounded-full opacity-30"
+          style={{ background: `radial-gradient(circle, ${BLUSH} 0%, transparent 70%)` }} />
+        <div className="absolute bottom-[-5%] right-[-5%] w-[500px] h-[500px] rounded-full opacity-20"
+          style={{ background: `radial-gradient(circle, ${WARM_SOFT} 0%, transparent 70%)` }} />
+      </div>
+
+      {/* Decorative floral top-left */}
+      <div className="absolute top-24 left-8 opacity-60 hidden lg:block">
+        <DecorFloral />
+      </div>
+      {/* Decorative dots top-right */}
+      <div className="absolute top-32 right-12 opacity-70 hidden lg:block">
+        <DecorDots />
       </div>
 
       {/* Badge */}
       <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}>
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border mb-8"
-          style={{ borderColor: `${TC}50`, background: `${TC}12` }}>
+          style={{ borderColor: `${TC}40`, background: `${TC}10` }}>
           <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: TC }} />
           <span className="text-[12.5px] font-semibold" style={{ color: TC }}>100% gratuit • Démarrez en 2 minutes</span>
         </div>
       </motion.div>
 
-      {/* Headline */}
-      <div className="text-center max-w-4xl mb-8 relative z-10">
-        <motion.h1 className="text-[clamp(2.8rem,7vw,5.5rem)] font-bold tracking-[-0.03em] leading-[1.05] text-white mb-0">
-          {words.map((word, i) => (
-            <motion.span key={i}
-              initial={{ opacity: 0, y: 40, filter: "blur(10px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ duration: 0.7, delay: 0.1 + i * 0.09, ease: [0.16, 1, 0.3, 1] }}
-              className="inline-block mr-[0.25em]"
-              style={{ color: (i === 2 || i === 3 || i === 4 || i === 5) ? "white" : "white" }}
-            >
-              {(i === 2 || i === 3 || i === 4 || i === 5)
-                ? <span style={{ background: `linear-gradient(135deg, ${TC}, ${GOLD})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{word}</span>
-                : word}
-            </motion.span>
-          ))}
+      {/* Headline — éditorial asymétrique */}
+      <div className="text-center max-w-3xl mb-6 relative z-10">
+        <motion.h1
+          className="tracking-[-0.02em] leading-[1.08]"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4 }}
+        >
+          <motion.span
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+            className="block text-[clamp(2.2rem,5.5vw,4rem)] font-light italic mb-1"
+            style={{ color: TEXT_MID }}
+          >
+            Votre mariage,
+          </motion.span>
+          <motion.span
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            className="block text-[clamp(3rem,8vw,5.8rem)] font-extrabold"
+            style={{ color: TEXT_DARK }}
+          >
+            organisé avec soin.
+          </motion.span>
         </motion.h1>
       </div>
 
       <motion.p
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
-        className="text-[clamp(1rem,2vw,1.2rem)] text-center max-w-xl mb-10 leading-relaxed relative z-10"
-        style={{ color: "rgba(255,255,255,0.55)" }}
+        transition={{ duration: 0.7, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        className="text-[clamp(1rem,2vw,1.15rem)] text-center max-w-lg mb-10 leading-relaxed relative z-10"
+        style={{ color: TEXT_MID }}
       >
-        The Cockpit centralise <strong className="text-white/90">tous les outils</strong> dont vous avez besoin — invités, budget, prestataires, Jour J — dans une seule app élégante.
+        Un espace unique pour tout gérer — invités, budget, Jour J — avec élégance.
       </motion.p>
 
       {/* CTAs */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.9 }}
+        transition={{ duration: 0.6, delay: 0.55 }}
         className="flex flex-wrap items-center justify-center gap-4 mb-16 relative z-10"
       >
         <Link href="/signup"
-          className="px-7 py-3.5 rounded-xl text-[15px] font-semibold text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-95"
-          style={{ background: `linear-gradient(135deg, ${TC} 0%, #9B4A1A 100%)`, boxShadow: `0 8px 30px ${TC}50` }}>
+          className="px-7 py-3.5 rounded-xl text-[15px] font-semibold text-white transition-all hover:scale-105 active:scale-95"
+          style={{ background: TC, boxShadow: `0 8px 28px ${TC}45` }}>
           Commencer gratuitement →
         </Link>
-        <a href="#demo"
-          className="px-7 py-3.5 rounded-xl text-[15px] font-semibold border transition-all hover:border-white/30 hover:bg-white/5"
-          style={{ color: "rgba(255,255,255,0.8)", borderColor: "rgba(255,255,255,0.15)" }}>
-          Voir la démo ↓
+        <a href="#features"
+          className="px-7 py-3.5 rounded-xl text-[15px] font-semibold border transition-all hover:bg-white/60"
+          style={{ color: TC, borderColor: `${TC}40`, background: `${TC}08` }}>
+          Voir les fonctionnalités ↓
         </a>
       </motion.div>
 
-      {/* Hero mockup with 3D tilt */}
+      {/* Hero mockup */}
       <motion.div
-        initial={{ opacity: 0, y: 60 }}
+        initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        style={{ perspective: 1200 }}
+        transition={{ duration: 0.9, delay: 0.45, ease: [0.16, 1, 0.3, 1] }}
         className="w-full max-w-3xl relative z-10"
+        whileHover={{ y: -4, transition: { duration: 0.3 } }}
       >
-        <motion.div style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}>
-          <AppFrame url="the-cockpit.fr/dashboard">
-            <MockDashboard />
-          </AppFrame>
+        <AppFrame url="the-cockpit.fr/dashboard">
+          <MockDashboard />
+        </AppFrame>
 
-          {/* Floating badges */}
-          <FloatingBadge className="hidden md:block -right-8 top-8">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ background: "#6B8C3E" }}>✓</div>
-              <div>
-                <div className="text-[11px] font-bold text-[#382F23]">Traiteur confirmé</div>
-                <div className="text-[9px] text-[#8a7a6a]">Château des Fleurs</div>
-              </div>
+        {/* Floating badges */}
+        <FloatingBadge className="hidden md:flex -right-8 top-12" delay={0}>
+          <div className="flex items-center gap-2">
+            <div className="text-lg">🗓</div>
+            <div>
+              <div className="text-[11px] font-bold" style={{ color: TEXT_DARK }}>J-142</div>
+              <div className="text-[9px]" style={{ color: TEXT_LIGHT }}>Compte à rebours</div>
             </div>
-          </FloatingBadge>
+          </div>
+        </FloatingBadge>
 
-          <FloatingBadge className="hidden md:block -left-10 bottom-24">
-            <div className="flex items-center gap-2.5">
-              <span className="text-xl">☀️</span>
-              <div>
-                <div className="text-[11px] font-bold text-[#382F23]">Score météo · 94</div>
-                <div className="text-[9px] text-[#8a7a6a]">15 Août · 28° · 2% pluie</div>
-              </div>
+        <FloatingBadge className="hidden md:flex -left-10 top-1/3" delay={1.2}>
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ background: SAGE }}>✓</div>
+            <div>
+              <div className="text-[11px] font-bold" style={{ color: TEXT_DARK }}>98 confirmés</div>
+              <div className="text-[9px]" style={{ color: TEXT_LIGHT }}>sur 147 invités</div>
             </div>
-          </FloatingBadge>
+          </div>
+        </FloatingBadge>
 
-          <FloatingBadge className="hidden md:block -right-6 bottom-12">
-            <div className="text-center px-1">
-              <div className="text-[18px] font-bold text-[#382F23]">147</div>
-              <div className="text-[9px] text-[#8a7a6a]">invités confirmés</div>
-              <div className="mt-1 h-1.5 w-16 bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: "67%", background: "#6B8C3E" }} />
-              </div>
+        <FloatingBadge className="hidden md:flex -right-6 bottom-16" delay={0.6}>
+          <div className="text-center px-1">
+            <div className="text-[18px] font-bold" style={{ color: TC }}>70%</div>
+            <div className="text-[9px]" style={{ color: TEXT_LIGHT }}>Budget engagé</div>
+            <div className="mt-1 h-1.5 w-16 rounded-full overflow-hidden" style={{ background: WARM_SOFT }}>
+              <div className="h-full rounded-full" style={{ width: "70%", background: `linear-gradient(90deg, ${TC}, ${GOLD})` }} />
             </div>
-          </FloatingBadge>
-        </motion.div>
+          </div>
+        </FloatingBadge>
       </motion.div>
 
       {/* Scroll indicator */}
@@ -727,8 +765,8 @@ function Hero() {
       >
         <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 1.5, repeat: Infinity }}
           className="w-5 h-8 rounded-full border-2 flex items-start justify-center pt-1.5"
-          style={{ borderColor: "rgba(255,255,255,0.2)" }}>
-          <div className="w-1 h-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.5)" }} />
+          style={{ borderColor: `${TC}40` }}>
+          <div className="w-1 h-1.5 rounded-full" style={{ background: TC }} />
         </motion.div>
       </motion.div>
     </section>
@@ -741,15 +779,15 @@ function MarqueeStrip() {
   const items = ["16 modules tout-en-un", "Météo en temps réel", "Plan de table drag & drop", "Collaboration multi-utilisateurs", "Export PDF", "Partage lecture seule", "Planner ou couple", "100% gratuit", "Données sécurisées", "Application mobile"];
   const doubled = [...items, ...items];
   return (
-    <div className="py-5 overflow-hidden border-y" style={{ background: `${TC}0A`, borderColor: `${TC}25` }}>
+    <div className="py-5 overflow-hidden border-y" style={{ background: "#F9EDE3", borderColor: `${TC}20` }}>
       <motion.div
         animate={{ x: ["0%", "-50%"] }}
         transition={{ duration: 30, ease: "linear", repeat: Infinity }}
         className="flex whitespace-nowrap gap-8"
       >
         {doubled.map((item, i) => (
-          <span key={i} className="flex items-center gap-3 text-[13px] font-medium shrink-0" style={{ color: "rgba(255,255,255,0.5)" }}>
-            <span className="text-[10px]" style={{ color: TC }}>✦</span>
+          <span key={i} className="flex items-center gap-3 text-[13px] font-medium shrink-0" style={{ color: TC }}>
+            <span className="text-[10px]" style={{ color: GOLD }}>✦</span>
             {item}
           </span>
         ))}
@@ -768,26 +806,29 @@ function Stats() {
     { val: 2, suffix: " min", label: "Pour démarrer", icon: "clock" },
   ];
   return (
-    <section className="py-20 px-6" style={{ background: "#0c0a14" }}>
+    <section className="py-20 px-6" style={{ background: "#FFFFFF" }}>
       <div className="max-w-5xl mx-auto">
         <FadeIn>
           <div className="text-center mb-12">
             <Pill>Chiffres</Pill>
-            <h2 className="text-[clamp(1.8rem,4vw,2.8rem)] font-bold text-white mt-4 tracking-tight">Tout ce dont vous avez besoin,<br /><span style={{ color: TC }}>rien de superflu.</span></h2>
+            <h2 className="text-[clamp(1.8rem,4vw,2.8rem)] font-bold mt-4 tracking-tight" style={{ color: TEXT_DARK }}>
+              Tout ce dont vous avez besoin,<br />
+              <span style={{ color: TC }}>rien de superflu.</span>
+            </h2>
           </div>
         </FadeIn>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {stats.map((s, i) => (
             <FadeIn key={i} delay={i * 0.1}>
-              <div className="rounded-2xl border p-6 text-center group hover:border-white/20 transition-colors"
-                style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}>
-                <div className="w-10 h-10 rounded-xl mx-auto mb-3 flex items-center justify-center" style={{ background: `${TC}20`, color: TC }}>
+              <div className="rounded-2xl border p-6 text-center transition-all duration-300"
+                style={{ background: "#FFFFFF", borderColor: `${TC}20`, boxShadow: "0 2px 12px rgba(56,47,35,0.06)" }}>
+                <div className="w-10 h-10 rounded-xl mx-auto mb-3 flex items-center justify-center" style={{ background: `${TC}15`, color: TC }}>
                   <Ic name={s.icon} size={20} />
                 </div>
-                <div className="text-4xl font-bold text-white mb-1">
+                <div className="text-4xl font-bold mb-1" style={{ color: TC }}>
                   <Counter to={s.val} suffix={s.suffix} />
                 </div>
-                <div className="text-[13px]" style={{ color: "rgba(255,255,255,0.45)" }}>{s.label}</div>
+                <div className="text-[13px]" style={{ color: TEXT_LIGHT }}>{s.label}</div>
               </div>
             </FadeIn>
           ))}
@@ -801,14 +842,15 @@ function Stats() {
 
 function FeaturesGrid() {
   return (
-    <section id="features" className="py-24 px-6" style={{ background: "#080610" }}>
+    <section id="features" className="py-24 px-6" style={{ background: WARM_SOFT }}>
       <div className="max-w-7xl mx-auto">
         <FadeIn className="text-center mb-16">
           <Pill>Fonctionnalités</Pill>
-          <h2 className="text-[clamp(1.8rem,4vw,2.8rem)] font-bold text-white mt-4 tracking-tight">
-            16 modules pour tout planifier,<br /><span style={{ background: `linear-gradient(135deg, ${TC}, ${GOLD})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>dans une seule app.</span>
+          <h2 className="text-[clamp(1.8rem,4vw,2.8rem)] font-bold mt-4 tracking-tight" style={{ color: TEXT_DARK }}>
+            16 modules pour tout planifier,<br />
+            <span style={{ color: TC }}>dans une seule app.</span>
           </h2>
-          <p className="mt-4 text-[15px] max-w-xl mx-auto" style={{ color: "rgba(255,255,255,0.5)" }}>
+          <p className="mt-4 text-[15px] max-w-xl mx-auto" style={{ color: TEXT_MID }}>
             De l'invitation au Jour J, chaque module est pensé pour les futurs mariés comme pour les wedding planners.
           </p>
         </FadeIn>
@@ -826,16 +868,16 @@ function FeaturesGrid() {
 // ─── Spotlight section helper ──────────────────────────────────────────────────
 
 function Spotlight({
-  tag, title, desc, bullets, mockup, reverse = false, id,
+  tag, title, desc, bullets, mockup, reverse = false, id, bg = "#FFFFFF",
 }: {
   tag: string; title: React.ReactNode; desc: string; bullets: string[];
-  mockup: React.ReactNode; reverse?: boolean; id?: string;
+  mockup: React.ReactNode; reverse?: boolean; id?: string; bg?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
-    <section ref={ref} id={id} className="py-24 px-6 overflow-hidden" style={{ background: "#0c0a14" }}>
+    <section ref={ref} id={id} className="py-24 px-6 overflow-hidden" style={{ background: bg }}>
       <div className={`max-w-6xl mx-auto flex flex-col ${reverse ? "lg:flex-row-reverse" : "lg:flex-row"} items-center gap-16`}>
         {/* Text */}
         <motion.div
@@ -845,12 +887,12 @@ function Spotlight({
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         >
           <Pill>{tag}</Pill>
-          <h2 className="text-[clamp(1.8rem,3.5vw,2.5rem)] font-bold text-white mt-5 mb-4 tracking-tight leading-tight">{title}</h2>
-          <p className="text-[15px] mb-6 leading-relaxed" style={{ color: "rgba(255,255,255,0.55)" }}>{desc}</p>
+          <h2 className="text-[clamp(1.8rem,3.5vw,2.5rem)] font-bold mt-5 mb-4 tracking-tight leading-tight" style={{ color: TEXT_DARK }}>{title}</h2>
+          <p className="text-[15px] mb-6 leading-relaxed" style={{ color: TEXT_MID }}>{desc}</p>
           <ul className="flex flex-col gap-3 mb-8">
             {bullets.map((b, i) => (
-              <li key={i} className="flex items-start gap-2.5 text-[14px]" style={{ color: "rgba(255,255,255,0.7)" }}>
-                <span className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: `${TC}25` }}>
+              <li key={i} className="flex items-start gap-2.5 text-[14px]" style={{ color: TEXT_MID }}>
+                <span className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: `${TC}20` }}>
                   <svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 5l2.5 2.5 4-4" stroke={TC} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" /></svg>
                 </span>
                 {b}
@@ -859,7 +901,7 @@ function Spotlight({
           </ul>
           <Link href="/signup"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-[14px] font-semibold text-white transition-all hover:scale-105"
-            style={{ background: `linear-gradient(135deg, ${TC}, #9B4A1A)` }}>
+            style={{ background: TC, boxShadow: `0 6px 20px ${TC}35` }}>
             Essayer gratuitement <Ic name="arrow" size={15} />
           </Link>
         </motion.div>
@@ -870,6 +912,7 @@ function Spotlight({
           initial={{ opacity: 0, x: reverse ? -40 : 40 }}
           animate={inView ? { opacity: 1, x: 0 } : {}}
           transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+          whileHover={{ y: -4, transition: { duration: 0.3 } }}
         >
           <AppFrame url={`the-cockpit.fr/${id || "app"}`}>
             {mockup}
@@ -893,7 +936,6 @@ const TESTIMONIALS = [
 
 function Testimonials() {
   const [active, setActive] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const id = setInterval(() => setActive((a) => (a + 1) % TESTIMONIALS.length), 4000);
@@ -901,11 +943,11 @@ function Testimonials() {
   }, []);
 
   return (
-    <section className="py-24 px-6 overflow-hidden" style={{ background: "#080610" }}>
+    <section className="py-24 px-6 overflow-hidden" style={{ background: "#FFFFFF" }}>
       <div className="max-w-6xl mx-auto">
         <FadeIn className="text-center mb-16">
           <Pill>Témoignages</Pill>
-          <h2 className="text-[clamp(1.8rem,4vw,2.6rem)] font-bold text-white mt-4 tracking-tight">
+          <h2 className="text-[clamp(1.8rem,4vw,2.6rem)] font-bold mt-4 tracking-tight" style={{ color: TEXT_DARK }}>
             Des couples qui ont dit <span style={{ color: TC }}>oui</span> à The Cockpit.
           </h2>
         </FadeIn>
@@ -919,9 +961,13 @@ function Testimonials() {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
               className="rounded-2xl border p-8 md:p-10 relative"
-              style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)" }}
+              style={{
+                background: BG_CREAM,
+                borderColor: "rgba(201,110,44,0.12)",
+                boxShadow: "0 4px 20px rgba(56,47,35,0.07)",
+              }}
             >
-              <div className="text-[clamp(1.1rem,2.5vw,1.5rem)] text-white font-medium leading-relaxed mb-6 max-w-3xl">
+              <div className="text-[clamp(1.1rem,2.5vw,1.4rem)] font-medium leading-relaxed mb-6 max-w-3xl" style={{ color: TEXT_DARK }}>
                 &ldquo;{TESTIMONIALS[active].text}&rdquo;
               </div>
               <div className="flex items-center gap-3">
@@ -930,8 +976,8 @@ function Testimonials() {
                   {TESTIMONIALS[active].photo}
                 </div>
                 <div>
-                  <div className="text-[14px] font-semibold text-white">{TESTIMONIALS[active].name}</div>
-                  <div className="text-[12px]" style={{ color: "rgba(255,255,255,0.45)" }}>
+                  <div className="text-[14px] font-semibold" style={{ color: TEXT_DARK }}>{TESTIMONIALS[active].name}</div>
+                  <div className="text-[12px]" style={{ color: TEXT_LIGHT }}>
                     {TESTIMONIALS[active].role || TESTIMONIALS[active].date}
                   </div>
                 </div>
@@ -950,7 +996,7 @@ function Testimonials() {
           {TESTIMONIALS.map((_, i) => (
             <button key={i} onClick={() => setActive(i)}
               className="rounded-full transition-all duration-300"
-              style={{ width: i === active ? 24 : 8, height: 8, background: i === active ? TC : "rgba(255,255,255,0.2)" }}
+              style={{ width: i === active ? 24 : 8, height: 8, background: i === active ? TC : `${TC}30` }}
             />
           ))}
         </div>
@@ -961,21 +1007,22 @@ function Testimonials() {
             <FadeIn key={i} delay={i * 0.07}>
               <button
                 onClick={() => setActive(i)}
-                className="text-left w-full rounded-xl border p-5 transition-all duration-200 hover:border-white/20"
+                className="text-left w-full rounded-xl border p-5 transition-all duration-200"
                 style={{
-                  background: i === active ? "rgba(201,110,44,0.08)" : "rgba(255,255,255,0.02)",
-                  borderColor: i === active ? `${TC}60` : "rgba(255,255,255,0.07)",
+                  background: i === active ? `${TC}08` : BG_CREAM,
+                  borderColor: i === active ? `${TC}50` : "rgba(201,110,44,0.1)",
+                  boxShadow: i === active ? `0 4px 16px ${TC}15` : "none",
                 }}
               >
-                <p className="text-[12.5px] leading-relaxed mb-3 line-clamp-3" style={{ color: "rgba(255,255,255,0.6)" }}>
+                <p className="text-[12.5px] leading-relaxed mb-3 line-clamp-3" style={{ color: TEXT_MID }}>
                   &ldquo;{t.text}&rdquo;
                 </p>
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
                     style={{ background: `linear-gradient(135deg, ${TC}, ${GOLD})` }}>{t.photo}</div>
                   <div>
-                    <div className="text-[11.5px] font-semibold text-white">{t.name}</div>
-                    <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>{t.role || t.date}</div>
+                    <div className="text-[11.5px] font-semibold" style={{ color: TEXT_DARK }}>{t.name}</div>
+                    <div className="text-[10px]" style={{ color: TEXT_LIGHT }}>{t.role || t.date}</div>
                   </div>
                 </div>
               </button>
@@ -991,22 +1038,23 @@ function Testimonials() {
 
 function PricingCTA() {
   return (
-    <section id="pricing" className="py-24 px-6" style={{ background: "#0c0a14" }}>
+    <section id="pricing" className="py-24 px-6" style={{ background: WARM_SOFT }}>
       <div className="max-w-3xl mx-auto text-center">
         <FadeIn>
           <Pill>Tarifs</Pill>
-          <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-bold text-white mt-4 mb-4 tracking-tight">
-            Gratuit.<br /><span style={{ background: `linear-gradient(135deg, ${TC}, ${GOLD})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Pour toujours.</span>
+          <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-bold mt-4 mb-4 tracking-tight" style={{ color: TEXT_DARK }}>
+            Gratuit.<br /><span style={{ color: TC }}>Pour toujours.</span>
           </h2>
-          <p className="text-[16px] mb-10 leading-relaxed" style={{ color: "rgba(255,255,255,0.55)" }}>
+          <p className="text-[16px] mb-10 leading-relaxed" style={{ color: TEXT_MID }}>
             The Cockpit est 100% gratuit. Pas d'essai, pas de carte bancaire, pas de limite de temps. Tous les modules, tous les exports, toutes les fonctionnalités.
           </p>
         </FadeIn>
 
         <FadeIn delay={0.1}>
-          <div className="rounded-2xl border p-8 md:p-10 mb-8" style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)" }}>
-            <div className="text-5xl font-bold text-white mb-1">0€</div>
-            <div className="text-[14px] mb-8" style={{ color: "rgba(255,255,255,0.4)" }}>Pour toujours</div>
+          <div className="rounded-2xl border p-8 md:p-10 mb-8"
+            style={{ background: "#FFFFFF", borderColor: "rgba(201,110,44,0.12)", boxShadow: "0 8px 32px rgba(56,47,35,0.1)" }}>
+            <div className="text-6xl font-bold mb-1" style={{ color: TC }}>0€</div>
+            <div className="text-[14px] mb-8" style={{ color: TEXT_LIGHT }}>Pour toujours</div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left mb-8">
               {[
                 "16 modules complets", "Invités illimités",
@@ -1015,8 +1063,8 @@ function PricingCTA() {
                 "Météo en temps réel", "Données sécurisées Supabase",
                 "Mode couple & wedding planner", "Mises à jour continues",
               ].map((f, i) => (
-                <div key={i} className="flex items-center gap-2.5 text-[13.5px]" style={{ color: "rgba(255,255,255,0.7)" }}>
-                  <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ background: `${TC}20` }}>
+                <div key={i} className="flex items-center gap-2.5 text-[13.5px]" style={{ color: TEXT_MID }}>
+                  <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ background: `${TC}18` }}>
                     <svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 5l2.5 2.5 4-4" stroke={TC} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" /></svg>
                   </div>
                   {f}
@@ -1025,15 +1073,15 @@ function PricingCTA() {
             </div>
             <Link href="/signup"
               className="block w-full py-4 rounded-xl text-[16px] font-bold text-white text-center transition-all hover:scale-[1.02] active:scale-95"
-              style={{ background: `linear-gradient(135deg, ${TC} 0%, #9B4A1A 100%)`, boxShadow: `0 12px 40px ${TC}60` }}>
+              style={{ background: TC, boxShadow: `0 12px 36px ${TC}45` }}>
               Créer mon espace gratuitement →
             </Link>
           </div>
         </FadeIn>
 
         <FadeIn delay={0.2}>
-          <p className="text-[13px]" style={{ color: "rgba(255,255,255,0.3)" }}>
-            Déjà un compte ? <Link href="/login" className="underline hover:text-white/60 transition-colors" style={{ color: TC }}>Se connecter</Link>
+          <p className="text-[13px]" style={{ color: TEXT_LIGHT }}>
+            Déjà un compte ? <Link href="/login" className="underline hover:opacity-80 transition-opacity" style={{ color: TC }}>Se connecter</Link>
           </p>
         </FadeIn>
       </div>
@@ -1057,30 +1105,35 @@ const FAQS = [
 function FAQ() {
   const [open, setOpen] = useState<number | null>(null);
   return (
-    <section id="faq" className="py-24 px-6" style={{ background: "#080610" }}>
+    <section id="faq" className="py-24 px-6" style={{ background: "#FFFFFF" }}>
       <div className="max-w-3xl mx-auto">
         <FadeIn className="text-center mb-16">
           <Pill>FAQ</Pill>
-          <h2 className="text-[clamp(1.8rem,4vw,2.6rem)] font-bold text-white mt-4 tracking-tight">Questions fréquentes</h2>
+          <h2 className="text-[clamp(1.8rem,4vw,2.6rem)] font-bold mt-4 tracking-tight" style={{ color: TEXT_DARK }}>Questions fréquentes</h2>
         </FadeIn>
         <div className="flex flex-col gap-3">
           {FAQS.map((faq, i) => (
             <FadeIn key={i} delay={i * 0.04}>
-              <div className="rounded-2xl border overflow-hidden" style={{ borderColor: open === i ? `${TC}50` : "rgba(255,255,255,0.08)", background: open === i ? "rgba(201,110,44,0.06)" : "rgba(255,255,255,0.03)" }}>
+              <div className="rounded-2xl border overflow-hidden transition-all duration-200"
+                style={{
+                  borderColor: open === i ? `${TC}40` : "rgba(201,110,44,0.1)",
+                  background: open === i ? `${TC}05` : "#FFFFFF",
+                  boxShadow: open === i ? `0 4px 16px ${TC}10` : "none",
+                }}>
                 <button
                   onClick={() => setOpen(open === i ? null : i)}
                   className="w-full flex items-center justify-between gap-4 px-6 py-5 text-left"
                 >
-                  <span className="text-[15px] font-semibold text-white">{faq.q}</span>
-                  <motion.span animate={{ rotate: open === i ? 45 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 28 }}
-                    className="shrink-0 text-white/40">
+                  <span className="text-[15px] font-semibold" style={{ color: TEXT_DARK }}>{faq.q}</span>
+                  <motion.span animate={{ rotate: open === i ? 45 : 0 }} transition={{ type: "spring", stiffness: 280, damping: 24 }}
+                    className="shrink-0" style={{ color: TC }}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
                   </motion.span>
                 </button>
                 <AnimatePresence>
                   {open === i && (
                     <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }} className="overflow-hidden">
-                      <p className="px-6 pb-5 text-[14px] leading-relaxed" style={{ color: "rgba(255,255,255,0.55)" }}>{faq.a}</p>
+                      <p className="px-6 pb-5 text-[14px] leading-relaxed" style={{ color: TEXT_MID }}>{faq.a}</p>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -1116,30 +1169,30 @@ function Footer() {
     ],
   };
   return (
-    <footer style={{ background: "#050408", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+    <footer style={{ background: BROWN_DARK, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
       <div className="max-w-7xl mx-auto px-6 py-16">
         <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_1fr] gap-10 mb-12">
           <div>
             <Link href="/" className="flex items-center gap-2.5 mb-4">
-              <div className="w-8 h-8 text-[#C96E2C]"><Logo size={30} /></div>
+              <div className="w-8 h-8" style={{ color: TC }}><Logo size={30} /></div>
               <span className="text-[16px] font-semibold text-white">The <b>Cockpit</b></span>
             </Link>
-            <p className="text-[13.5px] leading-relaxed mb-5" style={{ color: "rgba(255,255,255,0.4)" }}>
+            <p className="text-[13.5px] leading-relaxed mb-5" style={{ color: "rgba(253,250,245,0.55)" }}>
               L'outil tout-en-un pour organiser votre mariage parfait. Budget, invités, prestataires, planning et Jour J — tout en un.
             </p>
             <Link href="/signup"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-[13px] font-semibold text-white"
-              style={{ background: `linear-gradient(135deg, ${TC}, #9B4A1A)` }}>
+              style={{ background: TC, boxShadow: `0 4px 14px ${TC}50` }}>
               Commencer gratuitement →
             </Link>
           </div>
           {Object.entries(links).map(([cat, items]) => (
             <div key={cat}>
-              <div className="text-[11px] font-semibold uppercase tracking-wider mb-4" style={{ color: "rgba(255,255,255,0.3)" }}>{cat}</div>
+              <div className="text-[11px] font-semibold uppercase tracking-wider mb-4" style={{ color: "rgba(253,250,245,0.4)" }}>{cat}</div>
               <ul className="flex flex-col gap-2.5">
                 {items.map((l) => (
                   <li key={l.label}>
-                    <Link href={l.href} className="text-[13.5px] hover:text-white/80 transition-colors" style={{ color: "rgba(255,255,255,0.45)" }}>
+                    <Link href={l.href} className="text-[13.5px] transition-colors hover:text-white" style={{ color: "rgba(253,250,245,0.55)" }}>
                       {l.label}
                     </Link>
                   </li>
@@ -1149,11 +1202,11 @@ function Footer() {
           ))}
         </div>
         <div className="border-t pt-6 flex flex-col sm:flex-row items-center justify-between gap-3"
-          style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-          <p className="text-[12.5px]" style={{ color: "rgba(255,255,255,0.25)" }}>
+          style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+          <p className="text-[12.5px]" style={{ color: "rgba(253,250,245,0.3)" }}>
             © 2026 The Cockpit. Tous droits réservés.
           </p>
-          <p className="text-[12px]" style={{ color: "rgba(255,255,255,0.2)" }}>
+          <p className="text-[12px]" style={{ color: "rgba(253,250,245,0.25)" }}>
             Fait avec 💍 pour les futurs mariés de France
           </p>
         </div>
@@ -1168,29 +1221,45 @@ function FinalCTA() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true });
   return (
-    <section ref={ref} className="py-24 px-6 relative overflow-hidden" style={{ background: "#0c0a14" }}>
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at 50% 50%, ${TC}20, transparent 70%)` }} />
+    <section ref={ref} className="py-24 px-6 relative overflow-hidden"
+      style={{ background: "linear-gradient(135deg, #F4ECDD 0%, #FDF0E8 100%)" }}>
+      {/* Decorative elements */}
+      <div className="absolute top-8 left-12 opacity-60 hidden lg:block">
+        <DecorRings />
       </div>
+      <div className="absolute bottom-8 right-16 opacity-50 hidden lg:block">
+        <DecorDots />
+      </div>
+      {/* Subtle sparkle stars */}
+      <div className="absolute top-1/3 right-1/4 opacity-30">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
+            stroke={GOLD} strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      </div>
+
       <div className="max-w-3xl mx-auto text-center relative z-10">
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.94 }}
           animate={inView ? { opacity: 1, scale: 1 } : {}}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         >
-          <div className="text-6xl mb-6">💍</div>
-          <h2 className="text-[clamp(2rem,5vw,3.2rem)] font-bold text-white tracking-tight mb-4">
+          <div className="mb-6">
+            <DecorRings />
+            <div className="flex justify-center mt-3"><DecorRings /></div>
+          </div>
+          <h2 className="text-[clamp(2rem,5vw,3.2rem)] font-bold tracking-tight mb-4" style={{ color: TEXT_DARK }}>
             Votre mariage mérite<br />le meilleur outil.
           </h2>
-          <p className="text-[16px] mb-10" style={{ color: "rgba(255,255,255,0.5)" }}>
+          <p className="text-[16px] mb-10" style={{ color: TEXT_MID }}>
             Rejoignez des centaines de couples et de wedding planners qui font confiance à The Cockpit.
           </p>
           <Link href="/signup"
             className="inline-flex items-center gap-3 px-10 py-4 rounded-2xl text-[16px] font-bold text-white transition-all hover:scale-105 active:scale-95"
-            style={{ background: `linear-gradient(135deg, ${TC} 0%, #9B4A1A 100%)`, boxShadow: `0 16px 50px ${TC}60` }}>
+            style={{ background: TC, boxShadow: `0 16px 48px ${TC}50` }}>
             Créer mon espace mariage — Gratuit →
           </Link>
-          <div className="mt-6 flex items-center justify-center gap-6 text-[12.5px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+          <div className="mt-6 flex items-center justify-center gap-6 text-[12.5px]" style={{ color: TEXT_LIGHT }}>
             {["Aucune carte bancaire", "Démarrage en 2 min", "Données sécurisées"].map((t, i) => (
               <span key={i} className="flex items-center gap-1.5">
                 <span style={{ color: TC }}>✓</span> {t}
@@ -1208,19 +1277,19 @@ function FinalCTA() {
 function HowItWorks() {
   const steps = [
     {
-      num: "①",
+      num: "01",
       icon: "sparkle",
       title: "Créez votre espace",
       desc: "Choisissez votre période, entrez vos prénoms, c'est prêt en 2 minutes",
     },
     {
-      num: "②",
+      num: "02",
       icon: "grid",
       title: "Personnalisez vos modules",
       desc: "Invités, budget, prestataires, planning… chaque section se configure en quelques clics",
     },
     {
-      num: "③",
+      num: "03",
       icon: "clock",
       title: "Profitez du Jour J",
       desc: "Utilisez le mode EN DIRECT pour suivre votre programme minute par minute",
@@ -1228,51 +1297,48 @@ function HowItWorks() {
   ];
 
   return (
-    <section className="py-24 px-6" style={{ background: "#0c0a14" }}>
+    <section className="py-24 px-6" style={{ background: WARM_SOFT }}>
       <div className="max-w-5xl mx-auto">
         <FadeIn className="text-center mb-16">
           <Pill>Comment ça marche</Pill>
-          <h2 className="text-[clamp(1.8rem,4vw,2.8rem)] font-bold text-white mt-4 tracking-tight">
+          <h2 className="text-[clamp(1.8rem,4vw,2.8rem)] font-bold mt-4 tracking-tight" style={{ color: TEXT_DARK }}>
             En 3 étapes, votre mariage<br />
-            <span style={{ background: `linear-gradient(135deg, ${TC}, ${GOLD})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-              est organisé.
-            </span>
+            <span style={{ color: TC }}>est organisé.</span>
           </h2>
         </FadeIn>
 
         <div className="relative">
           {/* Connecting line — desktop */}
           <div className="hidden md:block absolute top-[52px] left-[calc(16.67%+16px)] right-[calc(16.67%+16px)] h-[2px] pointer-events-none"
-            style={{ background: `linear-gradient(90deg, transparent, ${TC}60, ${TC}60, transparent)` }} />
+            style={{ background: `linear-gradient(90deg, transparent, ${TC}40, ${TC}40, transparent)` }} />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
             {steps.map((step, i) => (
               <FadeIn key={i} delay={i * 0.12}>
                 <div className="relative flex flex-col items-center text-center group">
-                  {/* Connector line — mobile */}
                   {i < steps.length - 1 && (
                     <div className="md:hidden w-[2px] h-8 my-0 mx-auto"
-                      style={{ background: `linear-gradient(180deg, ${TC}60, transparent)` }} />
+                      style={{ background: `linear-gradient(180deg, ${TC}40, transparent)` }} />
                   )}
                   {/* Number badge */}
                   <div
-                    className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-bold mb-5 relative z-10 transition-transform duration-300 group-hover:scale-110"
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold mb-5 relative z-10 transition-transform duration-300 group-hover:scale-110"
                     style={{
-                      background: `linear-gradient(135deg, ${TC}30, ${TC}10)`,
-                      border: `1px solid ${TC}40`,
+                      background: "#FFFFFF",
+                      border: `2px solid ${TC}30`,
                       color: TC,
-                      boxShadow: `0 8px 24px ${TC}20`,
+                      boxShadow: `0 8px 24px ${TC}18`,
                     }}
                   >
-                    <span style={{ fontSize: "1.5rem", lineHeight: 1 }}>{step.num}</span>
+                    {step.num}
                   </div>
                   {/* Icon */}
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
-                    style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.4)" }}>
+                    style={{ background: `${TC}12`, color: TC }}>
                     <Ic name={step.icon} size={20} />
                   </div>
-                  <h3 className="text-[16px] font-bold text-white mb-3">{step.title}</h3>
-                  <p className="text-[14px] leading-relaxed" style={{ color: "rgba(255,255,255,0.5)" }}>{step.desc}</p>
+                  <h3 className="text-[16px] font-bold mb-3" style={{ color: TEXT_DARK }}>{step.title}</h3>
+                  <p className="text-[14px] leading-relaxed" style={{ color: TEXT_MID }}>{step.desc}</p>
                 </div>
               </FadeIn>
             ))}
@@ -1282,7 +1348,7 @@ function HowItWorks() {
         <FadeIn delay={0.35} className="text-center mt-12">
           <Link href="/signup"
             className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl text-[15px] font-semibold text-white transition-all hover:scale-105 active:scale-95"
-            style={{ background: `linear-gradient(135deg, ${TC} 0%, #9B4A1A 100%)`, boxShadow: `0 8px 30px ${TC}40` }}>
+            style={{ background: TC, boxShadow: `0 8px 28px ${TC}40` }}>
             Commencer — c'est gratuit →
           </Link>
         </FadeIn>
@@ -1292,6 +1358,33 @@ function HowItWorks() {
 }
 
 // ─── For Planners ──────────────────────────────────────────────────────────────
+
+function PlannerIllustration() {
+  return (
+    <svg viewBox="0 0 280 220" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-[280px]">
+      {/* Stack of documents */}
+      <rect x="50" y="80" width="160" height="110" rx="10" fill={WARM_SOFT} stroke={`${TC}30`} strokeWidth="1.5" />
+      <rect x="42" y="72" width="160" height="110" rx="10" fill="#FFF8F2" stroke={`${TC}25`} strokeWidth="1.5" />
+      <rect x="34" y="64" width="160" height="110" rx="10" fill="#FFFFFF" stroke={`${TC}35`} strokeWidth="1.5" />
+      {/* Lines on top doc */}
+      <rect x="50" y="84" width="90" height="5" rx="2.5" fill={`${TC}30`} />
+      <rect x="50" y="96" width="120" height="4" rx="2" fill={`${TC}18`} />
+      <rect x="50" y="107" width="100" height="4" rx="2" fill={`${TC}18`} />
+      <rect x="50" y="118" width="80" height="4" rx="2" fill={`${TC}18`} />
+      {/* Check badges */}
+      <circle cx="160" cy="130" r="16" fill={SAGE} fillOpacity="0.15" />
+      <circle cx="160" cy="130" r="12" fill={SAGE} fillOpacity="0.25" />
+      <path d="M154 130l4 4 8-8" stroke={SAGE} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      {/* Rings decoration top */}
+      <circle cx="200" cy="50" r="20" stroke={TC} strokeOpacity="0.3" strokeWidth="2" fill="none" />
+      <circle cx="225" cy="50" r="20" stroke={GOLD} strokeOpacity="0.3" strokeWidth="2" fill="none" />
+      {/* Small dots */}
+      <circle cx="46" cy="40" r="4" fill={TC} fillOpacity="0.2" />
+      <circle cx="60" cy="32" r="3" fill={GOLD} fillOpacity="0.3" />
+      <circle cx="76" cy="42" r="2.5" fill={TC} fillOpacity="0.15" />
+    </svg>
+  );
+}
 
 function ForPlanners() {
   const features = [
@@ -1306,7 +1399,7 @@ function ForPlanners() {
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
-    <section className="py-24 px-6" style={{ background: "#080610" }}>
+    <section className="py-24 px-6" style={{ background: "#FFFFFF" }}>
       <div ref={ref} className="max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-16">
         {/* Text column */}
         <motion.div
@@ -1316,52 +1409,52 @@ function ForPlanners() {
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         >
           <Pill>Wedding Planners</Pill>
-          <h2 className="text-[clamp(1.8rem,3.5vw,2.5rem)] font-bold text-white mt-5 mb-3 tracking-tight leading-tight">
+          <h2 className="text-[clamp(1.8rem,3.5vw,2.5rem)] font-bold mt-5 mb-3 tracking-tight leading-tight" style={{ color: TEXT_DARK }}>
             Wedding planner ?<br />
             <span style={{ color: TC }}>The Cockpit est fait pour vous aussi.</span>
           </h2>
-          <p className="text-[15px] mb-8 leading-relaxed" style={{ color: "rgba(255,255,255,0.55)" }}>
+          <p className="text-[15px] mb-6 leading-relaxed" style={{ color: TEXT_MID }}>
             Gérez jusqu'à 5 mariages simultanément depuis un seul tableau de bord.
           </p>
+
+          <ul className="flex flex-col gap-3 mb-8">
+            {features.map((feat, i) => (
+              <motion.li
+                key={i}
+                initial={{ opacity: 0, x: 16 }}
+                animate={inView ? { opacity: 1, x: 0 } : {}}
+                transition={{ duration: 0.5, delay: 0.3 + i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+                className="flex items-start gap-3 text-[14.5px]"
+                style={{ color: TEXT_MID }}
+              >
+                <span className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                  style={{ background: `${TC}20` }}>
+                  <svg width="10" height="10" viewBox="0 0 10 10">
+                    <path d="M2 5l2.5 2.5 4-4" stroke={TC} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                  </svg>
+                </span>
+                {feat}
+              </motion.li>
+            ))}
+          </ul>
+
           <Link href="/signup"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-[14px] font-semibold text-white transition-all hover:scale-105"
-            style={{ background: `linear-gradient(135deg, ${TC}, #9B4A1A)` }}>
+            style={{ background: TC, boxShadow: `0 6px 20px ${TC}35` }}>
             Créer mon espace planner <Ic name="arrow" size={15} />
           </Link>
         </motion.div>
 
-        {/* Features column */}
+        {/* Illustration column */}
         <motion.div
-          className="flex-1 w-full"
+          className="flex-1 w-full flex items-center justify-center"
           initial={{ opacity: 0, x: 40 }}
           animate={inView ? { opacity: 1, x: 0 } : {}}
           transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
         >
-          <div className="rounded-2xl border p-8"
-            style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.09)" }}>
-            <div className="text-[12px] font-semibold uppercase tracking-wider mb-6" style={{ color: "rgba(255,255,255,0.35)" }}>
-              Fonctionnalités dédiées planners
-            </div>
-            <ul className="flex flex-col gap-4">
-              {features.map((feat, i) => (
-                <motion.li
-                  key={i}
-                  initial={{ opacity: 0, x: 16 }}
-                  animate={inView ? { opacity: 1, x: 0 } : {}}
-                  transition={{ duration: 0.5, delay: 0.3 + i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-                  className="flex items-start gap-3 text-[14.5px]"
-                  style={{ color: "rgba(255,255,255,0.75)" }}
-                >
-                  <span className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5"
-                    style={{ background: `${TC}25` }}>
-                    <svg width="10" height="10" viewBox="0 0 10 10">
-                      <path d="M2 5l2.5 2.5 4-4" stroke={TC} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                    </svg>
-                  </span>
-                  {feat}
-                </motion.li>
-              ))}
-            </ul>
+          <div className="rounded-2xl p-12 w-full flex items-center justify-center"
+            style={{ background: BG_CREAM, border: "1px solid rgba(201,110,44,0.1)" }}>
+            <PlannerIllustration />
           </div>
         </motion.div>
       </div>
@@ -1385,10 +1478,10 @@ function ComparisonTable() {
     { label: "Prix",                             cockpit: "Gratuit", excel: "Payant",  generic: "Payant"  },
   ];
 
-  function Cell({ val, highlight = false }: { val: CellVal; highlight?: boolean }) {
+  function Cell({ val }: { val: CellVal }) {
     if (val === true) return (
       <span className="inline-flex items-center justify-center w-6 h-6 rounded-full"
-        style={{ background: "#6B8C3E20", color: "#6B8C3E" }}>
+        style={{ background: `${SAGE}25`, color: SAGE }}>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
           <path d="M20 6L9 17l-5-5" />
         </svg>
@@ -1396,7 +1489,7 @@ function ComparisonTable() {
     );
     if (val === false) return (
       <span className="inline-flex items-center justify-center w-6 h-6 rounded-full"
-        style={{ background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.25)" }}>
+        style={{ background: "rgba(201,110,44,0.08)", color: TEXT_LIGHT }}>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
           <path d="M18 6L6 18M6 6l12 12" />
         </svg>
@@ -1404,51 +1497,51 @@ function ComparisonTable() {
     );
     if (val === "partial") return (
       <span className="inline-flex items-center justify-center w-6 h-6 rounded-full"
-        style={{ background: `${GOLD}15`, color: GOLD }}>
+        style={{ background: `${GOLD}20`, color: GOLD }}>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
           <path d="M5 12h14" />
         </svg>
       </span>
     );
-    // string value (price row)
     if (val === "Gratuit") return (
       <span className="text-[12px] font-bold px-2 py-0.5 rounded-full"
-        style={{ background: "#6B8C3E20", color: "#6B8C3E" }}>{val}</span>
+        style={{ background: `${SAGE}20`, color: SAGE }}>{val}</span>
     );
     return (
-      <span className="text-[12px] font-medium" style={{ color: "rgba(255,255,255,0.35)" }}>{val as string}</span>
+      <span className="text-[12px] font-medium" style={{ color: TEXT_LIGHT }}>{val as string}</span>
     );
   }
 
   return (
-    <section className="py-24 px-6" style={{ background: "#0c0a14" }}>
+    <section className="py-24 px-6" style={{ background: BG_CREAM }}>
       <div className="max-w-4xl mx-auto">
         <FadeIn className="text-center mb-16">
           <Pill>Comparaison</Pill>
-          <h2 className="text-[clamp(1.8rem,4vw,2.8rem)] font-bold text-white mt-4 tracking-tight">
+          <h2 className="text-[clamp(1.8rem,4vw,2.8rem)] font-bold mt-4 tracking-tight" style={{ color: TEXT_DARK }}>
             Pourquoi The Cockpit<br />
             <span style={{ color: TC }}>plutôt qu'un tableur ?</span>
           </h2>
-          <p className="mt-4 text-[15px] max-w-xl mx-auto" style={{ color: "rgba(255,255,255,0.5)" }}>
+          <p className="mt-4 text-[15px] max-w-xl mx-auto" style={{ color: TEXT_MID }}>
             Votre mariage mérite mieux qu'une feuille de calcul. Voici pourquoi.
           </p>
         </FadeIn>
 
         <FadeIn delay={0.1}>
-          <div className="rounded-2xl overflow-hidden border" style={{ borderColor: "rgba(255,255,255,0.09)" }}>
+          <div className="rounded-2xl overflow-hidden border"
+            style={{ borderColor: "rgba(201,110,44,0.12)", boxShadow: "0 4px 20px rgba(56,47,35,0.08)" }}>
             {/* Header */}
-            <div className="grid grid-cols-[2fr_1fr_1fr_1fr] border-b" style={{ borderColor: "rgba(255,255,255,0.09)" }}>
+            <div className="grid grid-cols-[2fr_1fr_1fr_1fr] border-b" style={{ borderColor: "rgba(201,110,44,0.1)", background: "#FFFFFF" }}>
               <div className="px-5 py-4" />
               {/* The Cockpit header — highlighted */}
               <div className="px-4 py-4 flex flex-col items-center justify-center border-l border-r"
-                style={{ background: `${TC}12`, borderColor: `${TC}35` }}>
+                style={{ background: `${TC}10`, borderColor: `${TC}25` }}>
                 <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: TC }}>The Cockpit</span>
               </div>
-              <div className="px-4 py-4 flex items-center justify-center border-r" style={{ borderColor: "rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)" }}>
-                <span className="text-[11px] font-semibold text-white/40">Tableur Excel</span>
+              <div className="px-4 py-4 flex items-center justify-center border-r" style={{ borderColor: "rgba(201,110,44,0.08)", background: BG_CREAM }}>
+                <span className="text-[11px] font-semibold" style={{ color: TEXT_LIGHT }}>Tableur Excel</span>
               </div>
-              <div className="px-4 py-4 flex items-center justify-center" style={{ background: "rgba(255,255,255,0.02)" }}>
-                <span className="text-[11px] font-semibold text-white/40">App générique</span>
+              <div className="px-4 py-4 flex items-center justify-center" style={{ background: BG_CREAM }}>
+                <span className="text-[11px] font-semibold" style={{ color: TEXT_LIGHT }}>App générique</span>
               </div>
             </div>
 
@@ -1461,16 +1554,16 @@ function ComparisonTable() {
                 viewport={{ once: true, margin: "-30px" }}
                 transition={{ duration: 0.45, delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }}
                 className="grid grid-cols-[2fr_1fr_1fr_1fr] border-b last:border-0"
-                style={{ borderColor: "rgba(255,255,255,0.06)" }}
+                style={{ borderColor: "rgba(201,110,44,0.07)", background: i % 2 === 0 ? "#FFFFFF" : BG_CREAM }}
               >
-                <div className="px-5 py-4 flex items-center text-[13.5px] font-medium" style={{ color: "rgba(255,255,255,0.7)" }}>
+                <div className="px-5 py-4 flex items-center text-[13.5px] font-medium" style={{ color: TEXT_DARK }}>
                   {row.label}
                 </div>
                 <div className="px-4 py-4 flex items-center justify-center border-l border-r"
-                  style={{ background: `${TC}08`, borderColor: `${TC}25` }}>
-                  <Cell val={row.cockpit} highlight />
+                  style={{ background: `${TC}06`, borderColor: `${TC}20` }}>
+                  <Cell val={row.cockpit} />
                 </div>
-                <div className="px-4 py-4 flex items-center justify-center border-r" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+                <div className="px-4 py-4 flex items-center justify-center border-r" style={{ borderColor: "rgba(201,110,44,0.07)" }}>
                   <Cell val={row.excel} />
                 </div>
                 <div className="px-4 py-4 flex items-center justify-center">
@@ -1484,7 +1577,7 @@ function ComparisonTable() {
         <FadeIn delay={0.3} className="text-center mt-10">
           <Link href="/signup"
             className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl text-[15px] font-semibold text-white transition-all hover:scale-105 active:scale-95"
-            style={{ background: `linear-gradient(135deg, ${TC} 0%, #9B4A1A 100%)`, boxShadow: `0 8px 30px ${TC}40` }}>
+            style={{ background: TC, boxShadow: `0 8px 28px ${TC}40` }}>
             Essayer The Cockpit gratuitement →
           </Link>
         </FadeIn>
@@ -1499,18 +1592,18 @@ export default function LandingPage() {
   useLenis();
 
   return (
-    <div style={{ background: "#080610" }}>
+    <div style={{ background: BG_CREAM }}>
       <Nav />
       <Hero />
       <MarqueeStrip />
       <Stats />
       <FeaturesGrid />
 
-      <section id="demo" style={{ background: "#080610" }} className="pt-8">
+      <section id="demo" style={{ background: WARM_SOFT }} className="pt-8">
         <div className="max-w-7xl mx-auto px-6 pb-4">
           <FadeIn className="text-center mb-16">
             <Pill>Démo interactive</Pill>
-            <h2 className="text-[clamp(1.8rem,4vw,2.8rem)] font-bold text-white mt-4 tracking-tight">
+            <h2 className="text-[clamp(1.8rem,4vw,2.8rem)] font-bold mt-4 tracking-tight" style={{ color: TEXT_DARK }}>
               Chaque module en détail.
             </h2>
           </FadeIn>
@@ -1534,6 +1627,7 @@ export default function LandingPage() {
           "Statistiques en temps réel",
         ]}
         mockup={<MockGuests />}
+        bg="#FFFFFF"
       />
 
       <Spotlight
@@ -1550,6 +1644,7 @@ export default function LandingPage() {
         ]}
         mockup={<MockBudget />}
         reverse
+        bg={BG_CREAM}
       />
 
       <Spotlight
@@ -1565,12 +1660,13 @@ export default function LandingPage() {
           "Ajout de musiques sur chaque moment",
         ]}
         mockup={<MockDayJ />}
+        bg="#FFFFFF"
       />
 
       <Spotlight
         id="seating"
         tag="Plan de table"
-        title={<>Places assises, <span style={{ color: "#6B8C3E" }}>sans casse-tête.</span></>}
+        title={<>Places assises, <span style={{ color: SAGE }}>sans casse-tête.</span></>}
         desc="Créez votre plan de table visuellement avec un éditeur drag & drop. Gérez les contraintes alimentaires, les conflits familiaux et imprimez un document professionnel."
         bullets={[
           "Éditeur drag & drop visuel",
@@ -1581,6 +1677,7 @@ export default function LandingPage() {
         ]}
         mockup={<MockSeating />}
         reverse
+        bg={BG_CREAM}
       />
 
       <Spotlight
@@ -1596,6 +1693,7 @@ export default function LandingPage() {
           "Sélection et confirmation de date",
         ]}
         mockup={<MockDates />}
+        bg="#FFFFFF"
       />
 
       <Testimonials />

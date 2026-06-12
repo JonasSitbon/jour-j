@@ -39,7 +39,7 @@ export function IconButton({ name, size = "md", title, badge, className, disable
       {...(rest as any)}
     >
       <Icon name={name} size={size === "sm" ? 18 : 20} />
-      {badge && <span className="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-coral border-2 border-surface" />}
+      {badge && <span className="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-coral border-2 border-surface badge-pulse" />}
     </motion.button>
   );
 }

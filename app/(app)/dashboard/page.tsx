@@ -166,7 +166,7 @@ function GettingStartedCard({ steps }: { steps: GettingStartedStep[] }) {
               </div>
               {isNext && (
                 <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-primary">
-                  Commencer <Icon name="arrow" size={10} />
+                  Commencer <Icon name="chevronR" size={10} />
                 </span>
               )}
             </motion.button>
@@ -697,7 +697,7 @@ function UpcomingSnapshot({ state }: { state: AppState }) {
                         {isLate ? `${Math.abs(daysLeft)}j de retard` : `J-${daysLeft}`}
                       </div>
                     </div>
-                    <Icon name="chevron-right" size={13} className="text-text-3 shrink-0" />
+                    <Icon name="chevronR" size={13} className="text-text-3 shrink-0" />
                   </Link>
                 );
               })}

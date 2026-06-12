@@ -127,6 +127,7 @@ function NavGroups({
 }) {
   const { state } = useStore();
   const id = useId();
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     try {
@@ -211,11 +212,21 @@ function NavGroups({
                       <Link
                         href={`/${n.id}`}
                         onClick={onNavigate}
+                        onMouseEnter={() => setHoveredId(n.id)}
+                        onMouseLeave={() => setHoveredId(null)}
                         className={`flex items-center gap-2.5 rounded-sm text-[13.5px] font-medium transition relative z-[1]
                           ${collapsed ? "justify-center px-1.5 py-2.5" : "px-2.5 py-2.5"}
                           ${isActive ? "text-primary-700" : "text-text-2 hover:bg-hover hover:text-text"}`}
                       >
-                        <Icon name={n.icon} size={18} className="shrink-0" />
+                        <span
+                          className="shrink-0 inline-flex"
+                          style={{
+                            transform: hoveredId === n.id && !isActive ? "rotate(-8deg)" : "rotate(0deg)",
+                            transition: "transform 0.18s ease",
+                          }}
+                        >
+                          <Icon name={n.icon} size={18} />
+                        </span>
                         {!collapsed && (
                           <>
                             <span className="truncate">{n.label}</span>
@@ -380,10 +391,10 @@ function WeddingSwitcher({ collapsed }: { collapsed: boolean }) {
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: -6, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.97, transition: { duration: 0.12 } }}
-            transition={{ type: "spring", stiffness: 460, damping: 30 }}
+            initial={{ opacity: 0, scale: 0.95, y: -8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -4 }}
+            transition={{ type: "spring", stiffness: 380, damping: 30 }}
             className="absolute top-full left-0 right-0 mt-1.5 z-[250]
                        bg-popover border border-line rounded-md shadow-lg overflow-hidden"
           >
@@ -648,7 +659,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-1.5 text-sm text-text-2">
             <Icon name="home" size={15} />
             <Icon name="chevronR" size={13} className="text-text-3" />
-            <span className="text-text font-semibold">{cur?.label ?? "—"}</span>
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={current}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 4 }}
+                transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+                className="text-text font-semibold"
+              >
+                {cur?.label ?? "—"}
+              </motion.span>
+            </AnimatePresence>
           </div>
           <div className="flex-1" />
           <button
@@ -689,7 +711,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span className="relative flex items-center justify-center w-[46px] h-[30px] rounded-md">
               {current === n.id && (
                 <motion.div
-                  layoutId="bottom-pill"
+                  layoutId="bottom-tab-indicator"
                   className="absolute inset-0 bg-primary-soft rounded-md pointer-events-none"
                   transition={{ type: "spring", stiffness: 420, damping: 36 }}
                 />

@@ -24,9 +24,9 @@ const MAP: Record<string, LucideIcon> = {
   save: Save, key: Key, refresh: RotateCw, temp: Thermometer,
 };
 
-export function Icon({ name, size = 20, className, strokeWidth = 1.7 }: { name: string; size?: number; className?: string; strokeWidth?: number }) {
+export function Icon({ name, size = 20, className, strokeWidth = 1.7, style }: { name: string; size?: number; className?: string; strokeWidth?: number; style?: React.CSSProperties }) {
   const C = MAP[name] || Sparkles;
-  return <C size={size} className={className} strokeWidth={strokeWidth} aria-hidden />;
+  return <C size={size} className={className} strokeWidth={strokeWidth} style={style} aria-hidden />;
 }
 
 /** Logo : deux anneaux entrelacés + solitaire doré */
