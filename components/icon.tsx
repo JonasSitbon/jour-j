@@ -5,7 +5,7 @@ import {
   Info, Map, MapPin, Star, GripVertical, MoreHorizontal, Table, Gem, Cake, Camera, Music,
   Flower2, Car, Sparkles, List, Eye, LogOut, PieChart, BarChart3, Cloud, CloudRain, Droplet,
   Heart, Home, Link, Receipt, Flag, User, Baby, BedDouble, Leaf, Gift, Copy, Save, Key,
-  RotateCw, Thermometer,
+  RotateCw, Thermometer, Play, Pause,
   type LucideIcon,
 } from "lucide-react";
 
@@ -21,7 +21,7 @@ const MAP: Record<string, LucideIcon> = {
   list: List, eye: Eye, logout: LogOut, pie: PieChart, bars: BarChart3, cloud: Cloud,
   rain: CloudRain, droplet: Droplet, heart: Heart, home: Home, link: Link, receipt: Receipt,
   flag: Flag, user: User, baby: Baby, bed: BedDouble, leaf: Leaf, gift: Gift, copy: Copy,
-  save: Save, key: Key, refresh: RotateCw, temp: Thermometer,
+  save: Save, key: Key, refresh: RotateCw, temp: Thermometer, play: Play, pause: Pause,
 };
 
 export function Icon({ name, size = 20, className, strokeWidth = 1.7, style }: { name: string; size?: number; className?: string; strokeWidth?: number; style?: React.CSSProperties }) {

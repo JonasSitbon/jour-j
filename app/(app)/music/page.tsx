@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useStore, useToast } from "@/components/providers";
 import { Card, Badge, Button, Drawer, Field } from "@/components/ui";
@@ -215,6 +215,10 @@ export default function MusicPage() {
   const [mounted, setMounted] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
+  // Audio preview
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [playingUrl, setPlayingUrl] = useState<string | null>(null);
+
   // Drawer
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingSong, setEditingSong] = useState<Song | null>(null);
@@ -226,7 +230,7 @@ export default function MusicPage() {
 
   // iTunes API search (add drawer)
   const [apiQuery, setApiQuery] = useState("");
-  const [apiResults, setApiResults] = useState<{ trackName: string; artistName: string; artworkUrl60?: string; trackTimeMillis?: number }[]>([]);
+  const [apiResults, setApiResults] = useState<{ trackName: string; artistName: string; artworkUrl60?: string; trackTimeMillis?: number; previewUrl?: string }[]>([]);
   const [apiSearching, setApiSearching] = useState(false);
 
   const searchItunes = async () => {
@@ -245,11 +249,25 @@ export default function MusicPage() {
     }
   };
 
+  const togglePreview = (url: string) => {
+    if (playingUrl === url) {
+      audioRef.current?.pause();
+      setPlayingUrl(null);
+    } else {
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = url; audioRef.current.play().catch(() => {}); }
+      else { const a = new Audio(url); a.play().catch(() => {}); audioRef.current = a; a.onended = () => setPlayingUrl(null); }
+      setPlayingUrl(url);
+    }
+  };
+
+  const stopPreview = () => { audioRef.current?.pause(); audioRef.current = null; setPlayingUrl(null); };
+
   const selectTrack = (r: { trackName: string; artistName: string; trackTimeMillis?: number }) => {
     const ms = r.trackTimeMillis;
     const duration = ms
       ? `${Math.floor(ms / 60000)}:${String(Math.floor((ms % 60000) / 1000)).padStart(2, "0")}`
       : "";
+    stopPreview();
     setForm((f) => ({ ...f, title: r.trackName, artist: r.artistName, duration }));
     setApiResults([]);
     setApiQuery("");
@@ -588,7 +606,7 @@ export default function MusicPage() {
       {drawerOpen && (
         <Drawer
           title={editingSong ? "Modifier la chanson" : "Ajouter une chanson"}
-          onClose={() => { setDrawerOpen(false); setApiResults([]); setApiQuery(""); }}
+          onClose={() => { setDrawerOpen(false); setApiResults([]); setApiQuery(""); stopPreview(); }}
           footer={
             <>
               <Button
@@ -634,24 +652,50 @@ export default function MusicPage() {
                   </div>
                 </Field>
                 {apiResults.length > 0 && (
-                  <div className="rounded-lg border border-line overflow-hidden max-h-52 overflow-y-auto">
-                    {apiResults.map((r, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => selectTrack(r)}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-hover transition-colors border-b border-line last:border-0"
-                      >
-                        {r.artworkUrl60 && (
-                          <img src={r.artworkUrl60} alt="" className="w-9 h-9 rounded-[6px] object-cover shrink-0" />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[13px] font-medium truncate text-text">{r.trackName}</div>
-                          <div className="text-[11.5px] text-text-2 truncate">{r.artistName}</div>
+                  <div className="rounded-lg border border-line overflow-hidden max-h-60 overflow-y-auto">
+                    {apiResults.map((r, i) => {
+                      const isPlaying = playingUrl === r.previewUrl;
+                      return (
+                        <div
+                          key={i}
+                          className="flex items-center gap-2 px-3 py-2.5 border-b border-line last:border-0 hover:bg-hover transition-colors"
+                        >
+                          {/* Artwork + play preview */}
+                          <div className="relative shrink-0">
+                            {r.artworkUrl60 && (
+                              <img src={r.artworkUrl60} alt="" className="w-9 h-9 rounded-[6px] object-cover" />
+                            )}
+                            {r.previewUrl && (
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); togglePreview(r.previewUrl!); }}
+                                className={`absolute inset-0 rounded-[6px] flex items-center justify-center transition ${isPlaying ? "bg-black/60" : "bg-black/0 hover:bg-black/50"}`}
+                                title={isPlaying ? "Pause" : "Écouter l'extrait"}
+                              >
+                                <Icon name={isPlaying ? "pause" : "play"} size={14} className="text-white" />
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[13px] font-medium truncate text-text">{r.trackName}</div>
+                            <div className="text-[11.5px] text-text-2 truncate">{r.artistName}</div>
+                          </div>
+
+                          {/* Select */}
+                          <button
+                            type="button"
+                            onClick={() => selectTrack(r)}
+                            title="Ajouter ce titre"
+                            className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg text-[12px] font-medium border border-line text-text-2 hover:border-primary/50 hover:text-primary transition"
+                          >
+                            <Icon name="plus" size={12} />
+                            Choisir
+                          </button>
                         </div>
-                        <Icon name="plus" size={13} className="text-text-3 shrink-0" />
-                      </button>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
                 <div className="h-px bg-line" />
