@@ -12,7 +12,7 @@ import type { Vendor } from "@/lib/types";
 import { createClient } from "@/lib/supabase";
 import { getWeddingId } from "@/lib/db";
 import { ScrollReveal } from "@/components/scroll-reveal";
-import { exportVendorsPDF } from "@/lib/pdf-vendors";
+import { lazyExportVendorsPDF } from "@/lib/pdf-lazy";
 
 const STATUS: Record<string, { label: string; tone: any }> = {
   signed: { label: "Signé", tone: "sage" }, pending: { label: "En attente", tone: "amber" }, declined: { label: "Refusé", tone: "coral" },
@@ -1079,7 +1079,7 @@ export default function VendorsPage() {
         sub={`${state.vendors.length} devis · ${state.vendors.filter((v) => v.status === "signed").length} signés · ${state.vendors.filter((v) => v.status === "pending").length} en attente`}
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="secondary" icon="download" onClick={() => exportVendorsPDF(state.vendors, state.wedding.partnerA, state.wedding.partnerB)}>
+            <Button variant="secondary" icon="download" onClick={() => lazyExportVendorsPDF(state.vendors, state.wedding.partnerA, state.wedding.partnerB)}>
               Export PDF
             </Button>
             <Button variant="secondary" onClick={() => setShowEmailTemplates(true)}>📧 Modèles d&apos;emails</Button>

@@ -5,7 +5,7 @@ import { useStore } from "@/components/providers";
 import { Icon } from "@/components/icon";
 import { Card, Badge, Button, Empty, Field, Input, Textarea, Select, Modal } from "@/components/ui";
 import { PageHead } from "@/components/shell";
-import { exportDayJPDF } from "@/lib/pdf-dayj";
+import { lazyExportDayJPDF } from "@/lib/pdf-lazy";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                                */
@@ -18,9 +18,16 @@ interface DayEvent {
   duration: number;
   title: string;
   description?: string;
-  category: "preparations" | "transport" | "ceremonie" | "photos" | "cocktail" | "diner" | "soiree" | "technique" | "autre";
+  category: "preparations" | "transport" | "ceremonie" | "photos" | "cocktail" | "diner" | "soiree" | "technique" | "autre" | "henne" | "traditionnel";
   who: string;
   important: boolean;
+}
+
+interface WeddingDay {
+  id: string;
+  label: string;
+  date: string;
+  events: DayEvent[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -37,6 +44,8 @@ const CATEGORIES: Record<DayEvent["category"], { label: string; icon: string; co
   soiree: { label: "Soirée & Danse", icon: "music", color: "var(--primary)", bg: "bg-primary-softer", text: "text-primary" },
   technique: { label: "Technique & Logistique", icon: "flag", color: "var(--text-2)", bg: "bg-surface-3", text: "text-text-2" },
   autre: { label: "Autre", icon: "dots", color: "var(--line-strong)", bg: "bg-surface-2", text: "text-text-2" },
+  henne: { label: "Hénné & Mehndi", icon: "flower", color: "#D97706", bg: "bg-orange-50", text: "text-orange-700" },
+  traditionnel: { label: "Tradition & Rituels", icon: "sparkle", color: "#7C3AED", bg: "bg-violet-50", text: "text-violet-700" },
 };
 
 const WHO_CHIPS = [
@@ -84,15 +93,21 @@ const DEFAULT_EVENTS: Omit<DayEvent, "id">[] = [
 ];
 
 /* ------------------------------------------------------------------ */
-/* Smart template presets                                               */
+/* Smart template presets (multi-day)                                   */
 /* ------------------------------------------------------------------ */
+
+interface TemplateDay {
+  label: string;
+  offsetDays: number;
+  events: Omit<DayEvent, "id">[];
+}
 
 interface TemplatePreset {
   id: string;
   label: string;
   emoji: string;
   description: string;
-  events: Omit<DayEvent, "id">[];
+  days: TemplateDay[];
 }
 
 const TEMPLATE_PRESETS: TemplatePreset[] = [
@@ -101,65 +116,173 @@ const TEMPLATE_PRESETS: TemplatePreset[] = [
     label: "Mariage civil + laïque",
     emoji: "🏛",
     description: "Cérémonie à la mairie puis cérémonie laïque l'après-midi",
-    events: [
-      { hour: 9, minute: 0, duration: 60, title: "Réveil & petit-déjeuner des mariés", category: "preparations", who: "Mariés", important: false, description: "Moment de calme avant la grande journée" },
-      { hour: 10, minute: 0, duration: 90, title: "Coiffure & maquillage (côté mariée)", category: "preparations", who: "Mariée", important: false, description: "À domicile ou chez le prestataire" },
-      { hour: 11, minute: 30, duration: 45, title: "Habillage de la mariée", category: "preparations", who: "Mariée", important: true, description: "Avec les témoins et proches" },
-      { hour: 12, minute: 0, duration: 30, title: "Habillage du marié", category: "preparations", who: "Marié", important: false, description: "" },
-      { hour: 12, minute: 30, duration: 60, title: "Photos des préparatifs", category: "photos", who: "Mariés", important: false, description: "Avec le photographe avant le départ" },
-      { hour: 14, minute: 0, duration: 60, title: "Cérémonie civile (mairie)", category: "ceremonie", who: "Tous les invités", important: true, description: "Durée estimée 45 min" },
-      { hour: 15, minute: 0, duration: 60, title: "Cocktail des photos", category: "cocktail", who: "Tous les invités", important: false, description: "Accueil des invités, photos de famille" },
-      { hour: 16, minute: 0, duration: 60, title: "Cérémonie laïque", category: "ceremonie", who: "Tous les invités", important: true, description: "Au domaine ou en extérieur" },
-      { hour: 17, minute: 0, duration: 120, title: "Vin d'honneur", category: "cocktail", who: "Tous les invités", important: true, description: "Réception en extérieur, musique d'ambiance" },
-      { hour: 19, minute: 0, duration: 30, title: "Entrée en salle — discours", category: "diner", who: "Tous les invités", important: true, description: "Entrée des mariés + discours d'accueil" },
-      { hour: 19, minute: 30, duration: 150, title: "Dîner assis", category: "diner", who: "Tous les invités", important: true, description: "Repas de mariage, discours, animations" },
-      { hour: 22, minute: 0, duration: 30, title: "Pièce montée & première danse", category: "soiree", who: "Tous les invités", important: true, description: "Ouverture du bal des mariés" },
-      { hour: 23, minute: 0, duration: 180, title: "Ouverture de la piste de danse", category: "soiree", who: "Tous les invités", important: false, description: "Animation DJ, soirée dansante" },
-      { hour: 2, minute: 0, duration: 60, title: "Fin de soirée / navettes", category: "transport", who: "Tous les invités", important: false, description: "Départ des navettes pour les hôtels" },
-    ],
+    days: [{
+      label: "Jour J",
+      offsetDays: 0,
+      events: [
+        { hour: 9, minute: 0, duration: 60, title: "Réveil & petit-déjeuner des mariés", category: "preparations", who: "Mariés", important: false, description: "Moment de calme avant la grande journée" },
+        { hour: 10, minute: 0, duration: 90, title: "Coiffure & maquillage (côté mariée)", category: "preparations", who: "Mariée", important: false, description: "À domicile ou chez le prestataire" },
+        { hour: 11, minute: 30, duration: 45, title: "Habillage de la mariée", category: "preparations", who: "Mariée", important: true, description: "Avec les témoins et proches" },
+        { hour: 12, minute: 0, duration: 30, title: "Habillage du marié", category: "preparations", who: "Marié", important: false, description: "" },
+        { hour: 12, minute: 30, duration: 60, title: "Photos des préparatifs", category: "photos", who: "Mariés", important: false, description: "Avec le photographe avant le départ" },
+        { hour: 14, minute: 0, duration: 60, title: "Cérémonie civile (mairie)", category: "ceremonie", who: "Tous les invités", important: true, description: "Durée estimée 45 min" },
+        { hour: 15, minute: 0, duration: 60, title: "Cocktail des photos", category: "cocktail", who: "Tous les invités", important: false, description: "Accueil des invités, photos de famille" },
+        { hour: 16, minute: 0, duration: 60, title: "Cérémonie laïque", category: "ceremonie", who: "Tous les invités", important: true, description: "Au domaine ou en extérieur" },
+        { hour: 17, minute: 0, duration: 120, title: "Vin d'honneur", category: "cocktail", who: "Tous les invités", important: true, description: "Réception en extérieur, musique d'ambiance" },
+        { hour: 19, minute: 0, duration: 30, title: "Entrée en salle — discours", category: "diner", who: "Tous les invités", important: true, description: "Entrée des mariés + discours d'accueil" },
+        { hour: 19, minute: 30, duration: 150, title: "Dîner assis", category: "diner", who: "Tous les invités", important: true, description: "Repas de mariage, discours, animations" },
+        { hour: 22, minute: 0, duration: 30, title: "Pièce montée & première danse", category: "soiree", who: "Tous les invités", important: true, description: "Ouverture du bal des mariés" },
+        { hour: 23, minute: 0, duration: 180, title: "Ouverture de la piste de danse", category: "soiree", who: "Tous les invités", important: false, description: "Animation DJ, soirée dansante" },
+        { hour: 2, minute: 0, duration: 60, title: "Fin de soirée / navettes", category: "transport", who: "Tous les invités", important: false, description: "Départ des navettes pour les hôtels" },
+      ],
+    }],
   },
   {
     id: "religieux",
     label: "Mariage religieux",
     emoji: "⛪",
     description: "Cérémonie à l'église en fin d'après-midi, grande réception",
-    events: [
-      { hour: 9, minute: 0, duration: 60, title: "Réveil & petit-déjeuner des mariés", category: "preparations", who: "Mariés", important: false, description: "" },
-      { hour: 10, minute: 0, duration: 120, title: "Coiffure & maquillage de la mariée", category: "preparations", who: "Mariée", important: false, description: "À domicile ou en salon" },
-      { hour: 11, minute: 0, duration: 60, title: "Habillage de la mariée", category: "preparations", who: "Mariée", important: true, description: "Avec les demoiselles d'honneur" },
-      { hour: 12, minute: 0, duration: 30, title: "Habillage du marié", category: "preparations", who: "Marié", important: false, description: "" },
-      { hour: 13, minute: 0, duration: 90, title: "Déjeuner léger en famille", category: "preparations", who: "Famille", important: false, description: "" },
-      { hour: 14, minute: 0, duration: 30, title: "Arrivée des invités à l'église", category: "ceremonie", who: "Tous les invités", important: false, description: "Musique d'orgue, accueil par les témoins" },
-      { hour: 14, minute: 30, duration: 30, title: "Cortège et entrée de la mariée", category: "ceremonie", who: "Mariée", important: true, description: "" },
-      { hour: 15, minute: 0, duration: 90, title: "Cérémonie religieuse", category: "ceremonie", who: "Tous les invités", important: true, description: "Office religieux à l'église" },
-      { hour: 16, minute: 30, duration: 30, title: "Sortie de l'église & haie d'honneur", category: "ceremonie", who: "Tous les invités", important: true, description: "Photos de groupe, lancé de pétales" },
-      { hour: 17, minute: 0, duration: 30, title: "Séance photos couple", category: "photos", who: "Mariés", important: false, description: "Photos en extérieur" },
-      { hour: 17, minute: 30, duration: 120, title: "Vin d'honneur", category: "cocktail", who: "Tous les invités", important: true, description: "Au domaine de réception" },
-      { hour: 19, minute: 30, duration: 30, title: "Entrée en salle des mariés", category: "diner", who: "Tous les invités", important: true, description: "Discours d'accueil" },
-      { hour: 20, minute: 0, duration: 180, title: "Dîner de mariage", category: "diner", who: "Tous les invités", important: true, description: "Repas assis, discours, animations" },
-      { hour: 23, minute: 0, duration: 30, title: "Pièce montée & ouverture du bal", category: "soiree", who: "Tous les invités", important: true, description: "Première danse des mariés" },
-      { hour: 23, minute: 30, duration: 150, title: "Soirée dansante", category: "soiree", who: "Tous les invités", important: false, description: "Animation DJ" },
-    ],
+    days: [{
+      label: "Jour J",
+      offsetDays: 0,
+      events: [
+        { hour: 9, minute: 0, duration: 60, title: "Réveil & petit-déjeuner des mariés", category: "preparations", who: "Mariés", important: false, description: "" },
+        { hour: 10, minute: 0, duration: 120, title: "Coiffure & maquillage de la mariée", category: "preparations", who: "Mariée", important: false, description: "À domicile ou en salon" },
+        { hour: 11, minute: 0, duration: 60, title: "Habillage de la mariée", category: "preparations", who: "Mariée", important: true, description: "Avec les demoiselles d'honneur" },
+        { hour: 12, minute: 0, duration: 30, title: "Habillage du marié", category: "preparations", who: "Marié", important: false, description: "" },
+        { hour: 13, minute: 0, duration: 90, title: "Déjeuner léger en famille", category: "preparations", who: "Famille", important: false, description: "" },
+        { hour: 14, minute: 0, duration: 30, title: "Arrivée des invités à l'église", category: "ceremonie", who: "Tous les invités", important: false, description: "Musique d'orgue, accueil par les témoins" },
+        { hour: 14, minute: 30, duration: 30, title: "Cortège et entrée de la mariée", category: "ceremonie", who: "Mariée", important: true, description: "" },
+        { hour: 15, minute: 0, duration: 90, title: "Cérémonie religieuse", category: "ceremonie", who: "Tous les invités", important: true, description: "Office religieux à l'église" },
+        { hour: 16, minute: 30, duration: 30, title: "Sortie de l'église & haie d'honneur", category: "ceremonie", who: "Tous les invités", important: true, description: "Photos de groupe, lancé de pétales" },
+        { hour: 17, minute: 0, duration: 30, title: "Séance photos couple", category: "photos", who: "Mariés", important: false, description: "Photos en extérieur" },
+        { hour: 17, minute: 30, duration: 120, title: "Vin d'honneur", category: "cocktail", who: "Tous les invités", important: true, description: "Au domaine de réception" },
+        { hour: 19, minute: 30, duration: 30, title: "Entrée en salle des mariés", category: "diner", who: "Tous les invités", important: true, description: "Discours d'accueil" },
+        { hour: 20, minute: 0, duration: 180, title: "Dîner de mariage", category: "diner", who: "Tous les invités", important: true, description: "Repas assis, discours, animations" },
+        { hour: 23, minute: 0, duration: 30, title: "Pièce montée & ouverture du bal", category: "soiree", who: "Tous les invités", important: true, description: "Première danse des mariés" },
+        { hour: 23, minute: 30, duration: 150, title: "Soirée dansante", category: "soiree", who: "Tous les invités", important: false, description: "Animation DJ" },
+      ],
+    }],
   },
   {
     id: "intimiste",
     label: "Mariage intimiste",
     emoji: "🌿",
     description: "30–50 invités, ambiance décontractée, cocktail dînatoire",
-    events: [
-      { hour: 10, minute: 0, duration: 60, title: "Réveil & brunch des mariés", category: "preparations", who: "Mariés", important: false, description: "Moment de calme, derniers préparatifs" },
-      { hour: 11, minute: 0, duration: 90, title: "Coiffure & maquillage", category: "preparations", who: "Mariée", important: false, description: "" },
-      { hour: 12, minute: 30, duration: 60, title: "Habillage & photos préparatifs", category: "preparations", who: "Mariés", important: false, description: "" },
-      { hour: 14, minute: 0, duration: 30, title: "Accueil des proches", category: "ceremonie", who: "Tous les invités", important: false, description: "Arrivée progressive des invités" },
-      { hour: 14, minute: 30, duration: 45, title: "Cérémonie intime", category: "ceremonie", who: "Tous les invités", important: true, description: "Ceremony laïque ou symbolique" },
-      { hour: 15, minute: 15, duration: 45, title: "Photos de groupe & couple", category: "photos", who: "Tous les invités", important: false, description: "" },
-      { hour: 16, minute: 0, duration: 120, title: "Cocktail en plein air", category: "cocktail", who: "Tous les invités", important: true, description: "Apéritif, jeux, musique douce" },
-      { hour: 18, minute: 0, duration: 30, title: "Promenade des mariés & photos golden hour", category: "photos", who: "Mariés", important: false, description: "" },
-      { hour: 18, minute: 30, duration: 30, title: "Discours des proches", category: "diner", who: "Tous les invités", important: false, description: "" },
-      { hour: 19, minute: 0, duration: 150, title: "Dîner dînatoire / buffet", category: "diner", who: "Tous les invités", important: true, description: "Repas convivial, tables rondes" },
-      { hour: 21, minute: 30, duration: 30, title: "Gâteau de mariage & pièce montée", category: "soiree", who: "Tous les invités", important: true, description: "Moment festif" },
-      { hour: 22, minute: 0, duration: 120, title: "Soirée dansante ou musicale", category: "soiree", who: "Tous les invités", important: false, description: "" },
-      { hour: 0, minute: 0, duration: 60, title: "Fin de soirée", category: "transport", who: "Tous les invités", important: false, description: "Raccompagnement des invités" },
+    days: [{
+      label: "Jour J",
+      offsetDays: 0,
+      events: [
+        { hour: 10, minute: 0, duration: 60, title: "Réveil & brunch des mariés", category: "preparations", who: "Mariés", important: false, description: "Moment de calme, derniers préparatifs" },
+        { hour: 11, minute: 0, duration: 90, title: "Coiffure & maquillage", category: "preparations", who: "Mariée", important: false, description: "" },
+        { hour: 12, minute: 30, duration: 60, title: "Habillage & photos préparatifs", category: "preparations", who: "Mariés", important: false, description: "" },
+        { hour: 14, minute: 0, duration: 30, title: "Accueil des proches", category: "ceremonie", who: "Tous les invités", important: false, description: "Arrivée progressive des invités" },
+        { hour: 14, minute: 30, duration: 45, title: "Cérémonie intime", category: "ceremonie", who: "Tous les invités", important: true, description: "Ceremony laïque ou symbolique" },
+        { hour: 15, minute: 15, duration: 45, title: "Photos de groupe & couple", category: "photos", who: "Tous les invités", important: false, description: "" },
+        { hour: 16, minute: 0, duration: 120, title: "Cocktail en plein air", category: "cocktail", who: "Tous les invités", important: true, description: "Apéritif, jeux, musique douce" },
+        { hour: 18, minute: 0, duration: 30, title: "Promenade des mariés & photos golden hour", category: "photos", who: "Mariés", important: false, description: "" },
+        { hour: 18, minute: 30, duration: 30, title: "Discours des proches", category: "diner", who: "Tous les invités", important: false, description: "" },
+        { hour: 19, minute: 0, duration: 150, title: "Dîner dînatoire / buffet", category: "diner", who: "Tous les invités", important: true, description: "Repas convivial, tables rondes" },
+        { hour: 21, minute: 30, duration: 30, title: "Gâteau de mariage & pièce montée", category: "soiree", who: "Tous les invités", important: true, description: "Moment festif" },
+        { hour: 22, minute: 0, duration: 120, title: "Soirée dansante ou musicale", category: "soiree", who: "Tous les invités", important: false, description: "" },
+        { hour: 0, minute: 0, duration: 60, title: "Fin de soirée", category: "transport", who: "Tous les invités", important: false, description: "Raccompagnement des invités" },
+      ],
+    }],
+  },
+  {
+    id: "oriental-2jours",
+    label: "Mariage oriental 2 jours",
+    emoji: "🌙",
+    description: "Soirée Hénné la veille + Grande fête le Jour J",
+    days: [
+      {
+        label: "J-1 · Hénné",
+        offsetDays: -1,
+        events: [
+          { hour: 15, minute: 0, duration: 60, title: "Préparatifs & coiffure", category: "preparations", who: "Mariée", important: false, description: "Mise en beauté pour la soirée hénné" },
+          { hour: 16, minute: 0, duration: 60, title: "Habillage de la mariée (caftan)", category: "preparations", who: "Mariée", important: true, description: "Tenue traditionnelle pour la soirée" },
+          { hour: 17, minute: 0, duration: 60, title: "Accueil des invités", category: "ceremonie", who: "Tous les invités", important: false, description: "" },
+          { hour: 18, minute: 0, duration: 30, title: "Cortège de la mariée", category: "henne", who: "Mariée", important: true, description: "Entrée de la mariée accompagnée de la famille" },
+          { hour: 18, minute: 30, duration: 120, title: "Application du Mehndi de la mariée", category: "henne", who: "Mariée", important: true, description: "Artiste hénné — motifs traditionnels" },
+          { hour: 19, minute: 0, duration: 180, title: "Soirée Hénné", category: "henne", who: "Tous les invités", important: true, description: "Musique, youyous, animations traditionnelles" },
+          { hour: 20, minute: 0, duration: 30, title: "Youyous & musique orientale", category: "traditionnel", who: "Tous les invités", important: false, description: "" },
+          { hour: 20, minute: 30, duration: 90, title: "Chants & danses traditionnels", category: "traditionnel", who: "Tous les invités", important: false, description: "" },
+          { hour: 22, minute: 0, duration: 60, title: "Buffet de la soirée hénné", category: "diner", who: "Tous les invités", important: false, description: "" },
+          { hour: 23, minute: 0, duration: 60, title: "Fin de soirée hénné", category: "transport", who: "Tous les invités", important: false, description: "" },
+        ],
+      },
+      {
+        label: "Jour J",
+        offsetDays: 0,
+        events: [
+          { hour: 9, minute: 0, duration: 120, title: "Coiffure & maquillage de la mariée", category: "preparations", who: "Mariée", important: false, description: "" },
+          { hour: 10, minute: 0, duration: 60, title: "Habillage du marié", category: "preparations", who: "Marié", important: false, description: "" },
+          { hour: 12, minute: 0, duration: 60, title: "Habillage de la mariée (robe)", category: "preparations", who: "Mariée", important: true, description: "" },
+          { hour: 14, minute: 0, duration: 60, title: "Cérémonie civile (mairie)", category: "ceremonie", who: "Tous les invités", important: true, description: "" },
+          { hour: 15, minute: 0, duration: 90, title: "Cérémonie du Nikah", category: "traditionnel", who: "Famille", important: true, description: "Officié par l'imam en famille" },
+          { hour: 16, minute: 0, duration: 30, title: "Lecture de la Fatiha", category: "traditionnel", who: "Famille", important: true, description: "" },
+          { hour: 17, minute: 0, duration: 120, title: "Vin d'honneur & cocktail", category: "cocktail", who: "Tous les invités", important: true, description: "" },
+          { hour: 18, minute: 0, duration: 45, title: "Zaffa — cortège musical", category: "traditionnel", who: "Tous les invités", important: true, description: "Entrée des mariés en musique" },
+          { hour: 19, minute: 0, duration: 30, title: "Entrée en salle", category: "diner", who: "Tous les invités", important: true, description: "" },
+          { hour: 19, minute: 30, duration: 180, title: "Dîner oriental", category: "diner", who: "Tous les invités", important: true, description: "" },
+          { hour: 22, minute: 0, duration: 30, title: "Pièce montée & première danse", category: "soiree", who: "Tous les invités", important: true, description: "" },
+          { hour: 22, minute: 30, duration: 180, title: "Soirée dansante — musique orientale & moderne", category: "soiree", who: "Tous les invités", important: false, description: "" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "mariage-3jours",
+    label: "Mariage sur 3 jours",
+    emoji: "🗓",
+    description: "Préparatifs & Hénné la veille · Grande fête · Brunch le lendemain",
+    days: [
+      {
+        label: "J-1 · Préparatifs & Hénné",
+        offsetDays: -1,
+        events: [
+          { hour: 10, minute: 0, duration: 120, title: "Essayage tenue de la mariée", category: "preparations", who: "Mariée", important: false, description: "" },
+          { hour: 12, minute: 0, duration: 60, title: "Déjeuner en famille", category: "preparations", who: "Famille", important: false, description: "" },
+          { hour: 14, minute: 0, duration: 60, title: "Rendez-vous coiffeur / esthéticienne", category: "preparations", who: "Mariée", important: false, description: "" },
+          { hour: 15, minute: 0, duration: 120, title: "Application du Mehndi de la mariée", category: "henne", who: "Mariée", important: true, description: "Artiste hénné — motifs traditionnels" },
+          { hour: 17, minute: 0, duration: 60, title: "Accueil des invités proches", category: "ceremonie", who: "Famille", important: false, description: "" },
+          { hour: 18, minute: 0, duration: 30, title: "Cortège de la mariée", category: "henne", who: "Mariée", important: true, description: "" },
+          { hour: 18, minute: 30, duration: 30, title: "Bénédiction familiale (Fatiha)", category: "traditionnel", who: "Famille", important: true, description: "" },
+          { hour: 19, minute: 0, duration: 180, title: "Soirée Hénné", category: "henne", who: "Tous les invités", important: true, description: "Musique, animations, youyous" },
+          { hour: 21, minute: 0, duration: 90, title: "Chants & danses traditionnels", category: "traditionnel", who: "Tous les invités", important: false, description: "" },
+          { hour: 22, minute: 30, duration: 30, title: "Fin de soirée hénné", category: "transport", who: "Tous les invités", important: false, description: "" },
+        ],
+      },
+      {
+        label: "Jour J",
+        offsetDays: 0,
+        events: [
+          { hour: 8, minute: 0, duration: 120, title: "Coiffure & maquillage de la mariée", category: "preparations", who: "Mariée", important: false, description: "" },
+          { hour: 10, minute: 0, duration: 60, title: "Habillage du marié", category: "preparations", who: "Marié", important: false, description: "" },
+          { hour: 11, minute: 0, duration: 60, title: "Habillage de la mariée", category: "preparations", who: "Mariée", important: true, description: "" },
+          { hour: 12, minute: 0, duration: 60, title: "Photos des préparatifs", category: "photos", who: "Mariés", important: false, description: "" },
+          { hour: 14, minute: 0, duration: 60, title: "Cérémonie civile", category: "ceremonie", who: "Tous les invités", important: true, description: "" },
+          { hour: 15, minute: 0, duration: 90, title: "Cérémonie religieuse / laïque", category: "ceremonie", who: "Tous les invités", important: true, description: "" },
+          { hour: 17, minute: 0, duration: 30, title: "Remise des cadeaux traditionnels", category: "traditionnel", who: "Famille", important: false, description: "" },
+          { hour: 17, minute: 30, duration: 120, title: "Vin d'honneur", category: "cocktail", who: "Tous les invités", important: true, description: "" },
+          { hour: 19, minute: 0, duration: 30, title: "Cérémonie du thé", category: "traditionnel", who: "Famille", important: false, description: "" },
+          { hour: 20, minute: 0, duration: 30, title: "Entrée en salle des mariés", category: "diner", who: "Tous les invités", important: true, description: "" },
+          { hour: 20, minute: 30, duration: 180, title: "Dîner de mariage", category: "diner", who: "Tous les invités", important: true, description: "" },
+          { hour: 23, minute: 0, duration: 30, title: "Pièce montée & ouverture du bal", category: "soiree", who: "Tous les invités", important: true, description: "" },
+          { hour: 23, minute: 30, duration: 180, title: "Soirée dansante", category: "soiree", who: "Tous les invités", important: false, description: "" },
+        ],
+      },
+      {
+        label: "J+1 · Brunch",
+        offsetDays: 1,
+        events: [
+          { hour: 10, minute: 0, duration: 30, title: "Accueil des invités", category: "ceremonie", who: "Tous les invités", important: false, description: "" },
+          { hour: 10, minute: 30, duration: 120, title: "Brunch du lendemain", category: "diner", who: "Tous les invités", important: true, description: "Buffet convivial, ambiance détendue" },
+          { hour: 12, minute: 30, duration: 30, title: "Discours & remerciements", category: "ceremonie", who: "Tous les invités", important: false, description: "" },
+          { hour: 13, minute: 0, duration: 30, title: "Photos souvenir du brunch", category: "photos", who: "Tous les invités", important: false, description: "" },
+          { hour: 13, minute: 30, duration: 30, title: "Au revoir & départ des invités", category: "transport", who: "Tous les invités", important: false, description: "" },
+        ],
+      },
     ],
   },
 ];
@@ -268,6 +391,27 @@ const LIBRARY_TABS: LibraryTab[] = [
       { title: "Check sécurité / accès", hour: 13, duration: 30, cat: "technique" },
     ],
   },
+  {
+    id: "culturel",
+    label: "Culturel & Traditionnel",
+    emoji: "🌍",
+    suggestions: [
+      { title: "Soirée Hénné", hour: 19, duration: 180, cat: "henne" },
+      { title: "Application du Mehndi de la mariée", hour: 15, duration: 120, cat: "henne" },
+      { title: "Zaffa — cortège musical", hour: 18, duration: 45, cat: "traditionnel" },
+      { title: "Cérémonie du Nikah", hour: 15, duration: 90, cat: "traditionnel" },
+      { title: "Lecture de la Fatiha", hour: 16, duration: 20, cat: "traditionnel" },
+      { title: "Houppa — cérémonie juive", hour: 18, duration: 90, cat: "traditionnel" },
+      { title: "Bris du verre", hour: 19, duration: 15, cat: "traditionnel" },
+      { title: "Danse Hora", hour: 20, duration: 30, cat: "traditionnel" },
+      { title: "Remise des cadeaux traditionnels", hour: 17, duration: 45, cat: "traditionnel" },
+      { title: "Youyous & musique orientale", hour: 20, duration: 30, cat: "traditionnel" },
+      { title: "Bénédiction familiale (Fatiha)", hour: 10, duration: 30, cat: "traditionnel" },
+      { title: "Cérémonie du thé", hour: 16, duration: 60, cat: "traditionnel" },
+      { title: "Cortège de la mariée", hour: 19, duration: 30, cat: "henne" },
+      { title: "Chants & danses traditionnels", hour: 21, duration: 90, cat: "traditionnel" },
+    ],
+  },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -300,30 +444,81 @@ function toTotalMinutes(h: number, m: number) {
   return h * 60 + m;
 }
 
-function loadEvents(): DayEvent[] {
+/** Add offsetDays to a YYYY-MM-DD date string */
+function addDaysToDate(dateStr: string, offsetDays: number): string {
+  if (!dateStr) return "";
   try {
-    const raw = localStorage.getItem("jj_dayj_v2");
-    if (raw) return JSON.parse(raw);
+    const d = new Date(dateStr);
+    d.setDate(d.getDate() + offsetDays);
+    return d.toISOString().slice(0, 10);
+  } catch {
+    return "";
+  }
+}
+
+/** Format a YYYY-MM-DD date to short French label like "Sam. 14 juin" */
+function fmtShortDate(dateStr: string): string {
+  if (!dateStr) return "";
+  try {
+    const d = new Date(dateStr + "T00:00:00");
+    return d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "long" });
+  } catch {
+    return "";
+  }
+}
+
+function generateId(): string {
+  return `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+}
+
+/* ------------------------------------------------------------------ */
+/* Storage                                                              */
+/* ------------------------------------------------------------------ */
+
+function loadDays(weddingDate: string): WeddingDay[] {
+  try {
+    const raw = localStorage.getItem("jj_days_v1");
+    if (raw) return JSON.parse(raw) as WeddingDay[];
+    // Migration from old flat format
+    const oldRaw = localStorage.getItem("jj_dayj_v2");
+    if (oldRaw) {
+      const oldEvents = JSON.parse(oldRaw) as DayEvent[];
+      const migrated: WeddingDay[] = [{
+        id: generateId(),
+        label: "Jour J",
+        date: weddingDate ? weddingDate.slice(0, 10) : "",
+        events: oldEvents,
+      }];
+      localStorage.setItem("jj_days_v1", JSON.stringify(migrated));
+      return migrated;
+    }
+    // Fresh start — create default "Jour J" day
     const defaults = DEFAULT_EVENTS.map((e, i) => ({ ...e, id: String(Date.now() + i) }));
-    localStorage.setItem("jj_dayj_v2", JSON.stringify(defaults));
-    return defaults;
+    const initial: WeddingDay[] = [{
+      id: generateId(),
+      label: "Jour J",
+      date: weddingDate ? weddingDate.slice(0, 10) : "",
+      events: defaults,
+    }];
+    localStorage.setItem("jj_days_v1", JSON.stringify(initial));
+    return initial;
   } catch { return []; }
 }
 
-function saveEvents(events: DayEvent[]) {
-  try { localStorage.setItem("jj_dayj_v2", JSON.stringify(events)); } catch {}
+function saveDays(days: WeddingDay[]) {
+  try { localStorage.setItem("jj_days_v1", JSON.stringify(days)); } catch {}
 }
 
 function loadChecked(): Record<string, boolean> {
   try {
-    const raw = localStorage.getItem("jj_dayj_checked");
+    const raw = localStorage.getItem("jj_checked_v2");
     if (raw) return JSON.parse(raw);
     return {};
   } catch { return {}; }
 }
 
 function saveChecked(checked: Record<string, boolean>) {
-  try { localStorage.setItem("jj_dayj_checked", JSON.stringify(checked)); } catch {}
+  try { localStorage.setItem("jj_checked_v2", JSON.stringify(checked)); } catch {}
 }
 
 const cx = (...c: (string | false | undefined | null)[]) => c.filter(Boolean).join(" ");
@@ -642,11 +837,214 @@ function LibraryModal({ onClose, onAdd }: {
 }
 
 /* ------------------------------------------------------------------ */
+/* AddDayModal                                                          */
+/* ------------------------------------------------------------------ */
+
+const SUGGESTED_LABELS = ["J-2", "J-1 · Hénné", "J-1 · Préparatifs", "Jour J", "J+1 · Brunch", "J+2"];
+
+function AddDayModal({ onClose, onAdd, editDay }: {
+  onClose: () => void;
+  onAdd: (label: string, date: string) => void;
+  editDay?: WeddingDay;
+}) {
+  const [label, setLabel] = useState(editDay?.label ?? "");
+  const [date, setDate] = useState(editDay?.date ?? "");
+  const [customLabel, setCustomLabel] = useState("");
+
+  const isCustom = label !== "" && !SUGGESTED_LABELS.includes(label);
+  const effectiveLabel = isCustom ? customLabel : label;
+  const valid = effectiveLabel.trim().length > 0;
+
+  const handleChipClick = (l: string) => {
+    setLabel(l);
+    setCustomLabel("");
+  };
+
+  const handleCustomInput = (v: string) => {
+    setLabel("__custom__");
+    setCustomLabel(v);
+  };
+
+  return (
+    <Modal
+      title={editDay ? "Modifier le jour" : "Ajouter un jour"}
+      onClose={onClose}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button
+            variant="primary"
+            icon="plus"
+            disabled={!valid}
+            onClick={() => { if (valid) { onAdd(isCustom ? customLabel.trim() : label, date); onClose(); } }}
+          >
+            {editDay ? "Enregistrer" : "Ajouter"}
+          </Button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-5">
+        <Field label="Nom du jour">
+          <div className="flex flex-wrap gap-2 mb-3">
+            {SUGGESTED_LABELS.map((l) => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => handleChipClick(l)}
+                className={cx(
+                  "px-3 py-1.5 rounded-full text-xs font-medium border transition",
+                  label === l
+                    ? "bg-text text-bg border-transparent"
+                    : "bg-surface-2 text-text-2 border-line hover:border-line-strong"
+                )}
+              >
+                {l}
+              </button>
+            ))}
+          </div>
+          <Input
+            value={label === "__custom__" ? customLabel : (SUGGESTED_LABELS.includes(label) ? "" : label)}
+            onChange={(e) => handleCustomInput(e.target.value)}
+            placeholder="Nom personnalisé (optionnel)…"
+          />
+        </Field>
+
+        <Field label="Date (optionnelle)">
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+          />
+        </Field>
+      </div>
+    </Modal>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* DayTabBar                                                            */
+/* ------------------------------------------------------------------ */
+
+function DayTabBar({
+  days,
+  activeDayId,
+  onSelect,
+  onAdd,
+  onEdit,
+  onDelete,
+  today,
+}: {
+  days: WeddingDay[];
+  activeDayId: string;
+  onSelect: (id: string) => void;
+  onAdd: () => void;
+  onEdit: (day: WeddingDay) => void;
+  onDelete: (id: string) => void;
+  today: string;
+}) {
+  const [openPopover, setOpenPopover] = useState<string | null>(null);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setOpenPopover(null);
+      }
+    }
+    if (openPopover) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [openPopover]);
+
+  return (
+    <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+      {days.map((day) => {
+        const isActive = day.id === activeDayId;
+        const isToday = day.date === today;
+        const shortDate = fmtShortDate(day.date);
+
+        return (
+          <div key={day.id} className="relative flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => onSelect(day.id)}
+              className={cx(
+                "flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium border transition whitespace-nowrap",
+                isActive
+                  ? "bg-primary text-white border-transparent shadow-sm"
+                  : "border-line text-text-2 hover:border-primary/40 bg-surface"
+              )}
+            >
+              {isToday && (
+                <span className={cx(
+                  "w-1.5 h-1.5 rounded-full flex-shrink-0",
+                  isActive ? "bg-white animate-pulse" : "bg-red-500 animate-pulse"
+                )} />
+              )}
+              <span>{day.label}</span>
+              {shortDate && (
+                <span className={cx("text-[11px]", isActive ? "opacity-80" : "text-text-3")}>
+                  · {shortDate}
+                </span>
+              )}
+            </button>
+
+            {/* Dots menu */}
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setOpenPopover(openPopover === day.id ? null : day.id); }}
+              className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-surface-3 border border-line text-text-3 flex items-center justify-center hover:bg-surface-2 transition text-[8px] font-bold"
+              title="Options"
+            >
+              ···
+            </button>
+
+            {openPopover === day.id && (
+              <div
+                ref={popoverRef}
+                className="absolute top-full mt-1 left-0 z-50 bg-surface border border-line rounded-xl shadow-lg py-1 min-w-[140px]"
+              >
+                <button
+                  type="button"
+                  onClick={() => { setOpenPopover(null); onEdit(day); }}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-text hover:bg-surface-2 transition"
+                >
+                  <Icon name="edit" size={14} /> Modifier
+                </button>
+                {days.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => { setOpenPopover(null); onDelete(day.id); }}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-coral hover:bg-coral-soft transition"
+                  >
+                    <Icon name="trash" size={14} /> Supprimer
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Add day button */}
+      <button
+        type="button"
+        onClick={onAdd}
+        className="flex-shrink-0 flex items-center gap-1 px-3 py-2 rounded-full text-sm font-medium border border-dashed border-line text-text-3 hover:border-primary hover:text-primary transition"
+      >
+        <Icon name="plus" size={14} />
+        Ajouter
+      </button>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* Template picker (empty state)                                        */
 /* ------------------------------------------------------------------ */
 
 function TemplatePicker({ onSelect, onManual }: {
-  onSelect: (events: Omit<DayEvent, "id">[]) => void;
+  onSelect: (days: TemplateDay[]) => void;
   onManual: () => void;
 }) {
   return (
@@ -662,23 +1060,26 @@ function TemplatePicker({ onSelect, onManual }: {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-2xl">
-        {TEMPLATE_PRESETS.map((tpl) => (
-          <button
-            key={tpl.id}
-            type="button"
-            onClick={() => onSelect(tpl.events)}
-            className="group flex flex-col gap-2 p-4 rounded-xl border border-line bg-surface hover:border-primary hover:shadow-md transition text-left"
-          >
-            <div className="text-2xl">{tpl.emoji}</div>
-            <div className="font-semibold text-[13.5px] leading-snug group-hover:text-primary transition">
-              {tpl.label}
-            </div>
-            <div className="text-[12px] text-text-2 leading-relaxed">{tpl.description}</div>
-            <div className="mt-auto pt-1 text-[11px] text-text-3 font-medium">
-              {tpl.events.length} étapes · Modifiable
-            </div>
-          </button>
-        ))}
+        {TEMPLATE_PRESETS.map((tpl) => {
+          const totalEvents = tpl.days.reduce((s, d) => s + d.events.length, 0);
+          return (
+            <button
+              key={tpl.id}
+              type="button"
+              onClick={() => onSelect(tpl.days)}
+              className="group flex flex-col gap-2 p-4 rounded-xl border border-line bg-surface hover:border-primary hover:shadow-md transition text-left"
+            >
+              <div className="text-2xl">{tpl.emoji}</div>
+              <div className="font-semibold text-[13.5px] leading-snug group-hover:text-primary transition">
+                {tpl.label}
+              </div>
+              <div className="text-[12px] text-text-2 leading-relaxed">{tpl.description}</div>
+              <div className="mt-auto pt-1 text-[11px] text-text-3 font-medium">
+                {tpl.days.length > 1 ? `${tpl.days.length} jours · ` : ""}{totalEvents} étapes · Modifiable
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       <div className="flex items-center gap-3 text-sm text-text-2">
@@ -698,14 +1099,14 @@ function TemplatePicker({ onSelect, onManual }: {
 /* Progress tracker                                                     */
 /* ------------------------------------------------------------------ */
 
-function ProgressTracker({ events, checked, onToggle }: {
+function ProgressTracker({ events, checked, activeDayId }: {
   events: DayEvent[];
   checked: Record<string, boolean>;
-  onToggle: (id: string) => void;
+  activeDayId: string;
 }) {
   if (events.length === 0) return null;
 
-  const done = events.filter((e) => checked[e.id]).length;
+  const done = events.filter((e) => checked[`${activeDayId}:${e.id}`]).length;
   const total = events.length;
   const pct = Math.round((done / total) * 100);
   const complete = done === total;
@@ -941,13 +1342,16 @@ function EventCard({
 export default function DayJPage() {
   const { state } = useStore();
   const [mounted, setMounted] = useState(false);
-  const [events, setEvents] = useState<DayEvent[]>([]);
+  const [days, setDays] = useState<WeddingDay[]>([]);
+  const [activeDayId, setActiveDayId] = useState<string>("");
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [filterCat, setFilterCat] = useState<DayEvent["category"] | "all">("all");
   const [editingEvent, setEditingEvent] = useState<Partial<DayEvent> | null | false>(false);
   const [showLibrary, setShowLibrary] = useState(false);
+  const [showAddDay, setShowAddDay] = useState(false);
+  const [editingDay, setEditingDay] = useState<WeddingDay | undefined>(undefined);
 
-  // Current time tracking for Jour J mode
+  // Current time tracking
   const [nowMinutes, setNowMinutes] = useState<number>(0);
   const currentTimeRef = useRef<HTMLDivElement | null>(null);
   const scrolledRef = useRef(false);
@@ -956,8 +1360,17 @@ export default function DayJPage() {
   const [dragIdx, setDragIdx] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<string | null>(null);
 
+  const today = new Date().toISOString().slice(0, 10);
+  const weddingDate = state.wedding?.date ? state.wedding.date.slice(0, 10) : "";
+
   useEffect(() => {
-    setEvents(loadEvents());
+    const loadedDays = loadDays(weddingDate);
+    setDays(loadedDays);
+    if (loadedDays.length > 0) {
+      // Default to the day matching today, or the first day
+      const todayDay = loadedDays.find((d) => d.date === today);
+      setActiveDayId(todayDay ? todayDay.id : loadedDays[0].id);
+    }
     setChecked(loadChecked());
     setNowMinutes(getNowMinutes());
     setMounted(true);
@@ -970,14 +1383,14 @@ export default function DayJPage() {
     return () => clearInterval(interval);
   }, [mounted]);
 
-  // Auto-scroll to current time block on wedding day, once
-  const isWeddingDay = (() => {
-    if (!state.wedding?.date) return false;
-    const today = new Date().toISOString().slice(0, 10);
-    const wDate = state.wedding.date.slice(0, 10);
-    return today === wDate;
-  })();
+  // Active day object
+  const activeDay = days.find((d) => d.id === activeDayId) ?? days[0];
+  const events = activeDay?.events ?? [];
 
+  // Is the active day today (for live mode)?
+  const isWeddingDay = !!(activeDay?.date && activeDay.date === today);
+
+  // Auto-scroll to current time block on the active day, once
   useEffect(() => {
     if (!mounted || !isWeddingDay || scrolledRef.current) return;
     if (currentTimeRef.current) {
@@ -986,13 +1399,18 @@ export default function DayJPage() {
     }
   }, [mounted, isWeddingDay, events]);
 
+  // Persist days helper — update active day's events
   const persistedSetEvents = useCallback((updater: DayEvent[] | ((prev: DayEvent[]) => DayEvent[])) => {
-    setEvents((prev) => {
-      const next = typeof updater === "function" ? updater(prev) : updater;
-      saveEvents(next);
+    setDays((prevDays) => {
+      const next = prevDays.map((d) => {
+        if (d.id !== activeDayId) return d;
+        const newEvents = typeof updater === "function" ? updater(d.events) : updater;
+        return { ...d, events: newEvents };
+      });
+      saveDays(next);
       return next;
     });
-  }, []);
+  }, [activeDayId]);
 
   const handleSave = useCallback((form: Omit<DayEvent, "id"> & { id?: string }) => {
     if (form.id) {
@@ -1006,40 +1424,43 @@ export default function DayJPage() {
     persistedSetEvents((prev) => prev.filter((e) => e.id !== id));
     setChecked((prev) => {
       const next = { ...prev };
-      delete next[id];
+      delete next[`${activeDayId}:${id}`];
       saveChecked(next);
       return next;
     });
-  }, [persistedSetEvents]);
+  }, [persistedSetEvents, activeDayId]);
 
   const handleReset = useCallback(() => {
     if (!window.confirm("Réinitialiser le déroulé avec le modèle par défaut ?")) return;
     const defaults = DEFAULT_EVENTS.map((e, i) => ({ ...e, id: String(Date.now() + i) }));
     persistedSetEvents(defaults);
-    setChecked({});
-    saveChecked({});
   }, [persistedSetEvents]);
 
-  // Load template
-  const handleLoadTemplate = useCallback((templateEvents: Omit<DayEvent, "id">[]) => {
+  // Load template — creates multiple days from a TemplatePreset
+  const handleLoadTemplate = useCallback((templateDays: TemplateDay[]) => {
     const ts = Date.now();
-    const withIds = templateEvents.map((e, i) => ({
-      ...e,
-      id: `${ts}_${i}`,
+    const newDays: WeddingDay[] = templateDays.map((td, di) => ({
+      id: `${ts}_day_${di}`,
+      label: td.label,
+      date: weddingDate ? addDaysToDate(weddingDate, td.offsetDays) : "",
+      events: td.events.map((e, ei) => ({ ...e, id: `${ts}_${di}_${ei}` })),
     }));
-    persistedSetEvents(withIds);
+    setDays(newDays);
+    saveDays(newDays);
+    setActiveDayId(newDays[0].id);
     setChecked({});
     saveChecked({});
-  }, [persistedSetEvents]);
+  }, [weddingDate]);
 
-  // Toggle checked state
-  const handleToggleChecked = useCallback((id: string) => {
+  // Toggle checked state using composite key
+  const handleToggleChecked = useCallback((eventId: string) => {
     setChecked((prev) => {
-      const next = { ...prev, [id]: !prev[id] };
+      const key = `${activeDayId}:${eventId}`;
+      const next = { ...prev, [key]: !prev[key] };
       saveChecked(next);
       return next;
     });
-  }, []);
+  }, [activeDayId]);
 
   // Quick time adjust (+/- 15 min)
   const handleAdjustTime = useCallback((id: string, deltaMinutes: number) => {
@@ -1059,36 +1480,75 @@ export default function DayJPage() {
 
   // Library: add suggestion to timeline
   const handleAddFromLibrary = useCallback((s: LibrarySuggestion) => {
-    setEvents((prev) => {
-      const atHour = prev.filter((e) => e.hour === s.hour);
-      let minute = 0;
-      if (atHour.length > 0) {
-        const last = atHour.reduce((a, b) =>
-          a.hour * 60 + a.minute > b.hour * 60 + b.minute ? a : b
-        );
-        const end = addMinutes(last.hour, last.minute, last.duration + 30);
-        if (end.h === s.hour) {
-          minute = end.m;
-        } else {
-          minute = 0;
+    setDays((prevDays) => {
+      return prevDays.map((d) => {
+        if (d.id !== activeDayId) return d;
+        const atHour = d.events.filter((e) => e.hour === s.hour);
+        let minute = 0;
+        if (atHour.length > 0) {
+          const last = atHour.reduce((a, b) =>
+            a.hour * 60 + a.minute > b.hour * 60 + b.minute ? a : b
+          );
+          const end = addMinutes(last.hour, last.minute, last.duration + 30);
+          if (end.h === s.hour) {
+            minute = end.m;
+          }
         }
-      }
-      const newEvent: DayEvent = {
-        id: String(Date.now() + Math.random()),
-        hour: s.hour,
-        minute,
-        duration: s.duration,
-        title: s.title,
-        category: s.cat,
-        who: "Tous les invités",
-        important: false,
-        description: "",
-      };
-      const next = [...prev, newEvent];
-      saveEvents(next);
+        const newEvent: DayEvent = {
+          id: String(Date.now() + Math.random()),
+          hour: s.hour,
+          minute,
+          duration: s.duration,
+          title: s.title,
+          category: s.cat,
+          who: "Tous les invités",
+          important: false,
+          description: "",
+        };
+        const updatedEvents = [...d.events, newEvent];
+        const updatedDay = { ...d, events: updatedEvents };
+        const next = prevDays.map((dd) => dd.id === activeDayId ? updatedDay : dd);
+        saveDays(next);
+        return updatedDay;
+      });
+    });
+  }, [activeDayId]);
+
+  // Day management
+  const handleAddDay = useCallback((label: string, date: string) => {
+    const newDay: WeddingDay = {
+      id: generateId(),
+      label,
+      date,
+      events: [],
+    };
+    setDays((prev) => {
+      const next = [...prev, newDay];
+      saveDays(next);
+      return next;
+    });
+    setActiveDayId(newDay.id);
+  }, []);
+
+  const handleEditDay = useCallback((day: WeddingDay, label: string, date: string) => {
+    setDays((prev) => {
+      const next = prev.map((d) => d.id === day.id ? { ...d, label, date } : d);
+      saveDays(next);
       return next;
     });
   }, []);
+
+  const handleDeleteDay = useCallback((id: string) => {
+    if (!window.confirm("Supprimer ce jour et tous ses événements ?")) return;
+    setDays((prev) => {
+      const next = prev.filter((d) => d.id !== id);
+      saveDays(next);
+      if (activeDayId === id && next.length > 0) {
+        setActiveDayId(next[0].id);
+      }
+      return next;
+    });
+  }, [activeDayId]);
 
   // Drag & drop handlers
   const handleDragStart = useCallback((id: string) => {
@@ -1131,7 +1591,7 @@ export default function DayJPage() {
   const totalDuration = events.reduce((s, e) => s + e.duration, 0);
   const usedCats = new Set(events.map((e) => e.category));
 
-  const weddingDate = state.wedding?.date
+  const weddingDateFormatted = state.wedding?.date
     ? new Date(state.wedding.date).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
     : null;
 
@@ -1161,6 +1621,9 @@ export default function DayJPage() {
   const isPastEvent = (ev: DayEvent) =>
     isWeddingDay && toTotalMinutes(ev.hour, ev.minute) + ev.duration <= nowMinutes;
 
+  // Empty days (no days have any events) — show template picker
+  const allDaysEmpty = days.every((d) => d.events.length === 0);
+
   if (!mounted) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -1173,10 +1636,10 @@ export default function DayJPage() {
     <>
       <PageHead
         title="Déroulé du Jour J"
-        sub={weddingDate ? `Programme heure par heure · ${weddingDate}` : "Programme heure par heure de votre mariage"}
+        sub={weddingDateFormatted ? `Programme heure par heure · ${weddingDateFormatted}` : "Programme heure par heure de votre mariage"}
         actions={
           <>
-            {/* EN DIRECT badge on wedding day */}
+            {/* EN DIRECT badge on active day = today */}
             {isWeddingDay && (
               <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-50 border border-red-200 text-red-600 text-xs font-bold uppercase tracking-wide">
                 <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse inline-block" />
@@ -1186,7 +1649,7 @@ export default function DayJPage() {
             <Button variant="ghost" icon="download" onClick={() => window.print()}>
               Imprimer
             </Button>
-            <Button variant="secondary" icon="download" onClick={() => exportDayJPDF(events, state.wedding.partnerA, state.wedding.partnerB, state.wedding.date)}>
+            <Button variant="secondary" icon="download" onClick={() => lazyExportDayJPDF(events, state.wedding.partnerA, state.wedding.partnerB, state.wedding.date)}>
               Export PDF
             </Button>
           </>
@@ -1195,19 +1658,32 @@ export default function DayJPage() {
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 pb-16 space-y-6">
 
-        {/* Show template picker when no events at all */}
-        {events.length === 0 ? (
+        {/* Show template picker when all days are empty */}
+        {allDaysEmpty ? (
           <TemplatePicker
             onSelect={handleLoadTemplate}
             onManual={() => setEditingEvent({})}
           />
         ) : (
           <>
+            {/* Day Tab Bar */}
+            {days.length > 0 && (
+              <DayTabBar
+                days={days}
+                activeDayId={activeDayId}
+                onSelect={(id) => { setActiveDayId(id); setFilterCat("all"); scrolledRef.current = false; }}
+                onAdd={() => { setEditingDay(undefined); setShowAddDay(true); }}
+                onEdit={(day) => { setEditingDay(day); setShowAddDay(true); }}
+                onDelete={handleDeleteDay}
+                today={today}
+              />
+            )}
+
             {/* Progress tracker */}
             <ProgressTracker
               events={sorted}
               checked={checked}
-              onToggle={handleToggleChecked}
+              activeDayId={activeDayId}
             />
 
             {/* Stats bar */}
@@ -1294,8 +1770,6 @@ export default function DayJPage() {
                     const slotEvents = filtered.filter((e) => e.hour === hour);
                     const hasEvents = slotEvents.length > 0;
 
-                    // Find the sorted index of the last event in this slot (for gap detection)
-                    // and the first event of the next slot
                     return (
                       <div key={hour} className="flex gap-4 min-h-[4rem] relative">
                         <div className="w-12 flex-shrink-0 pt-3 text-right">
@@ -1320,8 +1794,7 @@ export default function DayJPage() {
 
                           {hasEvents ? (
                             <div className="ml-4 flex flex-col gap-2">
-                              {slotEvents.map((ev, evIdx) => {
-                                // Time gap warning: check against the *next* event in the overall sorted list
+                              {slotEvents.map((ev) => {
                                 const sortedIdx = sorted.findIndex((s) => s.id === ev.id);
                                 const nextEv = sorted[sortedIdx + 1];
                                 const showGapWarning = nextEv
@@ -1329,7 +1802,6 @@ export default function DayJPage() {
                                     (toTotalMinutes(ev.hour, ev.minute) + ev.duration) > 120
                                   : false;
 
-                                // Red "now" divider line: show before the first upcoming event
                                 const showNowLine = isWeddingDay && nextBlockId === ev.id;
 
                                 return (
@@ -1365,7 +1837,7 @@ export default function DayJPage() {
                                         onAdjustTime={(delta) => handleAdjustTime(ev.id, delta)}
                                         isDragging={dragIdx === ev.id}
                                         isDragOver={dragOver === ev.id && dragIdx !== ev.id}
-                                        isChecked={!!checked[ev.id]}
+                                        isChecked={!!checked[`${activeDayId}:${ev.id}`]}
                                         onToggleChecked={() => handleToggleChecked(ev.id)}
                                         isCurrentBlock={currentBlockId === ev.id}
                                         isPastBlock={isPastEvent(ev)}
@@ -1429,6 +1901,20 @@ export default function DayJPage() {
         <LibraryModal
           onClose={() => setShowLibrary(false)}
           onAdd={handleAddFromLibrary}
+        />
+      )}
+
+      {showAddDay && (
+        <AddDayModal
+          onClose={() => { setShowAddDay(false); setEditingDay(undefined); }}
+          editDay={editingDay}
+          onAdd={(label, date) => {
+            if (editingDay) {
+              handleEditDay(editingDay, label, date);
+            } else {
+              handleAddDay(label, date);
+            }
+          }}
         />
       )}
     </>

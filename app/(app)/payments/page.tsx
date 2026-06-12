@@ -8,7 +8,7 @@ import { Card, Badge, Button, Select, Segmented, Drawer, Field, Input, Empty, Ta
 import { PageHead } from "@/components/shell";
 import { PageTutorial } from "@/components/tutorial";
 import type { Payment } from "@/lib/types";
-import { exportPaymentsPDF } from "@/lib/pdf-payments";
+import { lazyExportPaymentsPDF } from "@/lib/pdf-lazy";
 import { createClient } from "@/lib/supabase";
 import { getWeddingId } from "@/lib/db";
 import { ScrollReveal } from "@/components/scroll-reveal";
@@ -397,7 +397,7 @@ export default function PaymentsPage() {
     <div className="mx-auto w-full max-w-[1320px] px-5 md:px-8 py-6 md:py-8 pb-28 md:pb-12">
       <PageHead title="Suivi des paiements" sub={`${fmt.eur(paid)} réglés · ${fmt.eur(due)} à venir`}
         actions={<>
-          <Button variant="secondary" icon="download" onClick={() => exportPaymentsPDF(state.payments, state.wedding.partnerA || "Partenaire A", state.wedding.partnerB || "Partenaire B")}>Export comptable</Button>
+          <Button variant="secondary" icon="download" onClick={() => lazyExportPaymentsPDF(state.payments, state.wedding.partnerA || "Partenaire A", state.wedding.partnerB || "Partenaire B")}>Export comptable</Button>
           <Button variant="primary" icon="plus" onClick={() => setAdding(true)}>Paiement</Button>
         </>} />
 

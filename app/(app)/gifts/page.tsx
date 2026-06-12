@@ -7,8 +7,6 @@ import { PageHead } from "@/components/shell";
 import { fmt } from "@/lib/format";
 import type { Gift } from "@/lib/types";
 import { getWeddingId, loadGifts, addGift, updateGift, deleteGift } from "@/lib/db";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -52,7 +50,9 @@ function StatPill({
 
 // ── PDF export ─────────────────────────────────────────────────────────────
 
-function exportGiftsPDF(gifts: Gift[]) {
+async function exportGiftsPDF(gifts: Gift[]) {
+  const jsPDF = (await import("jspdf")).default;
+  const autoTable = (await import("jspdf-autotable")).default;
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
   // Header band

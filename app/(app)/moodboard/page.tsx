@@ -14,8 +14,6 @@ import {
   upsertMoodCard,
   deleteMoodCard,
 } from "@/lib/db";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 
 /* ─────────────────────────── Types ─────────────────────────── */
 
@@ -646,7 +644,9 @@ export default function MoodboardPage() {
       });
   }
 
-  function exportPdf() {
+  async function exportPdf() {
+    const jsPDF = (await import("jspdf")).default;
+    const autoTable = (await import("jspdf-autotable")).default;
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const pageW = doc.internal.pageSize.getWidth();
     const terracotta: [number, number, number] = [201, 110, 44];

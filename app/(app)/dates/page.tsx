@@ -13,7 +13,7 @@ import { seedDefaultDateCandidates } from "@/lib/seed";
 import { geocodeCity, fetchDateWeather, fetchMonthlyWeather } from "@/lib/weather";
 import { PageTutorial } from "@/components/tutorial";
 import { ScrollReveal } from "@/components/scroll-reveal";
-import { exportDatesPDF } from "@/lib/pdf-dates";
+import { lazyExportDatesPDF } from "@/lib/pdf-lazy";
 
 const COUNTRIES = [
   { code: "FR", flag: "🇫🇷", label: "France" },
@@ -357,7 +357,7 @@ export default function DatesPage() {
               {refreshing ? "…" : "Graphique"}
             </Button>
           </div>
-          <Button variant="secondary" icon="download" onClick={() => exportDatesPDF(state.dateCandidates, state.selectedDate, state.wedding.partnerA, state.wedding.partnerB)} disabled={state.dateCandidates.length === 0}>
+          <Button variant="secondary" icon="download" onClick={() => lazyExportDatesPDF(state.dateCandidates, state.selectedDate, state.wedding.partnerA, state.wedding.partnerB)} disabled={state.dateCandidates.length === 0}>
             Export PDF
           </Button>
           <Button variant="primary" icon="plus" onClick={() => setAdding(true)}>Date candidate</Button>

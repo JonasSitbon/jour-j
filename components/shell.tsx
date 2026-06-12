@@ -11,6 +11,7 @@ import { NotificationsPanel } from "./notifications-panel";
 import { SearchPalette } from "./search-palette";
 import { createClient } from "@/lib/supabase";
 import type { WeddingRole } from "@/lib/types";
+import { getFilteredNavGroups, weddingRoleToCollaboratorRole } from "@/lib/roles";
 
 // ─── Navigation structure ────────────────────────────────────────────────────
 
@@ -138,6 +139,13 @@ function NavGroups({
   const { state } = useStore();
   const id = useId();
 
+  // ── Role-based nav filtering ──────────────────────────────────────────────
+  const activeWedding = state.myWeddings.find((w) => w.id === state.activeWeddingId);
+  const weddingRole: WeddingRole = activeWedding?.role ?? "viewer";
+  const collaboratorRole = weddingRoleToCollaboratorRole(weddingRole);
+  const visibleNavGroups = getFilteredNavGroups(collaboratorRole);
+  // ─────────────────────────────────────────────────────────────────────────
+
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     try {
       const stored = readLS("nav-groups", "");
@@ -167,7 +175,7 @@ function NavGroups({
 
   return (
     <nav className="flex flex-col gap-0 flex-1 overflow-y-auto overflow-x-hidden" style={{ scrollbarWidth: "none" }}>
-      {NAV_GROUPS.map((group, gi) => (
+      {visibleNavGroups.map((group, gi) => (
         <div key={group.id} className={collapsed ? "" : "mb-1"}>
           {/* Separator in collapsed mode */}
           {collapsed && gi > 0 && (

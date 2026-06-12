@@ -8,7 +8,7 @@ import { Card, Badge, Button, Select, Donut, Drawer, Field, Input } from "@/comp
 import { PageHead } from "@/components/shell";
 import { PageTutorial } from "@/components/tutorial";
 import type { BudgetPost, Payment } from "@/lib/types";
-import { exportBudgetPDF } from "@/lib/pdf-budget";
+import { lazyExportBudgetPDF } from "@/lib/pdf-lazy";
 import {
   PieChart, Pie, Cell, Tooltip as ReTooltip, Legend, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, AreaChart, Area,
@@ -1104,7 +1104,7 @@ export default function BudgetPage() {
     <div className="mx-auto w-full max-w-[1320px] px-5 md:px-8 py-6 md:py-8 pb-28 md:pb-12">
       <PageHead title="Budget" sub={`${fmt.eur(spent)} engagés sur ${fmt.eur(state.budgetTotal)} · ${state.budgetTotal ? Math.round(spent / state.budgetTotal * 100) : 0}%`}
         actions={<>
-          <Button variant="secondary" icon="download" onClick={() => exportBudgetPDF(state.budget, state.payments, state.budgetTotal, state.wedding.partnerA, state.wedding.partnerB)}>Exporter PDF</Button>
+          <Button variant="secondary" icon="download" onClick={() => lazyExportBudgetPDF(state.budget, state.payments, state.budgetTotal, state.wedding.partnerA, state.wedding.partnerB)}>Exporter PDF</Button>
           <Button variant="primary" icon="plus" onClick={() => setAddingPost(true)}>Nouveau poste</Button>
         </>} />
 

@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import { Icon } from "@/components/icon";
 import { Card, Button, Badge, Empty, Drawer, Field, Select, Modal } from "@/components/ui";
 import { PageHead } from "@/components/shell";
@@ -128,7 +126,9 @@ function fmtDuration(minutes: number): string {
 
 // ── PDF Export ─────────────────────────────────────────────────────────────
 
-function exportCeremonyPDF(events: CeremonyEvent[]) {
+async function exportCeremonyPDF(events: CeremonyEvent[]) {
+  const jsPDF = (await import("jspdf")).default;
+  const autoTable = (await import("jspdf-autotable")).default;
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
   // Header band

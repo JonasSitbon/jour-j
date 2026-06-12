@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { exportWeddingReport } from "@/lib/pdf-report";
+import { lazyExportWeddingReport } from "@/lib/pdf-lazy";
 import {
   motion, useMotionValue, useSpring, useTransform,
   useMotionTemplate, animate,
@@ -1211,7 +1211,7 @@ export default function DashboardPage() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           transition={{ delay: 0.12, duration: 0.3 }}
           className="flex gap-2 items-center flex-wrap">
-          <Button variant="secondary" icon="download" onClick={() => exportWeddingReport(state)}>Rapport complet</Button>
+          <Button variant="secondary" icon="download" onClick={() => lazyExportWeddingReport(state)}>Rapport complet</Button>
           <Link href="/vendors"><Button variant="primary" icon="plus">Ajouter un devis</Button></Link>
         </motion.div>
       </div>

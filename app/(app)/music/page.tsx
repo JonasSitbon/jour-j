@@ -13,7 +13,7 @@ import {
   updateSong,
   deleteSong,
 } from "@/lib/db";
-import { exportMusicPDF } from "@/lib/pdf-music";
+import { lazyExportMusicPDF } from "@/lib/pdf-lazy";
 import type { Song, SongMoment } from "@/lib/types";
 
 // ── Moment config ──────────────────────────────────────────────────────────
@@ -494,7 +494,7 @@ export default function MusicPage() {
                 variant="secondary"
                 icon="download"
                 size="sm"
-                onClick={() => exportMusicPDF(songs, partnerA, partnerB)}
+                onClick={() => lazyExportMusicPDF(songs, partnerA, partnerB)}
               >
                 Export PDF
               </Button>

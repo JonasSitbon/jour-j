@@ -7,7 +7,7 @@ import { PageHead } from "@/components/shell";
 import { useStore } from "@/components/providers";
 import type { JournalEntry } from "@/lib/types";
 import { getWeddingId, loadJournal, addJournalEntry, updateJournalEntry, deleteJournalEntry } from "@/lib/db";
-import { exportJournalPDF } from "@/lib/pdf-journal";
+import { lazyExportJournalPDF } from "@/lib/pdf-lazy";
 
 type Category = JournalEntry["category"] | "all";
 
@@ -201,7 +201,7 @@ export default function JournalPage() {
               variant="secondary"
               icon="download"
               onClick={() =>
-                exportJournalPDF(
+                lazyExportJournalPDF(
                   entries,
                   state.wedding.partnerA || "Partenaire A",
                   state.wedding.partnerB || "Partenaire B"

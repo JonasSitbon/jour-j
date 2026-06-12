@@ -9,9 +9,8 @@ import { PageHead } from "@/components/shell";
 import { PageTutorial } from "@/components/tutorial";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import type { Guest, Diet } from "@/lib/types";
-import { exportGuestListPDF } from "@/lib/pdf-guests";
+import { lazyExportGuestListPDF, lazyExportPlaceCardsPDF, lazyExportSeatingListPDF } from "@/lib/pdf-lazy";
 import { exportElementAsPNG } from "@/lib/export-canvas";
-import { exportPlaceCardsPDF, exportSeatingListPDF } from "@/lib/pdf-placecards";
 import Papa from "papaparse";
 import { QRCodeSVG } from "qrcode.react";
 import { createClient } from "@/lib/supabase";
@@ -1409,9 +1408,9 @@ export default function GuestsPage() {
             onChange={handleCSVImport}
           />
           <Button variant="secondary" icon="mail" onClick={() => toast(`Rappels RSVP envoyés à ${state.guests.filter((g) => g.rsvp === "pending").length} invités`)}>Relancer les RSVP</Button>
-          <Button variant="secondary" icon="download" onClick={() => exportGuestListPDF(state.guests, state.wedding.partnerA, state.wedding.partnerB)}>Export PDF</Button>
-          <Button variant="secondary" icon="download" onClick={() => exportSeatingListPDF(state.guests, state.tables, state.wedding.partnerA || "A", state.wedding.partnerB || "B")}>Plan de table PDF</Button>
-          <Button variant="secondary" icon="download" onClick={() => exportPlaceCardsPDF(state.guests, state.tables, state.wedding.partnerA || "A", state.wedding.partnerB || "B")}>Cartons placement</Button>
+          <Button variant="secondary" icon="download" onClick={() => lazyExportGuestListPDF(state.guests, state.wedding.partnerA, state.wedding.partnerB)}>Export PDF</Button>
+          <Button variant="secondary" icon="download" onClick={() => lazyExportSeatingListPDF(state.guests, state.tables, state.wedding.partnerA || "A", state.wedding.partnerB || "B")}>Plan de table PDF</Button>
+          <Button variant="secondary" icon="download" onClick={() => lazyExportPlaceCardsPDF(state.guests, state.tables, state.wedding.partnerA || "A", state.wedding.partnerB || "B")}>Cartons placement</Button>
           <Button variant="secondary" icon="download" onClick={() => exportElementAsPNG("seating-plan-export", "plan-de-table.png")}>Exporter PNG</Button>
           <Button variant="secondary" onClick={() => setBulkImporting(true)}>📥 Ajout en lot</Button>
           <Button variant="primary" icon="plus" onClick={() => setEditing(newGuest)}>Ajouter</Button>

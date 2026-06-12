@@ -13,7 +13,7 @@ import { getWeddingId } from "@/lib/db";
 import { seedDefaultTasks, seedDefaultDayJ } from "@/lib/seed";
 import type { Task, SubTask } from "@/lib/types";
 import { ScrollReveal } from "@/components/scroll-reveal";
-import { exportChecklistPDF } from "@/lib/pdf-checklist";
+import { lazyExportChecklistPDF } from "@/lib/pdf-lazy";
 
 // ─── Assignee types ───────────────────────────────────────────────────────────
 type Assignee = "all" | "a" | "b" | "both" | "vendor";
@@ -974,7 +974,7 @@ export default function ChecklistPage() {
     <div className="mx-auto w-full max-w-[1320px] px-5 md:px-8 py-6 md:py-8 pb-28 md:pb-12">
       <PageHead title="Checklist" sub={`${done} / ${state.tasks.length} tâches complétées · ${globalPct}%`}
         actions={<>
-          <Button variant="ghost" icon="download" onClick={() => exportChecklistPDF(state.tasks, cats, A || "Partenaire A", B || "Partenaire B")}>Export PDF</Button>
+          <Button variant="ghost" icon="download" onClick={() => lazyExportChecklistPDF(state.tasks, cats, A || "Partenaire A", B || "Partenaire B")}>Export PDF</Button>
           {state.tasks.some((t) => t.done) && (
             <Button variant="ghost" icon="trash" onClick={clearDoneTasks}>Nettoyer les terminées</Button>
           )}

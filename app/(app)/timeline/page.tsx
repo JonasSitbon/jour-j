@@ -6,7 +6,7 @@ import { Icon } from "@/components/icon";
 import { Card, Badge, Button, Empty, Segmented } from "@/components/ui";
 import { PageHead } from "@/components/shell";
 import { fmt } from "@/lib/format";
-import { exportTimelinePDF } from "@/lib/pdf-timeline";
+import { lazyExportTimelinePDF } from "@/lib/pdf-lazy";
 
 const cx = (...c: (string | false | undefined)[]) => c.filter(Boolean).join(" ");
 
@@ -401,7 +401,7 @@ export default function TimelinePage() {
               variant="secondary"
               size="sm"
               icon="download"
-              onClick={() => exportTimelinePDF(allItems, nameA, nameB, weddingDate ?? "")}
+              onClick={() => lazyExportTimelinePDF(allItems, nameA, nameB, weddingDate ?? "")}
             >
               Export PDF
             </Button>

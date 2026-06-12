@@ -17,6 +17,8 @@ const NAV = [
   { href: "/admin", label: "Dashboard", icon: "grid" },
   { href: "/admin/users", label: "Utilisateurs", icon: "users" },
   { href: "/admin/emails", label: "Emails", icon: "mail" },
+  { href: "/admin/roles", label: "Rôles & Accès", icon: "key" },
+  { href: "/admin/features", label: "Fonctionnalités", icon: "flag" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
