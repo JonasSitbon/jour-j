@@ -649,6 +649,33 @@ export default function SettingsPage() {
                   </Field>
                 </div>
 
+                {/* Nombre d'invités prévus */}
+                <Field label="Nombre d'invités prévus">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-wrap gap-1.5">
+                      {[50, 75, 100, 125, 150, 200].map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => update("wedding", (p) => ({ ...p, guestTarget: n }))}
+                          className={`px-3.5 py-1.5 rounded-lg text-[13px] font-medium border transition ${w.guestTarget === n ? "bg-primary text-white border-primary" : "border-line text-text-2 hover:border-primary/50 hover:text-text"}`}
+                        >
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                    <Input
+                      type="number"
+                      value={w.guestTarget || ""}
+                      onChange={(e) => {
+                        const v = parseInt(e.target.value);
+                        update("wedding", (p) => ({ ...p, guestTarget: isNaN(v) ? 0 : v }));
+                      }}
+                      placeholder="Nombre exact…"
+                    />
+                  </div>
+                </Field>
+
                 {/* Couleur de couverture */}
                 <Field label="Couleur de l'espace (card couverture)">
                   <div className="flex gap-2.5 mt-1">

@@ -221,8 +221,41 @@ export default function MusicPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [defaultMoment, setDefaultMoment] = useState<SongMoment | null>(null);
 
-  // Search
+  // Search (filter existing songs)
   const [search, setSearch] = useState("");
+
+  // iTunes API search (add drawer)
+  const [apiQuery, setApiQuery] = useState("");
+  const [apiResults, setApiResults] = useState<{ trackName: string; artistName: string; artworkUrl60?: string; trackTimeMillis?: number }[]>([]);
+  const [apiSearching, setApiSearching] = useState(false);
+
+  const searchItunes = async () => {
+    const q = apiQuery.trim();
+    if (!q) return;
+    setApiSearching(true);
+    setApiResults([]);
+    try {
+      const res = await fetch(
+        `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&media=music&limit=10&country=fr`
+      );
+      const json = await res.json();
+      setApiResults(json.results ?? []);
+    } catch {
+      // silently ignore
+    } finally {
+      setApiSearching(false);
+    }
+  };
+
+  const selectTrack = (r: { trackName: string; artistName: string; trackTimeMillis?: number }) => {
+    const ms = r.trackTimeMillis;
+    const duration = ms
+      ? `${Math.floor(ms / 60000)}:${String(Math.floor((ms % 60000) / 1000)).padStart(2, "0")}`
+      : "";
+    setForm((f) => ({ ...f, title: r.trackName, artist: r.artistName, duration }));
+    setApiResults([]);
+    setApiQuery("");
+  };
 
   // ── Load ─────────────────────────────────────────────────────────────────
 
@@ -557,7 +590,7 @@ export default function MusicPage() {
       {drawerOpen && (
         <Drawer
           title={editingSong ? "Modifier la chanson" : "Ajouter une chanson"}
-          onClose={() => setDrawerOpen(false)}
+          onClose={() => { setDrawerOpen(false); setApiResults([]); setApiQuery(""); }}
           footer={
             <>
               <Button
@@ -578,6 +611,55 @@ export default function MusicPage() {
           }
         >
           <div className="flex flex-col gap-4">
+            {/* iTunes search — only when adding */}
+            {!editingSong && (
+              <div className="flex flex-col gap-2">
+                <Field label="Rechercher un titre ou un artiste" hint="Sélectionnez un résultat pour remplir automatiquement">
+                  <div className="flex gap-2">
+                    <input
+                      className="input flex-1"
+                      value={apiQuery}
+                      onChange={(e) => setApiQuery(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && searchItunes()}
+                      placeholder="La Vie en Rose, Édith Piaf…"
+                    />
+                    <button
+                      type="button"
+                      onClick={searchItunes}
+                      disabled={apiSearching || !apiQuery.trim()}
+                      className="px-3 rounded-lg border border-line text-text-2 hover:border-primary/50 hover:text-text transition disabled:opacity-40 flex items-center"
+                    >
+                      {apiSearching
+                        ? <Icon name="refresh" size={15} className="animate-spin" />
+                        : <Icon name="search" size={15} />}
+                    </button>
+                  </div>
+                </Field>
+                {apiResults.length > 0 && (
+                  <div className="rounded-lg border border-line overflow-hidden max-h-52 overflow-y-auto">
+                    {apiResults.map((r, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => selectTrack(r)}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-hover transition-colors border-b border-line last:border-0"
+                      >
+                        {r.artworkUrl60 && (
+                          <img src={r.artworkUrl60} alt="" className="w-9 h-9 rounded-[6px] object-cover shrink-0" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[13px] font-medium truncate text-text">{r.trackName}</div>
+                          <div className="text-[11.5px] text-text-2 truncate">{r.artistName}</div>
+                        </div>
+                        <Icon name="plus" size={13} className="text-text-3 shrink-0" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="h-px bg-line" />
+              </div>
+            )}
+
             <Field label="Moment *">
               <select
                 className="input"

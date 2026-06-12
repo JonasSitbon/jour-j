@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useStore, useToast } from "@/components/providers";
 import { fmt } from "@/lib/format";
 import { Icon } from "@/components/icon";
 import { Card, Badge, Button, Ring, Drawer, Field, Input } from "@/components/ui";
 import { PageHead } from "@/components/shell";
-import type { DateCandidate } from "@/lib/types";
+import type { DateCandidate, Holiday } from "@/lib/types";
 import { createClient } from "@/lib/supabase";
 import { getWeddingId } from "@/lib/db";
 import { seedDefaultDateCandidates } from "@/lib/seed";
@@ -14,6 +14,16 @@ import { geocodeCity, fetchDateWeather, fetchMonthlyWeather } from "@/lib/weathe
 import { PageTutorial } from "@/components/tutorial";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { exportDatesPDF } from "@/lib/pdf-dates";
+
+const COUNTRIES = [
+  { code: "FR", flag: "🇫🇷", label: "France" },
+  { code: "CH", flag: "🇨🇭", label: "Suisse" },
+  { code: "BE", flag: "🇧🇪", label: "Belgique" },
+  { code: "IT", flag: "🇮🇹", label: "Italie" },
+  { code: "ES", flag: "🇪🇸", label: "Espagne" },
+  { code: "DE", flag: "🇩🇪", label: "Allemagne" },
+  { code: "LU", flag: "🇱🇺", label: "Luxembourg" },
+];
 
 const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 const DOW = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
@@ -161,6 +171,49 @@ export default function DatesPage() {
   const [adding, setAdding] = useState(false);
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
 
+  // Calendar nav — declared early so country useEffect can depend on ym.y
+  const wd = new Date(state.wedding.date + "T00:00:00");
+  const [ym, setYm] = useState({ y: wd.getFullYear(), m: wd.getMonth() });
+  const [selDate, setSelDate] = useState(state.wedding.date);
+  const nav = (dir: number) => setYm((p) => { let m = p.m + dir, y = p.y; if (m < 0) { m = 11; y--; } if (m > 11) { m = 0; y++; } return { y, m }; });
+
+  // Country holidays
+  const [activeCountries, setActiveCountries] = useState<string[]>(["FR"]);
+  const [countryHols, setCountryHols] = useState<(Holiday & { country: string })[]>([]);
+  const [loadingHols, setLoadingHols] = useState(false);
+  const [showCountryMenu, setShowCountryMenu] = useState(false);
+
+  useEffect(() => {
+    if (activeCountries.length === 0) { setCountryHols([]); return; }
+    const years = [ym.y, ym.y + 1];
+    setLoadingHols(true);
+    Promise.all(
+      activeCountries.flatMap((code) =>
+        years.map((y) =>
+          fetch(`https://date.nager.at/api/v3/PublicHolidays/${y}/${code}`)
+            .then((r) => r.json())
+            .then((list: any[]) =>
+              list.map((h) => ({ date: h.date as string, label: h.localName as string, country: code }))
+            )
+            .catch(() => [] as (Holiday & { country: string })[])
+        )
+      )
+    ).then((results) => {
+      setCountryHols(results.flat());
+    }).finally(() => setLoadingHols(false));
+  }, [activeCountries, ym.y]);
+
+  const allHolidays = useMemo(
+    () => [...state.holidays, ...countryHols],
+    [state.holidays, countryHols]
+  );
+
+  const toggleCountry = (code: string) => {
+    setActiveCountries((prev) =>
+      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
+    );
+  };
+
   // City / weather refresh (global monthly chart)
   const [cityInput, setCityInput] = useState(state.weatherCity || state.wedding.city);
   const [refreshing, setRefreshing] = useState(false);
@@ -200,11 +253,6 @@ export default function DatesPage() {
     toast("Date candidate supprimée");
   };
 
-  const wd = new Date(state.wedding.date + "T00:00:00");
-  const [ym, setYm] = useState({ y: wd.getFullYear(), m: wd.getMonth() });
-  const [selDate, setSelDate] = useState(state.wedding.date);
-
-  const nav = (dir: number) => setYm((p) => { let m = p.m + dir, y = p.y; if (m < 0) { m = 11; y--; } if (m > 11) { m = 0; y++; } return { y, m }; });
   const maxWeather = state.weatherByMonth.length ? Math.max(...state.weatherByMonth.map((w) => w.sun)) : 100;
   const best = state.dateCandidates.length > 0
     ? state.dateCandidates.reduce((a, b) => scoreOf(b) > scoreOf(a) ? b : a)
@@ -223,9 +271,40 @@ export default function DatesPage() {
   const isRealData = !!state.weatherCity;
 
   return (
-    <div className="mx-auto w-full max-w-[1320px] px-5 md:px-8 py-6 md:py-8 pb-28 md:pb-12">
+    <div className="mx-auto w-full max-w-[1320px] px-5 md:px-8 py-6 md:py-8 pb-28 md:pb-12" onClick={() => setShowCountryMenu(false)}>
       <PageHead title="Sélecteur de dates" sub="Comparez vos dates selon la météo réelle historique, les disponibilités et les jours fériés."
         actions={<>
+          {/* Country holiday toggle */}
+          <div className="relative">
+            <button
+              onClick={() => setShowCountryMenu((v) => !v)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium border transition ${showCountryMenu ? "bg-primary-soft border-primary text-primary-700" : "border-line text-text-2 hover:border-primary/40 hover:text-text"}`}
+            >
+              <Icon name="flag" size={14} />
+              Pays
+              {activeCountries.length > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary text-white text-[10px] font-bold leading-none">
+                  {activeCountries.length}
+                </span>
+              )}
+              {loadingHols && <Icon name="refresh" size={12} className="animate-spin ml-1" />}
+            </button>
+            {showCountryMenu && (
+              <div className="absolute right-0 top-full mt-1 z-50 bg-surface border border-line rounded-xl shadow-lg p-2 min-w-[180px]" onClick={(e) => e.stopPropagation()}>
+                <div className="text-[11px] text-text-3 px-2 pb-1.5 font-semibold uppercase tracking-wide">Jours fériés par pays</div>
+                {COUNTRIES.map((c) => (
+                  <button key={c.code}
+                    onClick={() => toggleCountry(c.code)}
+                    className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-[13px] transition ${activeCountries.includes(c.code) ? "bg-primary-soft text-primary-700 font-medium" : "text-text-2 hover:bg-hover"}`}
+                  >
+                    <span>{c.flag}</span>
+                    <span className="flex-1 text-left">{c.label}</span>
+                    {activeCountries.includes(c.code) && <Icon name="check" size={13} className="text-primary" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <div className="flex items-center gap-1.5">
             <div className="relative flex items-center">
               <Icon name="pin" size={14} className="absolute left-3 text-text-3 pointer-events-none" />
@@ -485,7 +564,7 @@ export default function DatesPage() {
             {cells.map((d, i) => {
               if (!d) return <div key={i} />;
               const dateStr = iso(d); const dow = new Date(ym.y, ym.m, d).getDay(); const weekend = dow === 0 || dow === 6;
-              const hol = state.holidays.find((h) => h.date === dateStr);
+              const hol = allHolidays.find((h) => h.date === dateStr);
               const cand = state.dateCandidates.find((c) => c.date === dateStr);
               const isSel = selDate === dateStr;
               let cls = "hover:bg-hover";
@@ -571,18 +650,31 @@ export default function DatesPage() {
 
           <Card>
             <div className="sec-title mb-4"><Icon name="flag" size={17} className="text-text-3" />Jours fériés &amp; événements à éviter</div>
-            <div className="flex flex-col">
-              {state.holidays.map((h) => (
-                <div key={h.date} className="flex items-center justify-between py-2.5 border-b border-line last:border-0">
-                  <span className="flex items-center gap-2.5">
-                    <span className="w-[30px] h-[30px] rounded-[10px] flex items-center justify-center bg-coral-soft text-coral">
-                      <Icon name="flag" size={15} />
-                    </span>{h.label}
-                  </span>
-                  <span className="font-mono text-text-2 text-[13px]">{fmt.dateShort(h.date)}</span>
-                </div>
-              ))}
-            </div>
+            {allHolidays.length === 0 ? (
+              <div className="text-[13px] text-text-3 py-3 text-center">
+                Activez au moins un pays pour voir les jours fériés.
+              </div>
+            ) : (
+              <div className="flex flex-col max-h-[320px] overflow-y-auto">
+                {[...allHolidays]
+                  .sort((a, b) => a.date.localeCompare(b.date))
+                  .filter((h, i, arr) => arr.findIndex((x) => x.date === h.date && x.label === h.label) === i)
+                  .map((h) => {
+                    const ctry = "country" in h ? COUNTRIES.find((c) => c.code === (h as any).country) : null;
+                    return (
+                      <div key={h.date + h.label} className="flex items-center justify-between py-2.5 border-b border-line last:border-0">
+                        <span className="flex items-center gap-2.5">
+                          <span className="w-[30px] h-[30px] rounded-[10px] flex items-center justify-center bg-coral-soft text-coral text-[15px]">
+                            {ctry ? ctry.flag : <Icon name="flag" size={15} />}
+                          </span>
+                          <span className="text-[13px]">{h.label}</span>
+                        </span>
+                        <span className="font-mono text-text-2 text-[13px] shrink-0 ml-2">{fmt.dateShort(h.date)}</span>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
           </Card>
         </div>
       </div>
