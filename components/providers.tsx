@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type { AppState } from "@/lib/types";
 import { initialState } from "@/lib/data";
 import { loadAll, syncKey, setActiveWedding } from "@/lib/db";
+import { createClient } from "@/lib/supabase";
 
 /* ----------------------------- Store ----------------------------- */
 type Updater<K extends keyof AppState> = AppState[K] | ((prev: AppState[K]) => AppState[K]);
@@ -48,22 +49,26 @@ export function Providers({ children }: { children: React.ReactNode }) {
     const publicPaths = ["/", "/login", "/signup", "/onboarding", "/update-password", "/rsvp", "/share", "/auth"];
     const isPublic = publicPaths.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
-    loadAll()
-      .then((data) => {
-        if (data) {
-          setState((s) => ({ ...s, ...data }));
-          setLoading(false);
-          if (pathname === "/") router.push("/dashboard");
-        } else if (!isPublic) {
-          router.push("/onboarding");
-        } else {
-          setLoading(false);
-        }
-      })
-      .catch(() => {
+    async function boot() {
+      const data = await loadAll().catch(() => null);
+      if (data) {
+        setState((s) => ({ ...s, ...data }));
         setLoading(false);
-        if (!isPublic) router.push("/onboarding");
-      });
+        if (pathname === "/") router.push("/dashboard");
+      } else if (!isPublic) {
+        router.push("/onboarding");
+      } else {
+        setLoading(false);
+      }
+    }
+
+    boot();
+
+    // Fallback : écoute l'arrivée de session (ex: après magic link)
+    const { data: { subscription } } = createClient().auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN") boot();
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   const reloadAll = useCallback(async () => {
