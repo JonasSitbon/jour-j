@@ -12,7 +12,7 @@ import { SearchPalette } from "./search-palette";
 import { createClient } from "@/lib/supabase";
 import type { WeddingRole } from "@/lib/types";
 
-// ─── Navigation structure ───────────────────────────────────────────────────
+// ─── Navigation structure ────────────────────────────────────────────────────
 
 const NAV_GROUPS = [
   {
@@ -71,52 +71,62 @@ const BOTTOM_NAV = [
   { id: "checklist", label: "Tâches",   icon: "check-circle" },
 ];
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function readLS(key: string, fallback: string) {
   if (typeof window === "undefined") return fallback;
   return localStorage.getItem(key) ?? fallback;
 }
 
-// ─── Theme toggle ────────────────────────────────────────────────────────────
+// ─── Theme toggle ─────────────────────────────────────────────────────────────
 
 function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   return (
-    <div className="inline-flex p-0.5 gap-0.5 bg-surface-3 rounded-sm border border-line">
+    <div className="inline-flex p-[3px] gap-[2px] rounded-[6px] border"
+      style={{ background: "var(--surface-3)", borderColor: "var(--line)" }}>
       {(["light", "dark"] as const).map((t) => (
-        <motion.button key={t} onClick={() => setTheme(t)}
-          className={`px-2 h-[26px] rounded-md flex items-center ${theme === t ? "bg-surface shadow-xs text-text" : "text-text-2"}`}
-          whileTap={{ scale: 0.94 }}
-          transition={{ type: "spring", stiffness: 500, damping: 28 }}>
-          <Icon name={t === "light" ? "sun" : "moon"} size={15} />
+        <motion.button
+          key={t}
+          onClick={() => setTheme(t)}
+          className={`px-2.5 h-[24px] rounded-[4px] flex items-center transition-colors text-[12px] ${
+            theme === t
+              ? "text-text bg-surface shadow-xs"
+              : "text-text-3 hover:text-text-2"
+          }`}
+          whileTap={{ scale: 0.92 }}
+          transition={{ type: "spring", stiffness: 500, damping: 28 }}
+        >
+          <Icon name={t === "light" ? "sun" : "moon"} size={13} />
         </motion.button>
       ))}
     </div>
   );
 }
 
-// ─── Tooltip (for collapsed mode) ───────────────────────────────────────────
+// ─── Tooltip (collapsed mode) ─────────────────────────────────────────────────
 
 function NavTooltip({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="relative group/tip">
       {children}
-      <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-[200]
+      <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2.5 z-[200]
                       opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150">
-        <div className="px-2.5 py-1.5 rounded-md text-[12.5px] font-medium whitespace-nowrap shadow-md
-                        bg-popover border border-line text-text">
+        <div className="px-2.5 py-1.5 rounded-[6px] text-[12px] font-medium whitespace-nowrap shadow-md
+                        text-text border"
+          style={{ background: "var(--surface)", borderColor: "var(--line)" }}>
           {label}
         </div>
-        {/* Arrow */}
-        <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-line" />
-        <div className="absolute right-[calc(100%-1px)] top-1/2 -translate-y-1/2 border-4 border-transparent border-r-popover" />
+        <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent"
+          style={{ borderRightColor: "var(--line)" }} />
+        <div className="absolute top-1/2 -translate-y-1/2 border-4 border-transparent"
+          style={{ right: "calc(100% - 1px)", borderRightColor: "var(--surface)" }} />
       </div>
     </div>
   );
 }
 
-// ─── Nav groups ──────────────────────────────────────────────────────────────
+// ─── Nav groups ───────────────────────────────────────────────────────────────
 
 function NavGroups({
   current, collapsed, onNavigate,
@@ -127,7 +137,6 @@ function NavGroups({
 }) {
   const { state } = useStore();
   const id = useId();
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     try {
@@ -157,21 +166,21 @@ function NavGroups({
   };
 
   return (
-    <nav className="flex flex-col gap-0.5 flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin">
+    <nav className="flex flex-col gap-0 flex-1 overflow-y-auto overflow-x-hidden" style={{ scrollbarWidth: "none" }}>
       {NAV_GROUPS.map((group, gi) => (
-        <div key={group.id}>
-          {/* Group separator in collapsed mode */}
+        <div key={group.id} className={collapsed ? "" : "mb-1"}>
+          {/* Separator in collapsed mode */}
           {collapsed && gi > 0 && (
-            <div className="my-2 mx-auto w-6 h-px bg-line" />
+            <div className="my-2 mx-auto w-5 h-px" style={{ background: "var(--line)" }} />
           )}
 
-          {/* Group header — expanded mode only */}
+          {/* Group header — expanded mode */}
           {!collapsed && (
             <button
               onClick={() => toggleGroup(group.id)}
-              className="flex items-center justify-between w-full px-2.5 pt-3 pb-1 hover:text-text-2 transition-colors group"
+              className="flex items-center justify-between w-full px-3 pt-4 pb-1.5 group transition-colors"
             >
-              <span className="text-[10.5px] font-semibold text-text-3 uppercase tracking-wider group-hover:text-text-2 transition-colors">
+              <span className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-text-3 group-hover:text-text-2 transition-colors">
                 {group.label}
               </span>
               <motion.span
@@ -179,12 +188,12 @@ function NavGroups({
                 transition={{ type: "spring", stiffness: 420, damping: 32 }}
                 className="text-text-3"
               >
-                <Icon name="chevronD" size={13} />
+                <Icon name="chevronD" size={12} />
               </motion.span>
             </button>
           )}
 
-          {/* Group items */}
+          {/* Items */}
           <AnimatePresence initial={false}>
             {(collapsed || openGroups[group.id]) && (
               <motion.div
@@ -192,7 +201,7 @@ function NavGroups({
                 initial={collapsed ? false : { height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.18, ease: "easeInOut" }}
+                transition={{ duration: 0.16, ease: "easeInOut" }}
                 className="overflow-hidden"
               >
                 {group.items.map((n) => {
@@ -201,38 +210,43 @@ function NavGroups({
                   const dot = needsDot[n.id];
 
                   const linkContent = (
-                    <div className="relative">
+                    <div className="relative px-2">
+                      {/* Active background */}
                       {isActive && (
                         <motion.div
-                          layoutId={`nav-active-${id}`}
-                          className="absolute inset-0 bg-primary-soft rounded-sm pointer-events-none"
+                          layoutId={`nav-bg-${id}`}
+                          className="absolute inset-0 rounded-[6px] pointer-events-none"
+                          style={{ background: "var(--hover)" }}
+                          transition={{ type: "spring", stiffness: 420, damping: 36 }}
+                        />
+                      )}
+                      {/* Active left bar */}
+                      {isActive && (
+                        <motion.div
+                          layoutId={`nav-bar-${id}`}
+                          className="absolute left-2 top-2 bottom-2 w-[2px] rounded-r-full pointer-events-none bg-primary"
                           transition={{ type: "spring", stiffness: 420, damping: 36 }}
                         />
                       )}
                       <Link
                         href={`/${n.id}`}
                         onClick={onNavigate}
-                        onMouseEnter={() => setHoveredId(n.id)}
-                        onMouseLeave={() => setHoveredId(null)}
-                        className={`flex items-center gap-2.5 rounded-sm text-[13.5px] font-medium transition relative z-[1]
-                          ${collapsed ? "justify-center px-1.5 py-2.5" : "px-2.5 py-2.5"}
-                          ${isActive ? "text-primary-700" : "text-text-2 hover:bg-hover hover:text-text"}`}
+                        className={`flex items-center gap-2 rounded-[6px] text-[13px] transition-colors relative z-[1]
+                          ${collapsed ? "justify-center px-1.5 py-2.5" : "pl-4 pr-2.5 py-2"}
+                          ${isActive
+                            ? "text-text font-medium"
+                            : "text-text-2 hover:bg-hover hover:text-text"
+                          }`}
                       >
-                        <span
-                          className="shrink-0 inline-flex"
-                          style={{
-                            transform: hoveredId === n.id && !isActive ? "rotate(-8deg)" : "rotate(0deg)",
-                            transition: "transform 0.18s ease",
-                          }}
-                        >
-                          <Icon name={n.icon} size={18} />
+                        <span className="shrink-0 inline-flex">
+                          <Icon name={n.icon} size={16} strokeWidth={isActive ? 2 : 1.6} />
                         </span>
                         {!collapsed && (
                           <>
-                            <span className="truncate">{n.label}</span>
+                            <span className="truncate flex-1">{n.label}</span>
                             {badge > 0
-                              ? <span className="ml-auto"><Badge tone={n.id === "payments" ? "coral" : "primary"}>{badge}</Badge></span>
-                              : dot && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                              ? <span className="ml-auto shrink-0"><Badge tone={n.id === "payments" ? "coral" : "primary"}>{badge}</Badge></span>
+                              : dot && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
                             }
                           </>
                         )}
@@ -251,31 +265,39 @@ function NavGroups({
       ))}
 
       {/* Settings */}
-      <div className={collapsed ? "mt-2 pt-2 border-t border-line" : "mt-1"}>
+      <div className={`mt-2 pt-2 ${collapsed ? "border-t" : ""}`} style={{ borderColor: "var(--line)" }}>
         {!collapsed && (
-          <div className="text-[10.5px] font-semibold text-text-3 uppercase tracking-wider px-2.5 pt-3 pb-1">
+          <div className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-text-3 px-3 pt-4 pb-1.5">
             Compte
           </div>
         )}
         {(() => {
           const isActive = current === "settings";
           const linkContent = (
-            <div className="relative">
+            <div className="relative px-2">
               {isActive && (
                 <motion.div
-                  layoutId={`nav-active-${id}`}
-                  className="absolute inset-0 bg-primary-soft rounded-sm pointer-events-none"
+                  layoutId={`nav-bg-${id}`}
+                  className="absolute inset-0 rounded-[6px] pointer-events-none"
+                  style={{ background: "var(--hover)" }}
+                  transition={{ type: "spring", stiffness: 420, damping: 36 }}
+                />
+              )}
+              {isActive && (
+                <motion.div
+                  layoutId={`nav-bar-${id}`}
+                  className="absolute left-2 top-2 bottom-2 w-[2px] rounded-r-full pointer-events-none bg-primary"
                   transition={{ type: "spring", stiffness: 420, damping: 36 }}
                 />
               )}
               <Link
                 href="/settings"
                 onClick={onNavigate}
-                className={`flex items-center gap-2.5 rounded-sm text-[13.5px] font-medium transition relative z-[1]
-                  ${collapsed ? "justify-center px-1.5 py-2.5" : "px-2.5 py-2.5"}
-                  ${isActive ? "text-primary-700" : "text-text-2 hover:bg-hover hover:text-text"}`}
+                className={`flex items-center gap-2 rounded-[6px] text-[13px] transition-colors relative z-[1]
+                  ${collapsed ? "justify-center px-1.5 py-2.5" : "pl-4 pr-2.5 py-2"}
+                  ${isActive ? "text-text font-medium" : "text-text-2 hover:bg-hover hover:text-text"}`}
               >
-                <Icon name="settings" size={18} className="shrink-0" />
+                <Icon name="settings" size={16} strokeWidth={isActive ? 2 : 1.6} className="shrink-0" />
                 {!collapsed && "Paramètres"}
               </Link>
             </div>
@@ -289,7 +311,7 @@ function NavGroups({
   );
 }
 
-// ─── Role label helper ────────────────────────────────────────────────────────
+// ─── Role label ───────────────────────────────────────────────────────────────
 
 function roleLabel(role: WeddingRole) {
   switch (role) {
@@ -300,7 +322,7 @@ function roleLabel(role: WeddingRole) {
   }
 }
 
-// ─── Wedding Switcher ────────────────────────────────────────────────────────
+// ─── Wedding Switcher ─────────────────────────────────────────────────────────
 
 function WeddingSwitcher({ collapsed }: { collapsed: boolean }) {
   const { state, switchWedding } = useStore();
@@ -308,13 +330,10 @@ function WeddingSwitcher({ collapsed }: { collapsed: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  // Close on outside click
   useEffect(() => {
     if (!open) return;
     function handle(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     }
     document.addEventListener("mousedown", handle);
     return () => document.removeEventListener("mousedown", handle);
@@ -323,16 +342,13 @@ function WeddingSwitcher({ collapsed }: { collapsed: boolean }) {
   const active = state.myWeddings.find((w) => w.id === state.activeWeddingId) ?? state.myWeddings[0];
   if (!active) return null;
 
-  const color = active.coverColor || "#C96E2C";
+  const color = active.coverColor || "#B5622E";
 
-  // Format date in short French style — hide day if it's an auto-generated period date (day=15)
   function fmtShort(dateStr: string) {
     if (!dateStr) return "Date à définir";
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return "Date à définir";
-    if (d.getDate() === 15) {
-      return d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
-    }
+    if (d.getDate() === 15) return d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
     return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
   }
 
@@ -344,35 +360,25 @@ function WeddingSwitcher({ collapsed }: { collapsed: boolean }) {
           className="flex justify-center w-full mb-3 py-1"
           aria-label="Changer de mariage"
         >
-          <span
-            className="w-6 h-6 rounded-sm shrink-0 border border-black/10"
-            style={{ background: color }}
-          />
+          <span className="w-5 h-5 rounded-[4px] shrink-0" style={{ background: color }} />
         </button>
       </NavTooltip>
     );
   }
 
   return (
-    <div ref={ref} className="relative mb-4">
-      {/* Trigger button */}
+    <div ref={ref} className="relative mb-3 px-2">
       <button
         onClick={() => setOpen((v) => !v)}
-        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md border transition-colors
-          ${open
-            ? "bg-surface-3 border-line-strong"
-            : "bg-surface-2 border-line hover:bg-surface-3 hover:border-line-strong"
-          }`}
+        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[7px] border transition-colors text-left
+          ${open ? "border-line-strong bg-surface-2" : "border-line bg-surface-2 hover:border-line-strong hover:bg-surface-3"}`}
       >
-        <span
-          className="w-5 h-5 rounded-sm shrink-0 border border-black/10"
-          style={{ background: color }}
-        />
-        <div className="flex-1 min-w-0 text-left">
-          <div className="text-[12.5px] font-semibold truncate leading-tight">
+        <span className="w-4 h-4 rounded-[3px] shrink-0" style={{ background: color }} />
+        <div className="flex-1 min-w-0">
+          <div className="text-[12.5px] font-semibold truncate leading-tight text-text">
             {active.partnerA} &amp; {active.partnerB}
           </div>
-          <div className="text-[10.5px] text-text-3 truncate leading-tight">
+          <div className="text-[11px] text-text-3 truncate leading-tight mt-0.5">
             {fmtShort(active.date)}
           </div>
         </div>
@@ -382,26 +388,25 @@ function WeddingSwitcher({ collapsed }: { collapsed: boolean }) {
             transition={{ type: "spring", stiffness: 420, damping: 32 }}
             className="text-text-3 shrink-0"
           >
-            <Icon name="chevronD" size={14} />
+            <Icon name="chevronD" size={13} />
           </motion.span>
         )}
       </button>
 
-      {/* Dropdown */}
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: -8 }}
+            initial={{ opacity: 0, scale: 0.97, y: -6 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -4 }}
-            transition={{ type: "spring", stiffness: 380, damping: 30 }}
-            className="absolute top-full left-0 right-0 mt-1.5 z-[250]
-                       bg-popover border border-line rounded-md shadow-lg overflow-hidden"
+            exit={{ opacity: 0, scale: 0.97, y: -4 }}
+            transition={{ type: "spring", stiffness: 400, damping: 32 }}
+            className="absolute top-full left-0 right-0 mt-1.5 z-[250] rounded-[8px] border shadow-md overflow-hidden"
+            style={{ background: "var(--surface)", borderColor: "var(--line)" }}
           >
-            <div className="py-1 max-h-[280px] overflow-y-auto">
+            <div className="py-1 max-h-[260px] overflow-y-auto">
               {state.myWeddings.map((w) => {
                 const isActive = w.id === state.activeWeddingId;
-                const wColor = w.coverColor || "#C96E2C";
+                const wColor = w.coverColor || "#B5622E";
                 return (
                   <button
                     key={w.id}
@@ -409,21 +414,15 @@ function WeddingSwitcher({ collapsed }: { collapsed: boolean }) {
                       setOpen(false);
                       if (!isActive) await switchWedding(w.id);
                     }}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors
-                      ${isActive
-                        ? "bg-primary-soft"
-                        : "hover:bg-hover"
-                      }`}
+                    className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left transition-colors
+                      ${isActive ? "bg-primary-soft" : "hover:bg-hover"}`}
                   >
-                    <span
-                      className="w-4 h-4 rounded-[3px] shrink-0 border border-black/10"
-                      style={{ background: wColor }}
-                    />
+                    <span className="w-4 h-4 rounded-[3px] shrink-0" style={{ background: wColor }} />
                     <div className="flex-1 min-w-0">
-                      <div className={`text-[12px] font-semibold truncate ${isActive ? "text-primary-700" : "text-text"}`}>
+                      <div className={`text-[12.5px] font-semibold truncate ${isActive ? "text-primary-700" : "text-text"}`}>
                         {w.partnerA} &amp; {w.partnerB}
                       </div>
-                      <div className="text-[10.5px] text-text-3 truncate">{fmtShort(w.date)}</div>
+                      <div className="text-[11px] text-text-3 truncate">{fmtShort(w.date)}</div>
                     </div>
                     <span className={`badge text-[10px] shrink-0 ${
                       w.role === "owner"  ? "bg-primary-soft text-primary-700" :
@@ -433,34 +432,24 @@ function WeddingSwitcher({ collapsed }: { collapsed: boolean }) {
                     }`}>
                       {roleLabel(w.role)}
                     </span>
-                    {isActive && (
-                      <Icon name="check" size={14} className="text-primary shrink-0" />
-                    )}
+                    {isActive && <Icon name="check" size={13} className="text-primary shrink-0" />}
                   </button>
                 );
               })}
             </div>
-            <div className="border-t border-line">
+            <div className="border-t" style={{ borderColor: "var(--line)" }}>
               <button
-                onClick={() => {
-                  setOpen(false);
-                  router.push("/mes-mariages");
-                }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-left text-[12px]
-                           text-text-3 hover:bg-hover hover:text-text transition-colors"
+                onClick={() => { setOpen(false); router.push("/mes-mariages"); }}
+                className="w-full flex items-center gap-2 px-3.5 py-2.5 text-left text-[12px] text-text-3 hover:bg-hover hover:text-text transition-colors"
               >
-                <Icon name="grid" size={13} className="text-text-3" />
+                <Icon name="grid" size={13} />
                 Voir tous mes mariages
               </button>
               <button
-                onClick={() => {
-                  setOpen(false);
-                  router.push("/onboarding?new=1");
-                }}
-                className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-[12.5px] font-medium
-                           text-primary-700 hover:bg-primary-soft transition-colors"
+                onClick={() => { setOpen(false); router.push("/onboarding?new=1"); }}
+                className="w-full flex items-center gap-2 px-3.5 py-2.5 text-left text-[12.5px] font-medium text-primary-700 hover:bg-primary-soft transition-colors"
               >
-                <Icon name="plus" size={15} className="text-primary" />
+                <Icon name="plus" size={14} className="text-primary" />
                 Créer un mariage
               </button>
             </div>
@@ -471,13 +460,13 @@ function WeddingSwitcher({ collapsed }: { collapsed: boolean }) {
   );
 }
 
-// ─── Brand ───────────────────────────────────────────────────────────────────
+// ─── Brand ────────────────────────────────────────────────────────────────────
 
 function Brand({ collapsed }: { collapsed: boolean }) {
   return (
-    <div className={`flex items-center mb-5 ${collapsed ? "justify-center px-1" : "gap-2.5 px-2"}`}>
-      <div className="w-[36px] h-[36px] flex items-center justify-center text-primary shrink-0">
-        <Logo size={34} />
+    <div className={`flex items-center mb-4 ${collapsed ? "justify-center px-1" : "gap-2.5 px-2"}`}>
+      <div className="w-[32px] h-[32px] flex items-center justify-center text-primary shrink-0">
+        <Logo size={30} />
       </div>
       <AnimatePresence>
         {!collapsed && (
@@ -488,10 +477,10 @@ function Brand({ collapsed }: { collapsed: boolean }) {
             transition={{ duration: 0.15 }}
             className="flex flex-col overflow-hidden"
           >
-            <span className="text-[16.5px] font-semibold tracking-tight whitespace-nowrap">
+            <span className="text-[15px] font-semibold tracking-[-0.01em] whitespace-nowrap text-text">
               Jour <b className="font-bold">J</b>
             </span>
-            <span className="text-[10.5px] text-text-3 font-mono tracking-wide whitespace-nowrap">
+            <span className="text-[10px] text-text-3 font-mono tracking-wider whitespace-nowrap">
               wedding studio
             </span>
           </motion.div>
@@ -501,7 +490,7 @@ function Brand({ collapsed }: { collapsed: boolean }) {
   );
 }
 
-// ─── User card ───────────────────────────────────────────────────────────────
+// ─── User card ────────────────────────────────────────────────────────────────
 
 function UserCard({ collapsed, onAction }: { collapsed: boolean; onAction?: () => void }) {
   const { state } = useStore();
@@ -527,38 +516,37 @@ function UserCard({ collapsed, onAction }: { collapsed: boolean; onAction?: () =
     return (
       <NavTooltip label="Se déconnecter">
         <button onClick={logout} disabled={loggingOut}
-          className="flex justify-center w-full py-1 text-text-3 hover:text-text transition-colors">
-          <Icon name="logout" size={17} />
+          className="flex justify-center w-full py-1 text-text-3 hover:text-text-2 transition-colors">
+          <Icon name="logout" size={16} />
         </button>
       </NavTooltip>
     );
   }
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-sm">
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-[6px]">
         <Avatar name={name} />
         <div className="min-w-0 flex-1">
-          <div className="text-[12.5px] font-semibold truncate">{name}</div>
+          <div className="text-[12.5px] font-semibold truncate text-text">{name}</div>
           <div className="text-[11px] text-text-3 truncate">{email ?? "…"}</div>
         </div>
       </div>
       <motion.button
         onClick={logout}
         disabled={loggingOut}
-        className="flex items-center gap-2 px-2.5 py-2 rounded-sm text-[13px] font-medium text-text-2
-                   hover:bg-hover hover:text-text transition w-full"
+        className="flex items-center gap-2 px-2 py-1.5 rounded-[6px] text-[12.5px] text-text-2
+                   hover:bg-hover hover:text-text transition-colors w-full"
         whileTap={loggingOut ? undefined : { scale: 0.98 }}
-        transition={{ type: "spring", stiffness: 500, damping: 30 }}
       >
-        <Icon name="logout" size={15} className="text-text-3" />
+        <Icon name="logout" size={14} className="text-text-3" />
         {loggingOut ? "Déconnexion…" : "Se déconnecter"}
       </motion.button>
     </div>
   );
 }
 
-// ─── App shell ───────────────────────────────────────────────────────────────
+// ─── App shell ────────────────────────────────────────────────────────────────
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -599,12 +587,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* ── Sidebar desktop ── */}
       <motion.aside
-        animate={{ width: collapsed ? 62 : 252 }}
-        transition={{ type: "spring", stiffness: 320, damping: 34 }}
-        className="hidden md:flex shrink-0 flex-col bg-surface border-r border-line sticky top-0 h-screen overflow-hidden"
-        style={{ minWidth: collapsed ? 62 : 252 }}
+        animate={{ width: collapsed ? 52 : 220 }}
+        transition={{ type: "spring", stiffness: 320, damping: 36 }}
+        className="hidden md:flex shrink-0 flex-col sticky top-0 h-screen overflow-hidden"
+        style={{
+          minWidth: collapsed ? 52 : 220,
+          background: "var(--surface)",
+          boxShadow: "1px 0 0 rgba(0,0,0,.05), 4px 0 20px rgba(0,0,0,.03)",
+        }}
       >
-        <div className={`flex flex-col h-full ${collapsed ? "px-1.5 py-4" : "px-3 py-5"}`}>
+        <div className={`flex flex-col h-full ${collapsed ? "px-1.5 py-4" : "px-2 py-4"}`}>
 
           {/* Brand + collapse toggle */}
           <div className="flex items-center mb-1">
@@ -614,13 +606,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <motion.button
               onClick={toggleCollapsed}
               title={collapsed ? "Développer" : "Réduire"}
-              className={`shrink-0 w-7 h-7 flex items-center justify-center rounded-md text-text-3
-                         hover:bg-hover hover:text-text transition-colors
-                         ${collapsed ? "mb-5" : "-mt-5 -mr-0.5"}`}
+              className={`shrink-0 w-6 h-6 flex items-center justify-center rounded-[5px]
+                         text-text-3 hover:bg-hover hover:text-text-2 transition-colors
+                         ${collapsed ? "mb-4 mx-auto" : "-mt-4 -mr-1"}`}
               whileTap={{ scale: 0.88 }}
-              transition={{ type: "spring", stiffness: 500, damping: 28 }}
             >
-              <Icon name={collapsed ? "chevronR" : "chevronL"} size={15} />
+              <Icon name={collapsed ? "chevronR" : "chevronL"} size={13} />
             </motion.button>
           </div>
 
@@ -631,16 +622,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <NavGroups current={current} collapsed={collapsed} />
 
           {/* Footer */}
-          <div className={`pt-3 border-t border-line flex flex-col gap-2.5 ${collapsed ? "mt-3" : "mt-auto"}`}>
+          <div className={`pt-3 flex flex-col gap-2 ${collapsed ? "mt-3 border-t" : "mt-auto border-t"}`}
+            style={{ borderColor: "var(--line)" }}>
             {!collapsed && (
-              <div className="flex items-center justify-between px-1">
-                <span className="text-[10.5px] font-semibold text-text-3 uppercase tracking-wider">Thème</span>
+              <div className="flex items-center justify-between px-2 pt-1">
+                <span className="text-[10.5px] font-semibold uppercase tracking-[0.07em] text-text-3">Thème</span>
                 <ThemeToggle />
               </div>
             )}
             {collapsed && (
               <NavTooltip label={`Thème : ${useTheme().theme === "light" ? "clair" : "sombre"}`}>
-                <div className="flex justify-center">
+                <div className="flex justify-center pt-1">
                   <ThemeToggle />
                 </div>
               </NavTooltip>
@@ -654,44 +646,62 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex-1 min-w-0 flex flex-col">
 
         {/* Topbar desktop */}
-        <header className="hidden md:flex h-14 shrink-0 items-center gap-4 px-6 border-b border-line
-                           sticky top-0 z-50 bg-bg/80 backdrop-blur-xl">
-          <div className="flex items-center gap-1.5 text-sm text-text-2">
-            <Icon name="home" size={15} />
-            <Icon name="chevronR" size={13} className="text-text-3" />
+        <header className="hidden md:flex h-[52px] shrink-0 items-center gap-4 px-6 sticky top-0 z-50 border-b"
+          style={{
+            background: "rgba(250,250,248,0.92)",
+            borderColor: "var(--line)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+          }}>
+          <div className="flex items-center gap-1.5 text-[13px] text-text-2">
+            <Icon name="home" size={14} />
+            <Icon name="chevronR" size={12} className="text-text-3" />
             <AnimatePresence mode="wait">
               <motion.span
                 key={current}
-                initial={{ opacity: 0, x: -8 }}
+                initial={{ opacity: 0, x: -6 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 4 }}
-                transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-                className="text-text font-semibold"
+                transition={{ duration: 0.18, ease: [0.25, 0.46, 0.45, 0.94] }}
+                className="font-medium text-text"
               >
                 {cur?.label ?? "—"}
               </motion.span>
             </AnimatePresence>
           </div>
+
           <div className="flex-1" />
+
+          {/* Search */}
           <button
             onClick={() => setSearchOpen(true)}
-            className="hidden lg:flex items-center gap-2 px-3 h-8 rounded-md border border-line bg-surface text-text-3 text-[13px] hover:border-primary/50 hover:text-text transition-colors"
+            className="hidden lg:flex items-center gap-2 px-3 h-8 rounded-[6px] border text-text-3 text-[12.5px] transition-colors hover:text-text"
+            style={{
+              borderColor: "var(--line)",
+              background: "var(--surface-2)",
+            }}
           >
-            <Icon name="search" size={14} />
+            <Icon name="search" size={13} />
             Rechercher…
-            <kbd className="ml-1 text-[10px] font-mono bg-surface-3 px-1.5 py-0.5 rounded border border-line">⌘K</kbd>
+            <kbd className="ml-1 text-[10px] font-mono px-1.5 py-0.5 rounded border"
+              style={{ background: "var(--surface-3)", borderColor: "var(--line)" }}>⌘K</kbd>
           </button>
+
           <IconButton name="search" title="Rechercher" className="lg:hidden" onClick={() => setSearchOpen(true)} />
           <IconButton name="bell" title="Notifications" badge={unread > 0} onClick={() => setNotifOpen(true)} />
         </header>
 
         {/* Topbar mobile */}
-        <header className="md:hidden flex items-center gap-3 h-[56px] px-4 border-b border-line
-                           sticky top-0 z-50 bg-bg/85 backdrop-blur-xl">
+        <header className="md:hidden flex items-center gap-3 h-[52px] px-4 border-b sticky top-0 z-50"
+          style={{
+            background: "rgba(250,250,248,0.92)",
+            borderColor: "var(--line)",
+            backdropFilter: "blur(16px)",
+          }}>
           <IconButton name="menu" onClick={() => setMenuOpen(true)} />
           <div className="flex items-center gap-2">
-            <div className="w-[28px] h-[28px] text-primary"><Logo size={26} /></div>
-            <span className="text-base font-semibold">Jour <b>J</b></span>
+            <div className="w-[26px] h-[26px] text-primary"><Logo size={24} /></div>
+            <span className="text-[14px] font-semibold text-text">Jour <b>J</b></span>
           </div>
           <div className="flex-1" />
           <IconButton name="bell" badge={unread > 0} onClick={() => setNotifOpen(true)} />
@@ -701,34 +711,37 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* ── Bottom nav mobile ── */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-[100] flex justify-around
-                      bg-surface/90 backdrop-blur-xl border-t border-line
-                      px-1.5 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-[100] flex justify-around border-t
+                      px-1.5 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
+        style={{
+          background: "rgba(255,255,255,0.92)",
+          borderColor: "var(--line)",
+          backdropFilter: "blur(16px)",
+        }}>
         {BOTTOM_NAV.map((n) => (
           <Link key={n.id} href={`/${n.id}`}
-            className={`flex flex-col items-center gap-0.5 px-2.5 py-1.5 text-[10.5px] font-medium flex-1
+            className={`flex flex-col items-center gap-0.5 px-2.5 py-1.5 text-[10px] font-medium flex-1
                         ${current === n.id ? "text-primary" : "text-text-3"}`}>
-            <span className="relative flex items-center justify-center w-[46px] h-[30px] rounded-md">
+            <span className="relative flex items-center justify-center w-[42px] h-[28px] rounded-[6px]">
               {current === n.id && (
                 <motion.div
                   layoutId="bottom-tab-indicator"
-                  className="absolute inset-0 bg-primary-soft rounded-md pointer-events-none"
+                  className="absolute inset-0 rounded-[6px] pointer-events-none bg-primary-soft"
                   transition={{ type: "spring", stiffness: 420, damping: 36 }}
                 />
               )}
-              <Icon name={n.icon} size={21} className="relative z-[1]" />
+              <Icon name={n.icon} size={19} className="relative z-[1]" />
             </span>
             {n.label}
           </Link>
         ))}
         <motion.button
           onClick={() => setMenuOpen(true)}
-          className="flex flex-col items-center gap-0.5 px-2.5 py-1.5 text-[10.5px] font-medium flex-1 text-text-3"
+          className="flex flex-col items-center gap-0.5 px-2.5 py-1.5 text-[10px] font-medium flex-1 text-text-3"
           whileTap={{ scale: 0.92 }}
-          transition={{ type: "spring", stiffness: 500, damping: 28 }}
         >
-          <span className="flex items-center justify-center w-[46px] h-[30px] rounded-md">
-            <Icon name="menu" size={21} />
+          <span className="flex items-center justify-center w-[42px] h-[28px] rounded-[6px]">
+            <Icon name="menu" size={19} />
           </span>
           Plus
         </motion.button>
@@ -742,15 +755,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {menuOpen && (
           <>
             <motion.div
-              className="md:hidden fixed inset-0 z-[300] bg-black/45 backdrop-blur-[3px]"
+              className="md:hidden fixed inset-0 z-[300] bg-black/30 backdrop-blur-[2px]"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0, transition: { duration: 0.18 } }}
               onClick={() => setMenuOpen(false)}
             />
             <motion.div
-              className="md:hidden fixed top-0 left-0 bottom-0 z-[301] w-[280px] max-w-[86vw]
-                         bg-surface border-r border-line shadow-lg px-3 py-5 flex flex-col overflow-auto"
+              className="md:hidden fixed top-0 left-0 bottom-0 z-[301] w-[260px] max-w-[86vw]
+                         border-r shadow-lg px-2 py-4 flex flex-col overflow-auto"
+              style={{ background: "var(--surface)", borderColor: "var(--line)" }}
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%", transition: { type: "spring", stiffness: 400, damping: 40 } }}
@@ -759,9 +773,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Brand collapsed={false} />
               <WeddingSwitcher collapsed={false} />
               <NavGroups current={current} collapsed={false} onNavigate={() => setMenuOpen(false)} />
-              <div className="mt-auto pt-4 border-t border-line flex flex-col gap-2.5">
-                <div className="flex items-center justify-between px-1">
-                  <span className="text-[10.5px] font-semibold text-text-3 uppercase tracking-wider">Thème</span>
+              <div className="mt-auto pt-4 border-t flex flex-col gap-2" style={{ borderColor: "var(--line)" }}>
+                <div className="flex items-center justify-between px-2">
+                  <span className="text-[10.5px] font-semibold uppercase tracking-[0.07em] text-text-3">Thème</span>
                   <ThemeToggle />
                 </div>
                 <UserCard collapsed={false} onAction={() => setMenuOpen(false)} />
@@ -774,7 +788,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ─── Page header ─────────────────────────────────────────────────────────────
+// ─── Page header ──────────────────────────────────────────────────────────────
 
 export function PageHead({
   title, sub, actions,
@@ -784,14 +798,14 @@ export function PageHead({
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
+    <div className="flex items-start justify-between gap-4 mb-8 flex-wrap">
       <motion.div
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
       >
-        <h1 className="text-[26px] font-semibold tracking-[-.025em]">{title}</h1>
-        {sub && <div className="text-sm text-text-2 mt-1">{sub}</div>}
+        <h1 className="text-[26px] font-bold tracking-[-0.02em] text-text">{title}</h1>
+        {sub && <div className="text-[13.5px] text-text-2 mt-1">{sub}</div>}
       </motion.div>
       {actions && <div className="flex gap-2 items-center flex-wrap">{actions}</div>}
     </div>

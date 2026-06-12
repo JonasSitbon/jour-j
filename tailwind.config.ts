@@ -40,9 +40,9 @@ const config: Config = {
         mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],
       },
       borderRadius: {
-        card: "16px",
-        md: "12px",
-        sm: "8px",
+        card: "8px",
+        md: "8px",
+        sm: "6px",
       },
       boxShadow: {
         xs: "var(--sh-xs)",

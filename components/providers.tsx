@@ -52,7 +52,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
       .then((data) => {
         if (data) {
           setState((s) => ({ ...s, ...data }));
-          setLoading(false);
+          if (pathname === "/") {
+            router.push("/dashboard");
+          } else {
+            setLoading(false);
+          }
         } else if (!isPublic) {
           router.push("/onboarding");
           // on garde loading=true pendant la navigation pour éviter le flash
