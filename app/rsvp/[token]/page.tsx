@@ -13,11 +13,9 @@ interface GuestInfo {
   rsvp: RsvpStatus;
   diet: Diet;
   note: string;
-  wedding_id: number;
 }
 
 interface WeddingInfo {
-  id: number;
   partner_a: string;
   partner_b: string;
   date: string;
@@ -74,26 +72,18 @@ export default function RsvpPage({ params }: { params: { token: string } }) {
 
   useEffect(() => {
     async function load() {
-      const { data: g, error } = await supabase
-        .from("guests")
-        .select("id, name, rsvp, diet, note, wedding_id")
-        .eq("rsvp_token", params.token)
-        .single();
+      // RPC sécurisée : ne renvoie que l'invité correspondant au token exact
+      const { data, error } = await supabase.rpc("get_rsvp_info", { p_token: params.token });
 
-      if (error || !g) { setStatus("notfound"); return; }
+      if (error || !data?.guest) { setStatus("notfound"); return; }
 
-      setGuest(g as GuestInfo);
-      setRsvp(g.rsvp as RsvpStatus);
-      setDiet((g.diet as Diet) || "none");
+      const g = data.guest as GuestInfo;
+      setGuest(g);
+      setRsvp(g.rsvp);
+      setDiet(g.diet || "none");
       setNote(g.note || "");
 
-      const { data: w } = await supabase
-        .from("wedding")
-        .select("id, partner_a, partner_b, date, venue, city")
-        .eq("id", g.wedding_id)
-        .single();
-
-      if (w) setWedding(w as WeddingInfo);
+      if (data.wedding) setWedding(data.wedding as WeddingInfo);
       setStatus("found");
     }
     load();
@@ -103,12 +93,14 @@ export default function RsvpPage({ params }: { params: { token: string } }) {
   const submit = async () => {
     if (!guest) return;
     setSaving(true);
-    const { error } = await supabase
-      .from("guests")
-      .update({ rsvp, diet, note })
-      .eq("rsvp_token", params.token);
+    const { data: ok, error } = await supabase.rpc("submit_rsvp", {
+      p_token: params.token,
+      p_rsvp: rsvp,
+      p_diet: diet,
+      p_note: note,
+    });
     setSaving(false);
-    if (error) { setStatus("error"); return; }
+    if (error || !ok) { setStatus("error"); return; }
     setStatus("submitted");
   };
 

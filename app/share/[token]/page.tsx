@@ -6,7 +6,6 @@ import { createBrowserClient } from "@supabase/ssr";
 type PageStatus = "loading" | "found" | "notfound";
 
 interface SharedWedding {
-  id: number;
   partner_a: string;
   partner_b: string;
   date: string;
@@ -93,26 +92,16 @@ export default function SharePage({ params }: { params: { token: string } }) {
 
   useEffect(() => {
     async function load() {
-      const { data: wData, error } = await supabase
-        .from("wedding")
-        .select("id, partner_a, partner_b, date, venue, city, theme, guest_target")
-        .eq("share_token", params.token)
-        .single();
+      // RPC sécurisée : ne renvoie que le mariage correspondant au token exact
+      const { data, error } = await supabase.rpc("get_share_data", { p_token: params.token });
 
-      if (error || !wData) { setStatus("notfound"); return; }
-      setWedding(wData as SharedWedding);
+      if (error || !data?.wedding) { setStatus("notfound"); return; }
 
-      const [gRes, vRes, tRes, cRes] = await Promise.all([
-        supabase.from("guests").select("id, name, rsvp, side, diet").eq("wedding_id", wData.id),
-        supabase.from("vendors").select("id, cat, name, status, total").eq("wedding_id", wData.id),
-        supabase.from("tasks").select("id, title, cat, due, done, who").eq("wedding_id", wData.id),
-        supabase.from("ceremony_events").select("id, order_idx, category, title, duration_min, who, music").eq("wedding_id", wData.id).order("order_idx"),
-      ]);
-
-      setGuests((gRes.data ?? []) as SharedGuest[]);
-      setVendors((vRes.data ?? []) as SharedVendor[]);
-      setTasks((tRes.data ?? []) as SharedTask[]);
-      setCeremony((cRes.data ?? []) as SharedCeremonyEvent[]);
+      setWedding(data.wedding as SharedWedding);
+      setGuests((data.guests ?? []) as SharedGuest[]);
+      setVendors((data.vendors ?? []) as SharedVendor[]);
+      setTasks((data.tasks ?? []) as SharedTask[]);
+      setCeremony((data.ceremony ?? []) as SharedCeremonyEvent[]);
       setStatus("found");
     }
     load();
