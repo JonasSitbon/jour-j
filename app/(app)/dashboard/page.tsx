@@ -86,7 +86,7 @@ function GettingStartedCard({ steps }: { steps: GettingStartedStep[] }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-      className="mb-6 rounded-card border border-[var(--primary)]/25 bg-[#FBF1E0]/60 p-6 md:p-8"
+      className="mb-6 rounded-[8px] border border-[var(--line)] bg-surface p-6 md:p-8"
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-5">
@@ -105,7 +105,7 @@ function GettingStartedCard({ steps }: { steps: GettingStartedStep[] }) {
       </div>
 
       {/* Progress bar */}
-      <div className="h-2 bg-surface-3 rounded-full overflow-hidden mb-6">
+      <div className="h-1.5 bg-surface-3 rounded-full overflow-hidden mb-6">
         <motion.div
           className="h-full rounded-full bg-primary"
           initial={{ width: 0 }}
@@ -131,7 +131,7 @@ function GettingStartedCard({ steps }: { steps: GettingStartedStep[] }) {
               whileHover={!step.done ? { scale: 1.03, y: -2 } : undefined}
               whileTap={!step.done ? { scale: 0.97 } : undefined}
               transition={{ type: "spring", stiffness: 500, damping: 28 }}
-              className={`flex flex-col items-start gap-2.5 p-4 rounded-xl border text-left transition-colors ${
+              className={`flex flex-col items-start gap-2.5 p-4 rounded-[7px] border text-left transition-colors ${
                 step.done
                   ? "border-sage/40 bg-sage-soft/50 cursor-default"
                   : isNext
@@ -141,7 +141,7 @@ function GettingStartedCard({ steps }: { steps: GettingStartedStep[] }) {
             >
               {/* Icon + number badge */}
               <div className="flex items-center justify-between w-full">
-                <div className={`w-9 h-9 rounded-[10px] flex items-center justify-center ${
+                <div className={`w-9 h-9 rounded-[8px] flex items-center justify-center ${
                   step.done ? "bg-sage text-white" : isNext ? "bg-primary text-white" : "bg-surface-3 text-text-3"
                 }`}>
                   {step.done
@@ -208,7 +208,7 @@ function QuickActionsBar() {
               whileHover={{ scale: 1.06, y: -2 }}
               whileTap={{ scale: 0.95 }}
               transition={{ type: "spring", stiffness: 500, damping: 26 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-line bg-surface text-text-2 text-[13px] font-medium cursor-pointer select-none hover:border-[var(--primary)]/50 hover:bg-primary-soft hover:text-primary-700 transition-colors shrink-0"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-line bg-surface text-text-2 text-[12.5px] font-medium cursor-pointer select-none transition-colors shrink-0 hover:border-primary/40 hover:bg-primary-soft hover:text-primary-700"
             >
               <span className="text-[15px] leading-none">{action.emoji}</span>
               {action.label}
@@ -297,7 +297,7 @@ function HeroCard({ w, days, isPast, globalPct, dateCand, confirmed, totalGuests
             "radial-gradient(90% 120% at 0% 100%, color-mix(in srgb, var(--gold) 60%, #6E4423), transparent 60%), " +
             "linear-gradient(125deg, #4A3320 0%, #6E4423 100%)",
         }}
-        className="relative overflow-hidden rounded-card shadow-lg flex flex-col min-h-[310px] h-full cursor-default"
+        className="relative overflow-hidden rounded-[8px] shadow-lg flex flex-col min-h-[310px] h-full cursor-default"
         initial={{ opacity: 0, y: 28 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
@@ -492,9 +492,9 @@ function DeadlineItem({ item, isLast }: { item: DeadlineEntry; isLast: boolean }
     <motion.div
       whileHover={{ x: 3 }}
       transition={{ type: "spring", stiffness: 500, damping: 30 }}
-      className={`flex items-start gap-3.5 px-4 py-3.5 border-l-[3px] bg-surface rounded-r-md ${borderColor} ${!isLast ? "mb-2" : ""}`}
+      className={`flex items-start gap-3.5 px-4 py-3.5 border-l-[3px] bg-surface rounded-r-[6px] ${borderColor} ${!isLast ? "mb-2" : ""}`}
     >
-      <div className={`w-8 h-8 rounded-[9px] flex items-center justify-center shrink-0 ${isLate ? "bg-coral-soft text-coral" : item.type === "pay" ? "bg-gold-soft text-[var(--gold-ink)]" : "bg-primary-soft text-primary-700"}`}>
+      <div className={`w-8 h-8 rounded-[7px] flex items-center justify-center shrink-0 ${isLate ? "bg-coral-soft text-coral" : item.type === "pay" ? "bg-gold-soft text-[var(--gold-ink)]" : "bg-primary-soft text-primary-700"}`}>
         <Icon name={item.type === "pay" ? "card" : "check-circle"} size={16} />
       </div>
       <div className="flex-1 min-w-0">
@@ -518,9 +518,9 @@ function AlertItem({ alert, isLast }: { alert: AlertEntry; isLast: boolean }) {
     <motion.div
       whileHover={{ x: 3 }}
       transition={{ type: "spring", stiffness: 500, damping: 30 }}
-      className={`flex items-start gap-3.5 px-4 py-3.5 border-l-[3px] bg-surface rounded-r-md ${border} ${!isLast ? "mb-2" : ""}`}
+      className={`flex items-start gap-3.5 px-4 py-3.5 border-l-[3px] bg-surface rounded-r-[6px] ${border} ${!isLast ? "mb-2" : ""}`}
     >
-      <div className={`w-8 h-8 rounded-[9px] flex items-center justify-center shrink-0 ${TILE_TONE[alert.tone] ?? TILE_TONE.primary}`}>
+      <div className={`w-8 h-8 rounded-[7px] flex items-center justify-center shrink-0 ${TILE_TONE[alert.tone] ?? TILE_TONE.primary}`}>
         <Icon name={alert.icon} size={16} />
       </div>
       <div className="flex-1 min-w-0">
@@ -546,9 +546,9 @@ function FocusItemRow({ item, isLast }: { item: FocusItem; isLast: boolean }) {
     <motion.div
       whileHover={{ x: 3 }}
       transition={{ type: "spring", stiffness: 500, damping: 30 }}
-      className={`flex items-center gap-3.5 px-4 py-3 border-l-[3px] bg-surface rounded-r-md ${FOCUS_BORDER[item.tone]} ${!isLast ? "mb-2" : ""}`}
+      className={`flex items-center gap-3.5 px-4 py-3 border-l-[3px] bg-surface rounded-r-[6px] ${FOCUS_BORDER[item.tone]} ${!isLast ? "mb-2" : ""}`}
     >
-      <div className={`w-8 h-8 rounded-[9px] flex items-center justify-center shrink-0 ${FOCUS_ICON_BG[item.tone]}`}>
+      <div className={`w-8 h-8 rounded-[7px] flex items-center justify-center shrink-0 ${FOCUS_ICON_BG[item.tone]}`}>
         <Icon name={item.icon} size={15} />
       </div>
       <div className="flex-1 min-w-0 text-[13px] font-medium leading-snug truncate">{item.label}</div>
@@ -570,7 +570,7 @@ function GettingStarted({ steps }: { steps: { id: string; label: string; desc: s
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="mb-5 rounded-card border border-line bg-surface p-5 md:p-6"
+      className="mb-5 rounded-[8px] border border-[var(--line)] bg-surface p-5 md:p-6"
     >
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
@@ -595,7 +595,7 @@ function GettingStarted({ steps }: { steps: { id: string; label: string; desc: s
               whileHover={isNext ? { scale: 1.03, y: -1 } : undefined}
               whileTap={isNext ? { scale: 0.97 } : undefined}
               transition={{ type: "spring", stiffness: 500, damping: 28 }}
-              className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border text-[12.5px] font-medium transition-colors ${
+              className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-[7px] border text-[12.5px] font-medium transition-colors ${
                 s.done   ? "border-sage/40 bg-sage-soft/60 text-sage cursor-default"
                 : isNext ? "border-primary bg-primary-soft text-primary-700"
                          : "border-line bg-surface-2 text-text-3 cursor-default"}`}
@@ -618,7 +618,7 @@ function GettingStarted({ steps }: { steps: { id: string; label: string; desc: s
         const next = steps.find((s) => !s.done);
         if (!next) return null;
         return (
-          <div className="mt-4 flex items-center justify-between gap-4 rounded-md border border-primary/20 bg-primary-softer px-4 py-3">
+          <div className="mt-4 flex items-center justify-between gap-4 rounded-[6px] border border-primary/20 bg-primary-softer px-4 py-3">
             <div>
               <div className="text-[11px] font-semibold text-primary uppercase tracking-wide">Prochaine étape</div>
               <div className="text-sm font-semibold mt-0.5">{next.label}</div>
@@ -687,7 +687,7 @@ function UpcomingSnapshot({ state }: { state: AppState }) {
                 const isLate = t.due < today;
                 const daysLeft = Math.round((new Date(t.due).getTime() - Date.now()) / 86400000);
                 return (
-                  <Link key={t.id} href="/checklist" className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-line hover:border-line-strong hover:bg-hover transition">
+                  <Link key={t.id} href="/checklist" className="flex items-center gap-3 px-3 py-2.5 rounded-[6px] border border-line hover:border-line-strong hover:bg-hover transition">
                     <div className={`w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0 ${isLate ? "bg-coral-soft" : "bg-primary-soft"}`}>
                       <Icon name="check" size={14} className={isLate ? "text-coral" : "text-primary-700"} />
                     </div>
@@ -711,7 +711,7 @@ function UpcomingSnapshot({ state }: { state: AppState }) {
               {upcomingPayments.map((p) => {
                 const isLate = p.due < today;
                 return (
-                  <Link key={p.id} href="/payments" className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-line hover:border-line-strong hover:bg-hover transition">
+                  <Link key={p.id} href="/payments" className="flex items-center gap-3 px-3 py-2.5 rounded-[6px] border border-line hover:border-line-strong hover:bg-hover transition">
                     <div className={`w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0 ${isLate ? "bg-coral-soft" : "bg-amber-soft"}`}>
                       <Icon name="wallet" size={14} className={isLate ? "text-coral" : "text-[var(--gold-ink)]"} />
                     </div>
@@ -848,7 +848,7 @@ function VendorsToReachWidget({ state }: { state: AppState }) {
         </div>
 
         {/* Alert badge */}
-        <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg bg-amber-soft border border-amber/30">
+        <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-[6px] bg-amber-soft border border-amber/30">
           <Icon name="bell" size={14} className="text-[var(--gold-ink)] shrink-0" />
           <span className="text-[12.5px] font-semibold text-[var(--gold-ink)]">
             {toReach.length} prestataire{toReach.length > 1 ? "s" : ""} sans contact depuis +14 jours
@@ -859,7 +859,7 @@ function VendorsToReachWidget({ state }: { state: AppState }) {
           {shown.map((v) => {
             const daysSince = Math.round((today - new Date(v.lastContact).getTime()) / 86400000);
             return (
-              <div key={v.id} className="flex items-center gap-3 px-3 py-2 rounded-lg border border-line bg-surface">
+              <div key={v.id} className="flex items-center gap-3 px-3 py-2 rounded-[6px] border border-line bg-surface">
                 <div className="w-8 h-8 rounded-[8px] bg-amber-soft flex items-center justify-center shrink-0">
                   <Icon name="phone" size={14} className="text-[var(--gold-ink)]" />
                 </div>
@@ -1024,7 +1024,7 @@ function WeatherWidget({ date, city }: { date: string; city: string }) {
 
   if (loading) {
     return (
-      <div className="mt-4 px-4 py-3 rounded-xl border border-line bg-surface flex items-center gap-3">
+      <div className="mt-4 px-4 py-3 rounded-[8px] border border-line bg-surface flex items-center gap-3">
         <div className="w-5 h-5 border-2 border-t-transparent border-primary rounded-full animate-spin shrink-0" />
         <span className="text-[13px] text-text-3">Chargement des prévisions météo…</span>
       </div>
@@ -1034,7 +1034,7 @@ function WeatherWidget({ date, city }: { date: string; city: string }) {
   if (!weather) return null;
 
   return (
-    <div className={`mt-4 rounded-xl border flex items-center gap-4 px-5 py-4 ${weather.precip !== null && weather.precip > 5 ? "border-amber/30 bg-amber-soft/30" : "border-primary/20 bg-primary-soft/20"}`}>
+    <div className={`mt-4 rounded-[8px] border flex items-center gap-4 px-5 py-4 ${weather.precip !== null && weather.precip > 5 ? "border-amber/30 bg-amber-soft/30" : "border-primary/20 bg-primary-soft/20"}`}>
       <span className="text-4xl shrink-0">{weather.emoji}</span>
       <div className="flex-1 min-w-0">
         <div className="text-[13.5px] font-semibold text-text">
@@ -1192,7 +1192,8 @@ export default function DashboardPage() {
 
   /* ================================================================ */
   return (
-    <div className="mx-auto w-full max-w-[1320px] px-5 md:px-8 py-6 md:py-8 pb-28 md:pb-12">
+    <div className="min-h-screen" style={{ background: "var(--bg)" }}>
+    <div className="max-w-[960px] mx-auto px-6 py-8 pb-28 md:pb-12">
 
       {/* ---- Header ---- */}
       <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
@@ -1234,16 +1235,16 @@ export default function DashboardPage() {
 
       {/* ---- Focus du jour ---- */}
       <Reveal delay={0.05} className="mb-5">
-        <div className="rounded-card border border-line bg-surface p-5 md:p-6">
+        <div className="rounded-[8px] border border-[var(--line)] bg-surface p-5 md:p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="font-semibold text-[15px] flex items-center gap-2">⚡ Focus du jour</div>
+              <div className="sec-title mb-0.5"><Icon name="sparkle" size={14} className="text-text-3" />Focus du jour</div>
               <div className="text-text-2 text-[12.5px] mt-0.5 capitalize">{todayFr}</div>
             </div>
           </div>
           {focusItems.length === 0 ? (
             <div className="flex items-center gap-3 py-3 text-text-2 text-sm">
-              <div className="w-9 h-9 rounded-[10px] bg-sage-soft flex items-center justify-center shrink-0">
+              <div className="w-9 h-9 rounded-[8px] bg-sage-soft flex items-center justify-center shrink-0">
                 <Icon name="check-circle" size={18} className="text-sage" />
               </div>
               Tout est à jour — profitez de votre journée ! 🎉
@@ -1306,13 +1307,13 @@ export default function DashboardPage() {
           <motion.div key={m.id} variants={fadeUp}>
             <Link href={`/${m.id}`}>
               <motion.div
-                className={`card p-4 flex flex-col gap-3 relative h-full group ${m.empty ? "border-dashed" : ""}`}
+                className={`bg-surface border border-[var(--line)] rounded-[7px] p-4 flex flex-col gap-3 relative h-full group transition-colors hover:border-primary/40 hover:bg-primary-soft ${m.empty ? "border-dashed" : ""}`}
                 whileHover={{ y: -5 }}
                 transition={{ type: "spring", stiffness: 400, damping: 22 }}
               >
                 <Icon name="chevronR" size={15}
                   className="absolute top-4 right-3.5 text-text-3 opacity-0 group-hover:opacity-100 transition" />
-                <div className={`w-10 h-10 rounded-[11px] flex items-center justify-center ${TILE_TONE[m.tone]}`}>
+                <div className={`w-10 h-10 rounded-[7px] flex items-center justify-center bg-surface-3 text-text-2 transition-colors group-hover:bg-primary-soft group-hover:text-primary-700`}>
                   <Icon name={m.icon} size={20} />
                 </div>
                 <div>
@@ -1352,8 +1353,8 @@ export default function DashboardPage() {
                   <div className="text-text-2 text-sm mb-1">Aucune alerte — commencez par ces étapes :</div>
                   {setupSteps.filter((s) => !s.done).slice(0, 3).map((s) => (
                     <Link key={s.id} href={s.href}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-md border border-dashed border-line hover:bg-hover hover:border-line-strong transition">
-                      <span className="w-8 h-8 rounded-[9px] flex items-center justify-center shrink-0 bg-primary-soft text-primary-700">
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-[6px] border border-dashed border-line hover:bg-hover hover:border-line-strong transition">
+                      <span className="w-8 h-8 rounded-[7px] flex items-center justify-center shrink-0 bg-primary-soft text-primary-700">
                         <Icon name={s.icon} size={16} />
                       </span>
                       <div className="flex-1 min-w-0">
@@ -1366,7 +1367,7 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="flex items-center gap-3 py-4 text-text-2 text-sm">
-                  <div className="w-9 h-9 rounded-[10px] bg-sage-soft flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-[8px] bg-sage-soft flex items-center justify-center shrink-0">
                     <Icon name="check-circle" size={18} className="text-sage" />
                   </div>
                   Aucune alerte. Tout est sous contrôle.
@@ -1386,7 +1387,7 @@ export default function DashboardPage() {
             </div>
             {upcoming.length === 0 ? (
               <div className="flex flex-col items-center gap-3 py-8 text-center">
-                <div className="w-14 h-14 rounded-2xl bg-surface-3 flex items-center justify-center">
+                <div className="w-14 h-14 rounded-[8px] bg-surface-3 flex items-center justify-center">
                   <Icon name="calendar" size={26} className="text-text-3" />
                 </div>
                 <div className="text-text-2 text-sm max-w-[240px]">
@@ -1421,6 +1422,7 @@ export default function DashboardPage() {
 
       {/* ── Gifts link ────────────────────────────────────────── */}
       <GiftsLinkWidget />
+    </div>
     </div>
   );
 }
