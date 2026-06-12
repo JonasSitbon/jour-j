@@ -78,12 +78,15 @@ function AnimatedCounter({ value }: { value: number }) {
 function Counters() {
   const { state } = useStore();
   const g = state.guests;
+  const target = state.wedding.guestTarget || 0;
+  const confirmed = g.filter((x) => x.rsvp === "yes").length;
+  const pct = target > 0 ? Math.min(100, Math.round((g.length / target) * 100)) : null;
   const vegCount = g.filter((x) =>
     x.diet === "vegetarien" || x.diet === "vegan" || x.diet === "vegetarian"
   ).length;
   const items = [
     { v: g.length, l: "Total", c: "var(--text-3)" },
-    { v: g.filter((x) => x.rsvp === "yes").length, l: "Confirmés", c: "var(--sage)" },
+    { v: confirmed, l: "Confirmés", c: "var(--sage)" },
     { v: g.filter((x) => x.rsvp === "pending").length, l: "En attente", c: "var(--amber)" },
     { v: g.filter((x) => x.rsvp === "declined").length, l: "Déclinés", c: "var(--coral)" },
     { v: g.filter((x) => x.child).length, l: "Enfants", c: "var(--primary)" },
@@ -91,13 +94,42 @@ function Counters() {
     { v: g.filter((x) => x.transport).length, l: "Transport", c: "var(--text-3)" },
   ];
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-px bg-line border border-line rounded-card overflow-hidden">
-      {items.map((it, i) => (
-        <div key={i} className="bg-surface px-4 py-4 flex flex-col gap-0.5">
-          <AnimatedCounter value={it.v} />
-          <span className="text-[12.5px] text-text-2 flex items-center gap-1.5"><span className="w-2 h-2 rounded-[3px]" style={{ background: it.c }} />{it.l}</span>
+    <div className="flex flex-col gap-3">
+      {target > 0 && (
+        <div className="flex items-center gap-4 px-4 py-3 rounded-card border border-line bg-surface">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[13px] font-medium">
+                <span className="text-text font-semibold">{g.length}</span>
+                <span className="text-text-2"> invités sur </span>
+                <span className="text-text font-semibold">{target}</span>
+                <span className="text-text-2"> prévus</span>
+              </span>
+              <span className="text-[12px] text-text-3 shrink-0 ml-3">
+                {confirmed} confirmés · {target - g.length > 0 ? `${target - g.length} places restantes` : "Liste complète"}
+              </span>
+            </div>
+            <div className="h-2 rounded-full bg-surface-3 overflow-hidden">
+              <motion.div
+                className="h-full rounded-full"
+                style={{ background: "var(--sage)" }}
+                initial={{ width: 0 }}
+                animate={{ width: `${pct}%` }}
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              />
+            </div>
+          </div>
+          <span className="text-[15px] font-bold text-sage shrink-0">{pct}%</span>
         </div>
-      ))}
+      )}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-px bg-line border border-line rounded-card overflow-hidden">
+        {items.map((it, i) => (
+          <div key={i} className="bg-surface px-4 py-4 flex flex-col gap-0.5">
+            <AnimatedCounter value={it.v} />
+            <span className="text-[12.5px] text-text-2 flex items-center gap-1.5"><span className="w-2 h-2 rounded-[3px]" style={{ background: it.c }} />{it.l}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -656,6 +688,7 @@ function TableManager({ onClose }: { onClose: () => void }) {
 
   const total = state.tables.reduce((s, t) => s + t.capacity, 0);
   const placed = state.guests.filter((g) => g.table && g.rsvp !== "declined").length;
+  const target = state.wedding.guestTarget || 0;
 
   return (
     <Modal title="Gestion des tables" onClose={onClose}>
@@ -720,9 +753,19 @@ function TableManager({ onClose }: { onClose: () => void }) {
       </div>
 
       {state.tables.length > 0 && (
-        <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-[12.5px] text-text-2">
-          <span>{state.tables.length} tables · {total} places au total</span>
-          <span className={placed > total ? "text-coral" : ""}>{placed} invités placés</span>
+        <div className="mt-4 pt-3 border-t border-line space-y-2">
+          <div className="flex items-center justify-between text-[12.5px] text-text-2">
+            <span>{state.tables.length} tables · {total} places au total</span>
+            <span className={placed > total ? "text-coral font-semibold" : "font-medium"}>
+              {placed} placés
+              {target > 0 && <span className="font-normal text-text-3"> · sur {target} prévus</span>}
+            </span>
+          </div>
+          {target > 0 && (
+            <div className="h-1.5 rounded-full bg-surface-3 overflow-hidden">
+              <div className="h-full rounded-full bg-sage transition-all" style={{ width: `${Math.min(100, Math.round((placed / target) * 100))}%` }} />
+            </div>
+          )}
         </div>
       )}
     </Modal>
@@ -1351,7 +1394,7 @@ export default function GuestsPage() {
 
   return (
     <div className="mx-auto w-full max-w-[1320px] px-5 md:px-8 py-6 md:py-8 pb-28 md:pb-12">
-      <PageHead title="Invités" sub={`${state.guests.length} personnes · ${state.guests.filter((g) => g.rsvp === "yes").length} confirmées`}
+      <PageHead title="Invités" sub={`${state.guests.length}${state.wedding.guestTarget ? ` / ${state.wedding.guestTarget} prévus` : " personnes"} · ${state.guests.filter((g) => g.rsvp === "yes").length} confirmés`}
         actions={<>
           <Button variant="ghost" size="sm" onClick={downloadTemplate}>Modèle CSV</Button>
           <Button variant="secondary" icon="download" onClick={exportCSV}>Exporter CSV</Button>
