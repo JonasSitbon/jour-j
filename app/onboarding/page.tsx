@@ -10,6 +10,36 @@ import { seedDefaultTasks, seedDefaultDayJ, seedDefaultBudget, seedDefaultDateCa
 type AccountType = "couple" | "planner";
 type Step = 1 | 2 | 3;
 
+// ─── Period helpers ───────────────────────────────────────────────────────────
+
+const SEASON_DATA = [
+  { label: "Printemps", emoji: "🌸", startMonth: 3,  approxMonth: "05" },
+  { label: "Été",       emoji: "☀️",  startMonth: 6,  approxMonth: "07" },
+  { label: "Automne",   emoji: "🍂", startMonth: 9,  approxMonth: "10" },
+  { label: "Hiver",     emoji: "❄️",  startMonth: 12, approxMonth: "12" },
+] as const;
+
+function getAvailablePeriods() {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  const periods: Array<{ value: string; emoji: string; approxDate: string | null }> = [];
+  for (const year of [currentYear, currentYear + 1, currentYear + 2]) {
+    for (const s of SEASON_DATA) {
+      if (year === currentYear && s.startMonth < currentMonth) continue;
+      periods.push({ value: `${s.label} ${year}`, emoji: s.emoji, approxDate: `${year}-${s.approxMonth}-15` });
+    }
+  }
+  periods.push({ value: "Je ne sais pas encore", emoji: "🤷", approxDate: null });
+  return periods;
+}
+
+function periodToApproxDate(period: string): string | null {
+  return getAvailablePeriods().find((p) => p.value === period)?.approxDate ?? null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 const STEPS = [
   { num: 1, label: "Compte" },
   { num: 2, label: "Mariage" },
@@ -31,7 +61,7 @@ export default function OnboardingPage() {
   const [form, setForm] = useState({
     partnerA: "",
     partnerB: "",
-    date: "",
+    period: "",
     venue: "",
     city: "",
     theme: "",
@@ -53,7 +83,6 @@ export default function OnboardingPage() {
   const goToStep2 = async () => {
     if (!accountType) return;
     setErr("");
-    // Save account_type in profiles
     const sb = createClient();
     const { data: { user } } = await sb.auth.getUser();
     if (!user) { router.push("/login"); return; }
@@ -64,17 +93,15 @@ export default function OnboardingPage() {
   // ─── Step 2 → Step 3 (submit & seed) ─────────────────────────────────────
   const goToStep3 = async () => {
     setErr("");
-    // Validation
     if (!form.partnerA || !form.partnerB) {
       setErr("Les prénoms des mariés sont obligatoires."); return;
     }
-    if (accountType === "couple" && !form.date) {
-      setErr("La date du mariage est obligatoire."); return;
+    if (!form.period) {
+      setErr("Veuillez sélectionner une période pour le mariage."); return;
     }
 
     setStep(3);
 
-    // Animate loading messages
     let msgIdx = 0;
     setLoadingMsg(0);
     const interval = setInterval(() => {
@@ -87,10 +114,12 @@ export default function OnboardingPage() {
       const { data: { user } } = await sb.auth.getUser();
       if (!user) { router.push("/login"); return; }
 
+      const approxDate = periodToApproxDate(form.period);
+
       const { data: newWedding, error } = await sb.from("wedding").insert({
         partner_a: form.partnerA.trim(),
         partner_b: form.partnerB.trim(),
-        date: form.date || null,
+        date: approxDate,
         venue: form.venue.trim(),
         city: form.city.trim(),
         theme: form.theme.trim(),
@@ -110,10 +139,10 @@ export default function OnboardingPage() {
       const wId = newWedding.id;
       const budget = parseInt(form.budgetTotal) || 20000;
       await Promise.all([
-        seedDefaultTasks(sb, wId, form.date),
+        seedDefaultTasks(sb, wId, approxDate ?? ""),
         seedDefaultDayJ(sb, wId),
         seedDefaultBudget(sb, wId, budget),
-        seedDefaultDateCandidates(sb, wId, form.date),
+        seedDefaultDateCandidates(sb, wId, approxDate ?? ""),
         seedDefaultTables(sb, wId),
       ]);
 
@@ -125,6 +154,8 @@ export default function OnboardingPage() {
       setStep(2);
     }
   };
+
+  const periods = getAvailablePeriods();
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 py-12" style={{ background: "var(--bg)" }}>
@@ -148,16 +179,13 @@ export default function OnboardingPage() {
             return (
               <div key={s.num} className="flex-1 flex flex-col items-center">
                 <div className="flex items-center w-full">
-                  {/* Left connector */}
                   <div className={`flex-1 h-[2px] ${i === 0 ? "invisible" : isDone || isCurrent ? "bg-sage" : "bg-surface-3"}`} />
-                  {/* Circle */}
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-semibold shrink-0 transition-colors
                       ${isCurrent ? "bg-primary text-white" : isDone ? "bg-sage text-white" : "bg-surface-3 text-text-3"}`}
                   >
                     {isDone ? <Icon name="check" size={14} /> : s.num}
                   </div>
-                  {/* Right connector */}
                   <div className={`flex-1 h-[2px] ${i === STEPS.length - 1 ? "invisible" : isDone ? "bg-sage" : "bg-surface-3"}`} />
                 </div>
                 <div className={`mt-1.5 text-[11.5px] font-medium ${isCurrent ? "text-primary" : isDone ? "text-text-2" : "text-text-3"}`}>
@@ -177,7 +205,6 @@ export default function OnboardingPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              {/* Couple */}
               <button
                 type="button"
                 onClick={() => setAccountType("couple")}
@@ -193,7 +220,6 @@ export default function OnboardingPage() {
                 </div>
               </button>
 
-              {/* Planner */}
               <button
                 type="button"
                 onClick={() => setAccountType("planner")}
@@ -210,14 +236,7 @@ export default function OnboardingPage() {
               </button>
             </div>
 
-            <Button
-              variant="primary"
-              size="lg"
-              block
-              type="button"
-              disabled={!accountType}
-              onClick={goToStep2}
-            >
+            <Button variant="primary" size="lg" block type="button" disabled={!accountType} onClick={goToStep2}>
               Continuer →
             </Button>
           </div>
@@ -237,14 +256,9 @@ export default function OnboardingPage() {
               </p>
             </div>
 
-            {/* Planner workspace name */}
             {accountType === "planner" && (
               <Field label="Nom de l'espace *">
-                <Input
-                  value={form.workspaceName}
-                  onChange={set("workspaceName")}
-                  placeholder="Mariage de Camille & Alex"
-                />
+                <Input value={form.workspaceName} onChange={set("workspaceName")} placeholder="Mariage de Camille & Alex" />
               </Field>
             )}
 
@@ -263,10 +277,34 @@ export default function OnboardingPage() {
               </div>
             </div>
 
-            {/* Date */}
-            <Field label={accountType === "planner" ? "Date du mariage (optionnelle)" : "Date du mariage *"}>
-              <Input type="date" value={form.date} onChange={set("date")} />
-            </Field>
+            {/* Period selector */}
+            <div>
+              <div className="text-[11.5px] font-semibold uppercase tracking-wide text-text-3 mb-3 flex items-center gap-2">
+                <Icon name="calendar" size={14} />
+                Période envisagée {accountType === "couple" ? "*" : "(optionnelle)"}
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {periods.map((p) => (
+                  <button
+                    key={p.value}
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, period: p.value }))}
+                    className={`flex flex-col items-center gap-1 py-2.5 px-2 rounded-xl border text-center transition text-[13px] font-medium
+                      ${form.period === p.value
+                        ? "border-primary bg-primary/5 ring-2 ring-primary/20 text-primary"
+                        : "border-line hover:border-text-3 text-text-2"}`}
+                  >
+                    <span className="text-[18px] leading-none">{p.emoji}</span>
+                    <span className="leading-tight">{p.value}</span>
+                  </button>
+                ))}
+              </div>
+              {form.period && (
+                <p className="mt-2 text-[12px] text-text-3">
+                  Vous pourrez affiner la date exacte depuis le sélecteur de dates de l&apos;app.
+                </p>
+              )}
+            </div>
 
             {/* Couple-only fields */}
             {accountType === "couple" && (
@@ -307,7 +345,6 @@ export default function OnboardingPage() {
               </div>
             </div>
 
-            {/* Planner note */}
             {accountType === "planner" && (
               <p className="text-[12.5px] text-text-3 border border-line rounded-lg px-3 py-2.5" style={{ background: "var(--surface-2)" }}>
                 Vous pourrez créer d&apos;autres mariages depuis votre tableau de bord.
