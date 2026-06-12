@@ -33,6 +33,15 @@ const TEMPLATES = [
     icon: "key",
     supabaseKey: "recovery",
   },
+  {
+    id: "magic-link",
+    label: "Lien magique (connexion sans mot de passe)",
+    description: "Envoyé quand un utilisateur demande un lien de connexion instantané.",
+    variables: ["{{ .ConfirmationURL }}", "{{ .SiteURL }}"],
+    color: "#6B4A8C",
+    icon: "sparkle",
+    supabaseKey: "magic_link",
+  },
 ];
 
 const SUPABASE_DASHBOARD = "https://supabase.com/dashboard/project/sxoocdnedizxlegwshxl/auth/templates";

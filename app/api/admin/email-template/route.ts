@@ -117,6 +117,49 @@ const TEMPLATES: Record<string, string> = {
     </p>
   `),
 
+  "magic-link": BASE.replace("{{BODY}}", `
+    <!-- Accent bar -->
+    <div style="width:48px;height:4px;background:#6B4A8C;border-radius:2px;margin-bottom:28px;"></div>
+
+    <h1 style="margin:0 0 12px;font-size:26px;font-weight:700;color:#1C1208;letter-spacing:-0.02em;line-height:1.2;">
+      Votre lien de connexion ✨
+    </h1>
+    <p style="margin:0 0 24px;font-size:15px;color:#6B5744;line-height:1.7;">
+      Vous avez demandé à vous connecter à <strong>The Cockpit</strong> sans mot de passe. Cliquez sur le bouton ci-dessous pour accéder directement à votre espace mariage.
+    </p>
+
+    <!-- CTA -->
+    <table cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+      <tr>
+        <td style="background:#6B4A8C;border-radius:10px;">
+          <a href="{{ .ConfirmationURL }}"
+             style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:700;color:#FFFFFF;text-decoration:none;letter-spacing:0.01em;">
+            Me connecter en un clic →
+          </a>
+        </td>
+      </tr>
+    </table>
+
+    <p style="margin:0 0 8px;font-size:13px;color:#A08B78;">
+      Ce lien expire dans <strong>1 heure</strong> et ne peut être utilisé qu'une seule fois. Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :
+    </p>
+    <p style="margin:0 0 20px;font-size:11px;color:#C5B8A8;word-break:break-all;">{{ .ConfirmationURL }}</p>
+
+    <!-- Security note -->
+    <div style="background:#F3EDF8;border:1px solid #D9C8EC;border-radius:8px;padding:14px 16px;">
+      <p style="margin:0;font-size:12px;color:#5C3A7A;line-height:1.6;">
+        🔒 &nbsp;Si vous n'avez pas demandé ce lien, ignorez cet email. Personne ne peut accéder à votre compte sans cliquer sur ce bouton.
+      </p>
+    </div>
+
+    <!-- Divider -->
+    <div style="border-top:1px solid #F0E8DC;margin:28px 0;"></div>
+
+    <p style="margin:0;font-size:13px;color:#A08B78;">
+      ✦ &nbsp;The Cockpit — Connectez-vous en toute simplicité.
+    </p>
+  `),
+
   "reset-password": BASE.replace("{{BODY}}", `
     <!-- Accent bar -->
     <div style="width:48px;height:4px;background:#382F23;border-radius:2px;margin-bottom:28px;"></div>
