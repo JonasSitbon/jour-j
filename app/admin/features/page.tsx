@@ -111,7 +111,6 @@ function Toggle({
       className="relative w-10 h-5 rounded-full transition-colors flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-[#1a1a2e]"
       style={{
         background: enabled ? "#4ade80" : "#374151",
-        focusRingColor: "#4ade80",
       }}
     >
       <span
