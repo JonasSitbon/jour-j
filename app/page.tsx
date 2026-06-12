@@ -1465,17 +1465,34 @@ const ORDERED_MODULES = [
 
 function ModuleCards() {
   const [active, setActive] = useState<number | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  const close = useCallback(() => setActive(null), []);
 
   useEffect(() => {
     if (active === null) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setActive(null); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") close(); };
+    const onWheel = (e: WheelEvent) => {
+      if (cardRef.current?.contains(e.target as Node)) return;
+      close();
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (cardRef.current?.contains(e.target as Node)) return;
+      close();
+    };
     document.addEventListener("keydown", onKey);
+    document.addEventListener("wheel", onWheel, { passive: true });
+    document.addEventListener("touchmove", onTouchMove, { passive: true });
     document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
     return () => {
       document.removeEventListener("keydown", onKey);
+      document.removeEventListener("wheel", onWheel);
+      document.removeEventListener("touchmove", onTouchMove);
       document.body.style.overflow = "";
+      document.body.style.touchAction = "";
     };
-  }, [active]);
+  }, [active, close]);
 
   return (
     <section id="features" className="py-24 px-6" style={{ background: "#FFFFFF" }}>
@@ -1554,6 +1571,7 @@ function ModuleCards() {
             {/* Expanded card — same layoutId = flies from grid position */}
             <div className="fixed inset-0 z-[201] flex items-center justify-center p-4 sm:p-8 pointer-events-none">
               <motion.div
+                ref={cardRef}
                 layoutId={`module-card-${ORDERED_MODULES[active].id}`}
                 transition={{ type: "spring", stiffness: 260, damping: 26 }}
                 className="w-full max-w-[700px] rounded-2xl overflow-hidden pointer-events-auto"
@@ -1566,47 +1584,47 @@ function ModuleCards() {
                   flexDirection: "column",
                 }}
               >
-                {/* Card header — même base visuelle que la carte de la grille */}
-                <div className="flex items-start gap-4 px-6 pt-6 pb-5 shrink-0"
+                {/* Card header */}
+                <div className="flex items-center gap-3 px-5 pt-4 pb-3 shrink-0"
                   style={{ borderBottom: "1px solid rgba(28,18,8,0.07)" }}>
-                  <div className="text-[42px] leading-none shrink-0">{ORDERED_MODULES[active].emoji}</div>
+                  <div className="text-[32px] leading-none shrink-0">{ORDERED_MODULES[active].emoji}</div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.18em] mb-0.5"
+                    <div className="text-[9px] font-semibold uppercase tracking-[0.18em] mb-0.5"
                       style={{ color: ORDERED_MODULES[active].color }}>
                       Étape {ORDERED_MODULES[active].step}
                     </div>
-                    <div className="text-[22px] font-bold tracking-tight leading-tight" style={{ color: TEXT_DARK }}>
+                    <div className="text-[18px] font-bold tracking-tight leading-tight" style={{ color: TEXT_DARK }}>
                       {ORDERED_MODULES[active].name}
                     </div>
                   </div>
                   <button
-                    onClick={() => setActive(null)}
-                    className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-[13px] mt-0.5 transition-opacity hover:opacity-60"
+                    onClick={() => close()}
+                    className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-[12px] transition-opacity hover:opacity-60"
                     style={{ background: "rgba(28,18,8,0.06)", color: TEXT_MID }}
                     aria-label="Fermer"
                   >✕</button>
                 </div>
 
-                {/* Description + features — fade in after card arrives */}
+                {/* Description + features */}
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.20, duration: 0.20 }}
-                  className="px-6 py-4 shrink-0"
+                  className="px-5 py-3 shrink-0"
                   style={{ borderBottom: "1px solid rgba(28,18,8,0.06)" }}
                 >
-                  <p className="text-[13.5px] leading-relaxed mb-4" style={{ color: TEXT_MID }}>
+                  <p className="text-[12.5px] leading-relaxed mb-2.5 line-clamp-2" style={{ color: TEXT_MID }}>
                     {ORDERED_MODULES[active].desc}
                   </p>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5">
                     {ORDERED_MODULES[active].features.map((f, fi) => (
                       <span key={fi}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium"
                         style={{
                           background: `${ORDERED_MODULES[active].color}14`,
                           color: ORDERED_MODULES[active].color,
                         }}>
-                        <span className="text-[8px]">▸</span>{f}
+                        <span className="text-[7px]">▸</span>{f}
                       </span>
                     ))}
                   </div>
@@ -1617,7 +1635,7 @@ function ModuleCards() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.26, duration: 0.20 }}
-                  className="flex-1 overflow-y-auto p-6"
+                  className="flex-1 overflow-y-auto p-4"
                   style={{ background: WARM_SOFT, minHeight: 0 }}
                 >
                   {(() => {
