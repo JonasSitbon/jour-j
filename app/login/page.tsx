@@ -79,7 +79,13 @@ export default function LoginPage() {
       </div>
 
       {/* Formulaire */}
-      <div className="flex items-center justify-center p-8 md:p-10" style={{ background: "var(--bg)" }}>
+      <div className="flex items-center justify-center p-8 md:p-10 relative" style={{ background: "var(--bg)" }}>
+        <Link href="/"
+          className="absolute top-6 left-6 flex items-center gap-1.5 text-[13px] font-medium transition-colors hover:opacity-70"
+          style={{ color: "var(--text-2)" }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          Retour
+        </Link>
         <div className="w-full max-w-[380px]">
           <div className="md:hidden flex items-center gap-3 justify-center mb-7">
             <div className="w-9 h-9 text-primary"><Logo size={34} /></div>

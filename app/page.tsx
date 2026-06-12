@@ -1141,20 +1141,20 @@ function Nav() {
         <div className="hidden md:flex items-center gap-3 ml-auto">
           {loggedIn ? (
             <Link href="/dashboard"
-              className="px-5 py-2 rounded-lg text-[13.5px] font-semibold text-white transition-all hover:scale-105 active:scale-95"
+              className="px-5 py-2 rounded-full text-[13.5px] font-semibold text-white transition-all hover:scale-105 active:scale-95"
               style={{ background: TC, boxShadow: `0 4px 14px ${TC}40` }}>
               Mon tableau de bord →
             </Link>
           ) : (
             <>
-              <Link href="/login" className="text-[13.5px] font-medium transition-colors px-4 py-2 rounded-lg"
+              <Link href="/login" className="text-[13.5px] font-medium transition-colors px-4 py-2 rounded-full"
                 style={{ color: TEXT_MID }}
                 onMouseEnter={(e) => (e.currentTarget.style.color = TC)}
                 onMouseLeave={(e) => (e.currentTarget.style.color = TEXT_MID)}>
                 Connexion
               </Link>
               <Link href="/signup"
-                className="px-5 py-2 rounded-lg text-[13.5px] font-semibold text-white transition-all hover:scale-105 active:scale-95"
+                className="px-5 py-2 rounded-full text-[13.5px] font-semibold text-white transition-all hover:scale-105 active:scale-95"
                 style={{ background: TC, boxShadow: `0 4px 14px ${TC}40` }}>
                 Commencer gratuitement
               </Link>
@@ -1269,7 +1269,7 @@ function Hero() {
               transition={{ duration: 0.55, delay: 0.48 }}
               className="flex flex-wrap items-center gap-4 mb-14">
               <Link href="/signup"
-                className="inline-flex items-center gap-2 px-7 py-3.5 text-[14.5px] font-semibold text-white transition-all hover:opacity-90 active:scale-95"
+                className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full text-[14.5px] font-semibold text-white transition-all hover:opacity-90 active:scale-95"
                 style={{ background: TEXT_DARK, letterSpacing: "0.01em" }}>
                 Commencer gratuitement
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -1410,28 +1410,190 @@ function Stats() {
   );
 }
 
-// ─── Features bento grid ───────────────────────────────────────────────────────
+// ─── Module flip cards ────────────────────────────────────────────────────────
 
-function FeaturesGrid() {
+const ORDERED_MODULES = [
+  {
+    id: "dates",    step: "01", emoji: "📅", name: "Dates & Météo",    color: TC,
+    tagline: "Choisissez la date parfaite",
+    desc: "Comparez vos dates candidates avec les données météo historiques d'Open-Meteo — aucune clé API requise. Un score 0-100 automatique vous guide vers la meilleure option.",
+    features: ["Météo historique par ville", "Score automatique pluie / chaleur", "Vue tableau comparatif", "Confirmation et export PDF"],
+    Preview: DemoDates,
+  },
+  {
+    id: "checklist", step: "02", emoji: "✅", name: "Checklist",         color: SAGE,
+    tagline: "250+ tâches, rien à oublier",
+    desc: "Une checklist complète pré-remplie avec plus de 250 tâches organisées par catégorie et horizon temporel. Cochez, réassignez, ajoutez vos propres tâches.",
+    features: ["250+ tâches pré-remplies", "Catégories et délais", "Progression en temps réel", "Assignation aux membres de l'équipe"],
+    Preview: DemoChecklist,
+  },
+  {
+    id: "budget",    step: "03", emoji: "💰", name: "Budget",            color: GOLD,
+    tagline: "Dépenses réelles vs prévues",
+    desc: "Suivez chaque poste budgétaire avec comparaison budget prévu / réel. Comparez avec les moyennes nationales pour 11 catégories de mariage en France.",
+    features: ["11 catégories de dépenses", "Budget réel vs prévu", "Comparaison moyennes nationales", "Alertes dépassement"],
+    Preview: DemoBudget,
+  },
+  {
+    id: "guests",    step: "04", emoji: "👥", name: "Invités",           color: "#3B6EA5",
+    tagline: "RSVP, régimes, côtés, tables",
+    desc: "Gérez l'intégralité de votre liste d'invités. Suivez les réponses RSVP, gérez les régimes alimentaires, organisez par côté (A/B) et reliez directement au plan de table.",
+    features: ["Import/export CSV", "Suivi RSVP temps réel", "Régimes et allergies", "Filtres multi-critères"],
+    Preview: DemoGuests,
+  },
+  {
+    id: "dayj",      step: "05", emoji: "📋", name: "Jour J",            color: "#B5586E",
+    tagline: "Déroulé minute par minute",
+    desc: "Construisez le programme complet de votre journée à partir de 3 templates (civil, laïc, religieux). Activez le mode EN DIRECT le jour J pour suivre le déroulé en temps réel.",
+    features: ["3 templates de référence", "Mode EN DIRECT le Jour J", "Alertes de timing", "Partage prestataires & témoins"],
+    Preview: DemoDayJ,
+  },
+  {
+    id: "seating",   step: "06", emoji: "🪑", name: "Plan de table",     color: TC,
+    tagline: "Drag & drop visuel",
+    desc: "Créez votre plan de table avec un éditeur drag & drop. Gérez les contraintes alimentaires, les incompatibilités familiales et imprimez un document professionnel.",
+    features: ["Drag & drop entre tables", "Indicateurs de régimes", "Formes de salle personnalisables", "Export PDF prêt à imprimer"],
+    Preview: DemoSeating,
+  },
+  {
+    id: "dashboard", step: "07", emoji: "🏠", name: "Tableau de bord",   color: TEXT_MID,
+    tagline: "Vue d'ensemble en un coup d'œil",
+    desc: "Le tableau de bord centralise toutes vos informations clés : compte à rebours, taux de réponse invités, progression budget, prochaines tâches urgentes.",
+    features: ["Compte à rebours Jour J", "Résumé invités et RSVP", "Progression budget", "Tâches urgentes à venir"],
+    Preview: DemoDashboard,
+  },
+];
+
+function ModuleCards() {
+  const [active, setActive] = useState<number | null>(null);
+
+  const toggle = (i: number) => setActive(prev => prev === i ? null : i);
+
   return (
-    <section id="features" className="py-24 px-6" style={{ background: WARM_SOFT }}>
-      <div className="max-w-7xl mx-auto">
-        <FadeIn className="text-center mb-16">
+    <section id="features" className="py-24 px-6" style={{ background: "#FFFFFF" }}>
+      <div className="max-w-6xl mx-auto">
+
+        <FadeIn className="text-center mb-14">
           <Pill>Fonctionnalités</Pill>
           <h2 className="text-[clamp(1.8rem,4vw,2.8rem)] font-bold mt-4 tracking-tight" style={{ color: TEXT_DARK }}>
-            16 modules pour tout planifier,<br />
-            <span style={{ color: TC }}>dans une seule app.</span>
+            Les modules essentiels,
+            <span style={{ color: TC }}> dans l&apos;ordre.</span>
           </h2>
-          <p className="mt-4 text-[15px] max-w-xl mx-auto" style={{ color: TEXT_MID }}>
-            De l'invitation au Jour J, chaque module est pensé pour les futurs mariés comme pour les wedding planners.
+          <p className="mt-4 text-[15px] max-w-md mx-auto" style={{ color: TEXT_MID }}>
+            Cliquez sur une carte pour la retourner et voir ce que le module vous apporte.
           </p>
         </FadeIn>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {FEATURES.map((f, i) => (
-            <BentoCard key={f.id} f={f} index={i} />
-          ))}
+        {/* Cards grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+          {ORDERED_MODULES.map((m, i) => {
+            const isActive = active === i;
+            return (
+              <button
+                key={m.id}
+                onClick={() => toggle(i)}
+                className="relative h-[168px] sm:h-[180px] text-left group"
+                style={{ perspective: "900px" }}
+                aria-pressed={isActive}
+              >
+                <motion.div
+                  animate={{ rotateY: isActive ? 180 : 0 }}
+                  transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+                  style={{ transformStyle: "preserve-3d", width: "100%", height: "100%", position: "relative" }}
+                >
+                  {/* ── Front ── */}
+                  <div className="absolute inset-0 rounded-2xl border flex flex-col justify-between p-5 transition-shadow group-hover:shadow-md"
+                    style={{
+                      backfaceVisibility: "hidden",
+                      WebkitBackfaceVisibility: "hidden",
+                      background: "#FFFFFF",
+                      borderColor: isActive ? m.color : "rgba(28,18,8,0.07)",
+                      boxShadow: isActive ? `0 0 0 2px ${m.color}30` : undefined,
+                    }}>
+                    <div>
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.18em] mb-2" style={{ color: TEXT_LIGHT }}>
+                        Étape {m.step}
+                      </div>
+                      <div className="text-[26px] mb-2">{m.emoji}</div>
+                      <div className="text-[14px] font-bold leading-tight" style={{ color: TEXT_DARK }}>{m.name}</div>
+                    </div>
+                    <div className="text-[11px] leading-snug" style={{ color: TEXT_MID }}>{m.tagline}</div>
+                  </div>
+
+                  {/* ── Back ── */}
+                  <div className="absolute inset-0 rounded-2xl p-4 flex flex-col gap-2 overflow-hidden"
+                    style={{
+                      backfaceVisibility: "hidden",
+                      WebkitBackfaceVisibility: "hidden",
+                      transform: "rotateY(180deg)",
+                      background: WARM_SOFT,
+                      border: `1.5px solid ${m.color}30`,
+                    }}>
+                    <div className="text-[12px] font-bold" style={{ color: m.color }}>{m.emoji} {m.name}</div>
+                    <ul className="flex flex-col gap-1 flex-1">
+                      {m.features.map((f, fi) => (
+                        <li key={fi} className="flex items-start gap-1.5 text-[10.5px] leading-snug" style={{ color: TEXT_DARK }}>
+                          <span className="mt-[2px] shrink-0 text-[8px]" style={{ color: m.color }}>▸</span>
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="text-[10px] font-semibold" style={{ color: m.color }}>
+                      {isActive ? "Voir en détail ↓" : ""}
+                    </div>
+                  </div>
+                </motion.div>
+              </button>
+            );
+          })}
         </div>
+
+        {/* Expanded preview panel */}
+        <AnimatePresence>
+          {active !== null && (
+            <motion.div
+              key={active}
+              initial={{ opacity: 0, y: -16, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: "auto" }}
+              exit={{ opacity: 0, y: -8, height: 0 }}
+              transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+              className="overflow-hidden"
+            >
+              <div className="rounded-2xl border overflow-hidden"
+                style={{ borderColor: `${ORDERED_MODULES[active].color}25`,
+                         boxShadow: `0 8px 40px rgba(56,47,35,0.1)` }}>
+
+                {/* Panel header */}
+                <div className="flex items-center justify-between px-5 py-3 border-b"
+                  style={{ background: WARM_SOFT, borderColor: "rgba(201,110,44,0.1)" }}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{ORDERED_MODULES[active].emoji}</span>
+                    <span className="text-[13px] font-bold" style={{ color: TEXT_DARK }}>{ORDERED_MODULES[active].name}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <p className="hidden sm:block text-[11px] max-w-xs leading-snug" style={{ color: TEXT_MID }}>
+                      {ORDERED_MODULES[active].desc}
+                    </p>
+                    <button onClick={() => setActive(null)}
+                      className="w-7 h-7 rounded-full flex items-center justify-center transition-colors hover:opacity-70 shrink-0"
+                      style={{ background: "rgba(28,18,8,0.06)", color: TEXT_MID }}
+                      aria-label="Fermer">
+                      ✕
+                    </button>
+                  </div>
+                </div>
+
+                {/* Preview content */}
+                <div className="p-5" style={{ background: WARM_SOFT }}>
+                  {(() => {
+                    const Preview = ORDERED_MODULES[active].Preview;
+                    return <Preview />;
+                  })()}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </section>
   );
@@ -2167,9 +2329,7 @@ export default function LandingPage() {
     <div style={{ background: BG_CREAM }}>
       <Nav />
       <Hero />
-      <MarqueeStrip />
-      <Stats />
-      <FeaturesGrid />
+      <ModuleCards />
 
       <InteractiveDemo />
 
