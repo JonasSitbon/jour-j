@@ -25,6 +25,46 @@ const COUNTRIES = [
   { code: "LU", flag: "🇱🇺", label: "Luxembourg" },
 ];
 
+const HOL_FR: Record<string, string> = {
+  "New Year's Day": "Jour de l'An",
+  "Epiphany": "Épiphanie",
+  "Berchtold's Day": "Lendemain du Jour de l'An",
+  "Good Friday": "Vendredi Saint",
+  "Holy Saturday": "Samedi Saint",
+  "Easter Sunday": "Dimanche de Pâques",
+  "Easter Monday": "Lundi de Pâques",
+  "Labour Day": "Fête du Travail",
+  "Ascension Day": "Ascension",
+  "Whit Sunday": "Dimanche de Pentecôte",
+  "Whit Monday": "Lundi de Pentecôte",
+  "Corpus Christi": "Fête-Dieu",
+  "Swiss National Day": "Fête nationale suisse",
+  "National Day": "Fête nationale",
+  "Assumption Day": "Assomption",
+  "Federal Day of Thanksgiving": "Jeûne fédéral",
+  "All Saints' Day": "Toussaint",
+  "All Souls' Day": "Fête des Morts",
+  "Immaculate Conception": "Immaculée Conception",
+  "Christmas Day": "Noël",
+  "St. Stephen's Day": "Saint-Étienne",
+  "St. Berchtold's Day": "Lendemain du Jour de l'An",
+  "Victory in Europe Day": "Victoire 1945",
+  "Bastille Day": "Fête nationale (14 juillet)",
+  "Armistice Day": "Armistice",
+  "Liberation Day": "Fête de la Libération",
+  "Republic Day": "Fête de la République",
+  "Unity Day": "Fête de l'Unité nationale",
+  "Christmas Eve": "Veille de Noël",
+  "New Year's Eve": "Saint-Sylvestre",
+  "Reformation Day": "Fête de la Réformation",
+  "German Unity Day": "Fête de l'Unité allemande",
+  "Day of German Unity": "Fête de l'Unité allemande",
+  "Grand Duke's Birthday": "Anniversaire du Grand-Duc",
+  "Europe Day": "Fête de l'Europe",
+};
+
+const toFr = (name: string) => HOL_FR[name] ?? name;
+
 const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 const DOW = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 const scoreOf = (d: DateCandidate) => Math.round(d.weather * 0.45 + d.availability * 0.4 + (d.longWeekend ? 8 : 0) + 7);
@@ -193,7 +233,7 @@ export default function DatesPage() {
           fetch(`https://date.nager.at/api/v3/PublicHolidays/${y}/${code}`)
             .then((r) => r.json())
             .then((list: any[]) =>
-              list.map((h) => ({ date: h.date as string, label: h.localName as string, country: code }))
+              list.map((h) => ({ date: h.date as string, label: toFr(h.name as string), country: code }))
             )
             .catch(() => [] as (Holiday & { country: string })[])
         )
