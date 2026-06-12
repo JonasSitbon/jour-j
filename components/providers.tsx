@@ -52,24 +52,17 @@ export function Providers({ children }: { children: React.ReactNode }) {
       .then((data) => {
         if (data) {
           setState((s) => ({ ...s, ...data }));
-          if (pathname === "/") {
-            router.push("/dashboard");
-          } else {
-            setLoading(false);
-          }
+          setLoading(false);
+          if (pathname === "/") router.push("/dashboard");
         } else if (!isPublic) {
           router.push("/onboarding");
-          // on garde loading=true pendant la navigation pour éviter le flash
         } else {
           setLoading(false);
         }
       })
       .catch(() => {
-        if (!isPublic) {
-          router.push("/onboarding");
-        } else {
-          setLoading(false);
-        }
+        setLoading(false);
+        if (!isPublic) router.push("/onboarding");
       });
   }, []);
 
@@ -130,7 +123,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 2600);
   }, []);
 
-  const isPublicPage = ["/login", "/signup", "/onboarding"].some((p) => pathname.startsWith(p));
+  const isPublicPage = ["/", "/login", "/signup", "/onboarding"].some((p) => pathname === p || pathname.startsWith(p + "/"));
   const showSpinner = loading && !isPublicPage;
 
   return (
