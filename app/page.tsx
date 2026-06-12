@@ -1203,6 +1203,296 @@ function FinalCTA() {
   );
 }
 
+// ─── How It Works ─────────────────────────────────────────────────────────────
+
+function HowItWorks() {
+  const steps = [
+    {
+      num: "①",
+      icon: "sparkle",
+      title: "Créez votre espace",
+      desc: "Choisissez votre période, entrez vos prénoms, c'est prêt en 2 minutes",
+    },
+    {
+      num: "②",
+      icon: "grid",
+      title: "Personnalisez vos modules",
+      desc: "Invités, budget, prestataires, planning… chaque section se configure en quelques clics",
+    },
+    {
+      num: "③",
+      icon: "clock",
+      title: "Profitez du Jour J",
+      desc: "Utilisez le mode EN DIRECT pour suivre votre programme minute par minute",
+    },
+  ];
+
+  return (
+    <section className="py-24 px-6" style={{ background: "#0c0a14" }}>
+      <div className="max-w-5xl mx-auto">
+        <FadeIn className="text-center mb-16">
+          <Pill>Comment ça marche</Pill>
+          <h2 className="text-[clamp(1.8rem,4vw,2.8rem)] font-bold text-white mt-4 tracking-tight">
+            En 3 étapes, votre mariage<br />
+            <span style={{ background: `linear-gradient(135deg, ${TC}, ${GOLD})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+              est organisé.
+            </span>
+          </h2>
+        </FadeIn>
+
+        <div className="relative">
+          {/* Connecting line — desktop */}
+          <div className="hidden md:block absolute top-[52px] left-[calc(16.67%+16px)] right-[calc(16.67%+16px)] h-[2px] pointer-events-none"
+            style={{ background: `linear-gradient(90deg, transparent, ${TC}60, ${TC}60, transparent)` }} />
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+            {steps.map((step, i) => (
+              <FadeIn key={i} delay={i * 0.12}>
+                <div className="relative flex flex-col items-center text-center group">
+                  {/* Connector line — mobile */}
+                  {i < steps.length - 1 && (
+                    <div className="md:hidden w-[2px] h-8 my-0 mx-auto"
+                      style={{ background: `linear-gradient(180deg, ${TC}60, transparent)` }} />
+                  )}
+                  {/* Number badge */}
+                  <div
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-bold mb-5 relative z-10 transition-transform duration-300 group-hover:scale-110"
+                    style={{
+                      background: `linear-gradient(135deg, ${TC}30, ${TC}10)`,
+                      border: `1px solid ${TC}40`,
+                      color: TC,
+                      boxShadow: `0 8px 24px ${TC}20`,
+                    }}
+                  >
+                    <span style={{ fontSize: "1.5rem", lineHeight: 1 }}>{step.num}</span>
+                  </div>
+                  {/* Icon */}
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
+                    style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.4)" }}>
+                    <Ic name={step.icon} size={20} />
+                  </div>
+                  <h3 className="text-[16px] font-bold text-white mb-3">{step.title}</h3>
+                  <p className="text-[14px] leading-relaxed" style={{ color: "rgba(255,255,255,0.5)" }}>{step.desc}</p>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+
+        <FadeIn delay={0.35} className="text-center mt-12">
+          <Link href="/signup"
+            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl text-[15px] font-semibold text-white transition-all hover:scale-105 active:scale-95"
+            style={{ background: `linear-gradient(135deg, ${TC} 0%, #9B4A1A 100%)`, boxShadow: `0 8px 30px ${TC}40` }}>
+            Commencer — c'est gratuit →
+          </Link>
+        </FadeIn>
+      </div>
+    </section>
+  );
+}
+
+// ─── For Planners ──────────────────────────────────────────────────────────────
+
+function ForPlanners() {
+  const features = [
+    "Espaces clients séparés par mariage",
+    "Rôles personnalisés (admin, éditeur, lecteur)",
+    "Partage lecture seule pour chaque client",
+    "Templates de checklist réutilisables",
+    "Tableaux de bord indépendants",
+  ];
+
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+
+  return (
+    <section className="py-24 px-6" style={{ background: "#080610" }}>
+      <div ref={ref} className="max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-16">
+        {/* Text column */}
+        <motion.div
+          className="flex-1"
+          initial={{ opacity: 0, x: -40 }}
+          animate={inView ? { opacity: 1, x: 0 } : {}}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <Pill>Wedding Planners</Pill>
+          <h2 className="text-[clamp(1.8rem,3.5vw,2.5rem)] font-bold text-white mt-5 mb-3 tracking-tight leading-tight">
+            Wedding planner ?<br />
+            <span style={{ color: TC }}>The Cockpit est fait pour vous aussi.</span>
+          </h2>
+          <p className="text-[15px] mb-8 leading-relaxed" style={{ color: "rgba(255,255,255,0.55)" }}>
+            Gérez jusqu'à 5 mariages simultanément depuis un seul tableau de bord.
+          </p>
+          <Link href="/signup"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-[14px] font-semibold text-white transition-all hover:scale-105"
+            style={{ background: `linear-gradient(135deg, ${TC}, #9B4A1A)` }}>
+            Créer mon espace planner <Ic name="arrow" size={15} />
+          </Link>
+        </motion.div>
+
+        {/* Features column */}
+        <motion.div
+          className="flex-1 w-full"
+          initial={{ opacity: 0, x: 40 }}
+          animate={inView ? { opacity: 1, x: 0 } : {}}
+          transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <div className="rounded-2xl border p-8"
+            style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.09)" }}>
+            <div className="text-[12px] font-semibold uppercase tracking-wider mb-6" style={{ color: "rgba(255,255,255,0.35)" }}>
+              Fonctionnalités dédiées planners
+            </div>
+            <ul className="flex flex-col gap-4">
+              {features.map((feat, i) => (
+                <motion.li
+                  key={i}
+                  initial={{ opacity: 0, x: 16 }}
+                  animate={inView ? { opacity: 1, x: 0 } : {}}
+                  transition={{ duration: 0.5, delay: 0.3 + i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+                  className="flex items-start gap-3 text-[14.5px]"
+                  style={{ color: "rgba(255,255,255,0.75)" }}
+                >
+                  <span className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                    style={{ background: `${TC}25` }}>
+                    <svg width="10" height="10" viewBox="0 0 10 10">
+                      <path d="M2 5l2.5 2.5 4-4" stroke={TC} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    </svg>
+                  </span>
+                  {feat}
+                </motion.li>
+              ))}
+            </ul>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Comparison Table ──────────────────────────────────────────────────────────
+
+function ComparisonTable() {
+  type CellVal = true | false | "partial" | string;
+
+  const rows: { label: string; cockpit: CellVal; excel: CellVal; generic: CellVal }[] = [
+    { label: "Invités avec RSVP intégré",       cockpit: true,      excel: false,     generic: "partial" },
+    { label: "Budget avec moyennes nationales",  cockpit: true,      excel: false,     generic: "partial" },
+    { label: "Plan de table visuel",             cockpit: true,      excel: false,     generic: "partial" },
+    { label: "Mode Jour J EN DIRECT",            cockpit: true,      excel: false,     generic: false     },
+    { label: "Collaboration multi-users",        cockpit: true,      excel: "partial", generic: "partial" },
+    { label: "Météo pour les dates",             cockpit: true,      excel: false,     generic: false     },
+    { label: "Export PDF",                       cockpit: true,      excel: "partial", generic: "partial" },
+    { label: "Prix",                             cockpit: "Gratuit", excel: "Payant",  generic: "Payant"  },
+  ];
+
+  function Cell({ val, highlight = false }: { val: CellVal; highlight?: boolean }) {
+    if (val === true) return (
+      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full"
+        style={{ background: "#6B8C3E20", color: "#6B8C3E" }}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20 6L9 17l-5-5" />
+        </svg>
+      </span>
+    );
+    if (val === false) return (
+      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full"
+        style={{ background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.25)" }}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M18 6L6 18M6 6l12 12" />
+        </svg>
+      </span>
+    );
+    if (val === "partial") return (
+      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full"
+        style={{ background: `${GOLD}15`, color: GOLD }}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M5 12h14" />
+        </svg>
+      </span>
+    );
+    // string value (price row)
+    if (val === "Gratuit") return (
+      <span className="text-[12px] font-bold px-2 py-0.5 rounded-full"
+        style={{ background: "#6B8C3E20", color: "#6B8C3E" }}>{val}</span>
+    );
+    return (
+      <span className="text-[12px] font-medium" style={{ color: "rgba(255,255,255,0.35)" }}>{val as string}</span>
+    );
+  }
+
+  return (
+    <section className="py-24 px-6" style={{ background: "#0c0a14" }}>
+      <div className="max-w-4xl mx-auto">
+        <FadeIn className="text-center mb-16">
+          <Pill>Comparaison</Pill>
+          <h2 className="text-[clamp(1.8rem,4vw,2.8rem)] font-bold text-white mt-4 tracking-tight">
+            Pourquoi The Cockpit<br />
+            <span style={{ color: TC }}>plutôt qu'un tableur ?</span>
+          </h2>
+          <p className="mt-4 text-[15px] max-w-xl mx-auto" style={{ color: "rgba(255,255,255,0.5)" }}>
+            Votre mariage mérite mieux qu'une feuille de calcul. Voici pourquoi.
+          </p>
+        </FadeIn>
+
+        <FadeIn delay={0.1}>
+          <div className="rounded-2xl overflow-hidden border" style={{ borderColor: "rgba(255,255,255,0.09)" }}>
+            {/* Header */}
+            <div className="grid grid-cols-[2fr_1fr_1fr_1fr] border-b" style={{ borderColor: "rgba(255,255,255,0.09)" }}>
+              <div className="px-5 py-4" />
+              {/* The Cockpit header — highlighted */}
+              <div className="px-4 py-4 flex flex-col items-center justify-center border-l border-r"
+                style={{ background: `${TC}12`, borderColor: `${TC}35` }}>
+                <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: TC }}>The Cockpit</span>
+              </div>
+              <div className="px-4 py-4 flex items-center justify-center border-r" style={{ borderColor: "rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)" }}>
+                <span className="text-[11px] font-semibold text-white/40">Tableur Excel</span>
+              </div>
+              <div className="px-4 py-4 flex items-center justify-center" style={{ background: "rgba(255,255,255,0.02)" }}>
+                <span className="text-[11px] font-semibold text-white/40">App générique</span>
+              </div>
+            </div>
+
+            {/* Rows */}
+            {rows.map((row, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: -12 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, margin: "-30px" }}
+                transition={{ duration: 0.45, delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }}
+                className="grid grid-cols-[2fr_1fr_1fr_1fr] border-b last:border-0"
+                style={{ borderColor: "rgba(255,255,255,0.06)" }}
+              >
+                <div className="px-5 py-4 flex items-center text-[13.5px] font-medium" style={{ color: "rgba(255,255,255,0.7)" }}>
+                  {row.label}
+                </div>
+                <div className="px-4 py-4 flex items-center justify-center border-l border-r"
+                  style={{ background: `${TC}08`, borderColor: `${TC}25` }}>
+                  <Cell val={row.cockpit} highlight />
+                </div>
+                <div className="px-4 py-4 flex items-center justify-center border-r" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+                  <Cell val={row.excel} />
+                </div>
+                <div className="px-4 py-4 flex items-center justify-center">
+                  <Cell val={row.generic} />
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </FadeIn>
+
+        <FadeIn delay={0.3} className="text-center mt-10">
+          <Link href="/signup"
+            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl text-[15px] font-semibold text-white transition-all hover:scale-105 active:scale-95"
+            style={{ background: `linear-gradient(135deg, ${TC} 0%, #9B4A1A 100%)`, boxShadow: `0 8px 30px ${TC}40` }}>
+            Essayer The Cockpit gratuitement →
+          </Link>
+        </FadeIn>
+      </div>
+    </section>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
@@ -1226,6 +1516,10 @@ export default function LandingPage() {
           </FadeIn>
         </div>
       </section>
+
+      <HowItWorks />
+      <ForPlanners />
+      <ComparisonTable />
 
       <Spotlight
         id="guests"

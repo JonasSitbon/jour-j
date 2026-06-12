@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { exportWeddingReport } from "@/lib/pdf-report";
 import {
   motion, useMotionValue, useSpring, useTransform,
@@ -37,6 +38,188 @@ const pillVariants = {
     transition: { type: "spring" as const, stiffness: 420, damping: 26 } },
 };
 
+/* ------------------------------------------------------------------ */
+/* Season helper                                                       */
+/* ------------------------------------------------------------------ */
+function getSeasonLabel(dateStr: string): string | null {
+  // Returns a season label only when the day is exactly 15 (approximate date)
+  const d = new Date(dateStr + "T00:00:00");
+  if (d.getDate() !== 15) return null;
+  const month = d.getMonth() + 1; // 1-12
+  const year = d.getFullYear();
+  let season: string;
+  if (month >= 6 && month <= 8) season = "Été";
+  else if (month >= 9 && month <= 11) season = "Automne";
+  else if (month >= 3 && month <= 5) season = "Printemps";
+  else season = "Hiver";
+  return `${season} ${year}`;
+}
+
+/* ================================================================== */
+/* GettingStartedCard (empty-state full card)                          */
+/* ================================================================== */
+const gettingStartedStagger = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.07, delayChildren: 0.1 } },
+};
+const gettingStartedItem = {
+  hidden:  { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 380, damping: 26 } },
+};
+
+interface GettingStartedStep {
+  id: string;
+  label: string;
+  desc: string;
+  icon: string;
+  href: string;
+  done: boolean;
+}
+
+function GettingStartedCard({ steps }: { steps: GettingStartedStep[] }) {
+  const router = useRouter();
+  const doneCount = steps.filter((s) => s.done).length;
+  const pct = Math.round((doneCount / steps.length) * 100);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+      className="mb-6 rounded-card border border-[var(--primary)]/25 bg-[#FBF1E0]/60 p-6 md:p-8"
+    >
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4 mb-5">
+        <div>
+          <div className="font-semibold text-[17px] flex items-center gap-2.5 text-text">
+            <Icon name="sparkle" size={19} className="text-primary" />
+            Par où commencer ?
+          </div>
+          <div className="text-text-2 text-[13px] mt-1">
+            Suivez ces 5 étapes pour préparer votre mariage sereinement.
+          </div>
+        </div>
+        <div className="shrink-0 font-mono text-[13px] font-semibold text-text-2 bg-surface-2 border border-line px-3 py-1 rounded-full">
+          {doneCount} / {steps.length}
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div className="h-2 bg-surface-3 rounded-full overflow-hidden mb-6">
+        <motion.div
+          className="h-full rounded-full bg-primary"
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+        />
+      </div>
+
+      {/* Steps */}
+      <motion.div
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3"
+        variants={gettingStartedStagger}
+        initial="hidden"
+        animate="visible"
+      >
+        {steps.map((step, i) => {
+          const isNext = !step.done && (i === 0 || steps[i - 1].done);
+          return (
+            <motion.button
+              key={step.id}
+              variants={gettingStartedItem}
+              onClick={() => router.push(step.href)}
+              whileHover={!step.done ? { scale: 1.03, y: -2 } : undefined}
+              whileTap={!step.done ? { scale: 0.97 } : undefined}
+              transition={{ type: "spring", stiffness: 500, damping: 28 }}
+              className={`flex flex-col items-start gap-2.5 p-4 rounded-xl border text-left transition-colors ${
+                step.done
+                  ? "border-sage/40 bg-sage-soft/50 cursor-default"
+                  : isNext
+                  ? "border-primary/40 bg-primary-soft hover:bg-primary-soft hover:border-primary/60 cursor-pointer"
+                  : "border-line bg-surface-2 cursor-pointer hover:border-line-strong"
+              }`}
+            >
+              {/* Icon + number badge */}
+              <div className="flex items-center justify-between w-full">
+                <div className={`w-9 h-9 rounded-[10px] flex items-center justify-center ${
+                  step.done ? "bg-sage text-white" : isNext ? "bg-primary text-white" : "bg-surface-3 text-text-3"
+                }`}>
+                  {step.done
+                    ? <Icon name="check" size={15} />
+                    : <Icon name={step.icon} size={16} />
+                  }
+                </div>
+                <span className={`text-[11px] font-bold rounded-full w-5 h-5 flex items-center justify-center ${
+                  step.done ? "bg-sage/20 text-sage" : isNext ? "bg-primary/15 text-primary-700" : "bg-surface-3 text-text-3"
+                }`}>
+                  {i + 1}
+                </span>
+              </div>
+              {/* Label */}
+              <div>
+                <div className={`text-[12.5px] font-semibold leading-snug ${
+                  step.done ? "text-sage line-through decoration-sage/60" : isNext ? "text-text" : "text-text-2"
+                }`}>
+                  {step.label}
+                </div>
+                <div className="text-[11px] text-text-3 mt-0.5 leading-snug">{step.desc}</div>
+              </div>
+              {isNext && (
+                <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-primary">
+                  Commencer <Icon name="arrow" size={10} />
+                </span>
+              )}
+            </motion.button>
+          );
+        })}
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/* ================================================================== */
+/* QuickActionsBar                                                     */
+/* ================================================================== */
+const QUICK_ACTIONS = [
+  { emoji: "➕", label: "Invité",   href: "/guests"    },
+  { emoji: "💳", label: "Dépense",  href: "/budget"    },
+  { emoji: "✅", label: "Tâche",    href: "/checklist" },
+  { emoji: "🎵", label: "Musique",  href: "/music"     },
+  { emoji: "📝", label: "Note",     href: "/journal"   },
+  { emoji: "📅", label: "Date",     href: "/dates"     },
+];
+
+function QuickActionsBar() {
+  const router = useRouter();
+  return (
+    <div className="mb-6">
+      <div className="overflow-x-auto pb-1 -mx-1 px-1">
+        <motion.div
+          className="flex gap-2 min-w-max sm:min-w-0 sm:flex-wrap"
+          variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.055, delayChildren: 0.05 } } }}
+          initial="hidden"
+          animate="visible"
+        >
+          {QUICK_ACTIONS.map((action) => (
+            <motion.button
+              key={action.href}
+              variants={pillVariants}
+              onClick={() => router.push(action.href)}
+              whileHover={{ scale: 1.06, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 500, damping: 26 }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-line bg-surface text-text-2 text-[13px] font-medium cursor-pointer select-none hover:border-[var(--primary)]/50 hover:bg-primary-soft hover:text-primary-700 transition-colors shrink-0"
+            >
+              <span className="text-[15px] leading-none">{action.emoji}</span>
+              {action.label}
+            </motion.button>
+          ))}
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
 /* ================================================================== */
 /* HeroCard                                                            */
 /* ================================================================== */
@@ -52,9 +235,10 @@ interface HeroCardProps {
   doneTasks: number;
   totalTasks: number;
   nextUrgent: { val: string; label: string } | null;
+  seasonLabel: string | null;
 }
 
-function HeroCard({ w, days, isPast, globalPct, dateCand, confirmed, totalGuests, pctSpent, doneTasks, totalTasks, nextUrgent }: HeroCardProps) {
+function HeroCard({ w, days, isPast, globalPct, dateCand, confirmed, totalGuests, pctSpent, doneTasks, totalTasks, nextUrgent, seasonLabel }: HeroCardProps) {
   /* 3D tilt -------------------------------------------------------- */
   const mouseX = useMotionValue(0.5);
   const mouseY = useMotionValue(0.5);
@@ -137,7 +321,10 @@ function HeroCard({ w, days, isPast, globalPct, dateCand, confirmed, totalGuests
             {w.partnerA} &amp; {w.partnerB}
           </div>
           <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[13px] text-[#FBF1E0]/75">
-            <span className="flex items-center gap-1.5"><Icon name="calendar" size={13} />{fmt.date(w.date)}</span>
+            <span className="flex items-center gap-1.5">
+              <Icon name="calendar" size={13} />
+              {seasonLabel ? seasonLabel : fmt.date(w.date)}
+            </span>
             {w.venue && (
               <span className="flex items-center gap-1.5">
                 <Icon name="pin" size={13} />{w.venue}{w.city ? `, ${w.city}` : ""}
@@ -192,6 +379,21 @@ function HeroCard({ w, days, isPast, globalPct, dateCand, confirmed, totalGuests
               </motion.div>
             )}
           </div>
+
+          {/* Season / approximate date pill */}
+          {seasonLabel && !isPast && (
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              className="flex items-center gap-1.5 self-start"
+            >
+              <span className="inline-flex items-center gap-1.5 bg-white/10 border border-white/25 rounded-full px-3 py-1 backdrop-blur-sm text-[11.5px] font-medium text-[#FBF1E0]/90">
+                <Icon name="calendar" size={11} className="text-[#FBF1E0]/70 shrink-0" />
+                {seasonLabel} · Date à affiner
+              </span>
+            </motion.div>
+          )}
 
           {/* Mini-stats pills — stagger */}
           <motion.div
@@ -894,8 +1096,10 @@ export default function DashboardPage() {
   const pctSpent   = Math.min(100, state.budgetTotal ? Math.round((spent / state.budgetTotal) * 100) : 0);
   const globalPct  = Math.round(pctTasks * 0.4 + pctVendors * 0.25 + pctGuests * 0.2 + pctSpent * 0.15);
 
-  const dateCand  = state.dateCandidates.find((d) => d.id === state.selectedDate) ?? state.dateCandidates[0] ?? null;
-  const isNewUser = state.guests.length === 0 && state.vendors.length === 0;
+  const dateCand    = state.dateCandidates.find((d) => d.id === state.selectedDate) ?? state.dateCandidates[0] ?? null;
+  const isNewUser   = state.guests.length === 0 && state.vendors.length === 0;
+  const seasonLabel = getSeasonLabel(w.date);
+  const isEmptyState = state.guests.length === 0 && state.tasks.filter((t) => !t.done).length === 0 && state.vendors.length === 0;
 
   const nextUrgent = useMemo(() => {
     const items = [
@@ -922,6 +1126,15 @@ export default function DashboardPage() {
     { id: "guests",    label: "Invités ajoutés",       desc: "Construisez votre liste et gérez les RSVP",    done: state.guests.length > 0,                                       href: "/guests",    icon: "users"        },
     { id: "vendors",   label: "Prestataire contacté",  desc: "Comparez les devis et signez vos contrats",    done: state.vendors.length > 0,                                      href: "/vendors",   icon: "file"         },
     { id: "checklist", label: "Checklist initialisée", desc: "Suivez toutes les étapes jusqu'au grand jour", done: state.tasks.length > 0,                                        href: "/checklist", icon: "check-circle" },
+  ];
+
+  // 5-step card for truly empty state
+  const gettingStartedSteps = [
+    { id: "guests",    label: "Ajouter vos premiers invités", desc: "Construisez votre liste et gérez les RSVP",    done: state.guests.length > 0,   href: "/guests",    icon: "users"        },
+    { id: "budget",    label: "Configurer votre budget",      desc: "Définissez vos postes de dépenses",            done: state.budget.length > 0,   href: "/budget",    icon: "wallet"       },
+    { id: "checklist", label: "Explorer la checklist",        desc: "Suivez toutes les étapes jusqu'au grand jour", done: state.tasks.length > 0,    href: "/checklist", icon: "check-circle" },
+    { id: "vendors",   label: "Ajouter vos prestataires",     desc: "Comparez les devis et signez vos contrats",    done: state.vendors.length > 0,  href: "/vendors",   icon: "file"         },
+    { id: "dates",     label: "Définir votre date",           desc: "Sélectionnez votre date parmi les candidates", done: state.dateCandidates.some((d) => d.id === state.selectedDate), href: "/dates", icon: "calendar" },
   ];
 
   const modules = [
@@ -1002,8 +1215,11 @@ export default function DashboardPage() {
         </motion.div>
       </div>
 
-      {/* Getting started */}
-      <GettingStarted steps={setupSteps} />
+      {/* Getting started — empty state shows prominent card, otherwise inline stepper */}
+      {isEmptyState
+        ? <GettingStartedCard steps={gettingStartedSteps} />
+        : <GettingStarted steps={setupSteps} />
+      }
 
       {/* ---- Bento : Hero 3D + Score ---- */}
       <div className="grid grid-cols-1 lg:grid-cols-[1.65fr_1fr] gap-5 items-stretch mb-5">
@@ -1011,7 +1227,7 @@ export default function DashboardPage() {
           w={w} days={days} isPast={isPast} globalPct={globalPct} dateCand={dateCand}
           confirmed={confirmed} totalGuests={state.guests.length}
           pctSpent={pctSpent} doneTasks={doneTasks} totalTasks={state.tasks.length}
-          nextUrgent={nextUrgent}
+          nextUrgent={nextUrgent} seasonLabel={seasonLabel}
         />
         <ScoreWidget globalPct={globalPct} bars={scoreBars} />
       </div>
@@ -1039,28 +1255,7 @@ export default function DashboardPage() {
       </Reveal>
 
       {/* ---- Quick actions ---- */}
-      <Reveal delay={0.06} className="mb-8">
-        <div className="flex flex-wrap gap-2.5">
-          {([
-            { icon: "plus",         label: "Ajouter un invité",        href: "/guests"    },
-            { icon: "wallet",       label: "Saisir une dépense",       href: "/budget"    },
-            { icon: "check-circle", label: "Compléter une tâche",      href: "/checklist" },
-            { icon: "phone",        label: "Contacter un prestataire", href: "/vendors"   },
-          ] as { icon: string; label: string; href: string }[]).map((action) => (
-            <Link key={action.href} href={action.href}>
-              <motion.span
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-line text-text-2 text-[13px] font-medium cursor-pointer select-none"
-                whileHover={{ scale: 1.05, y: -2 }}
-                whileTap={{ scale: 0.97 }}
-                transition={{ type: "spring", stiffness: 500, damping: 26 }}
-              >
-                <Icon name={action.icon} size={14} />
-                {action.label}
-              </motion.span>
-            </Link>
-          ))}
-        </div>
-      </Reveal>
+      <QuickActionsBar />
 
       {/* ---- Finances ---- */}
       <Reveal delay={0.04} className="mb-5">

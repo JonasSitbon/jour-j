@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { PageHead } from "@/components/shell";
 import { Button, Badge } from "@/components/ui";
 import { Icon } from "@/components/icon";
-import { useStore } from "@/components/providers";
+import { useStore, useToast } from "@/components/providers";
 import {
   getWeddingId,
   loadMoodboard,
@@ -14,6 +14,8 @@ import {
   upsertMoodCard,
   deleteMoodCard,
 } from "@/lib/db";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 /* ─────────────────────────── Types ─────────────────────────── */
 
@@ -138,13 +140,25 @@ const PRESET_PALETTES: { name: string; colors: string[] }[] = [
 ];
 
 const TAGS = [
+  { id: "decoration", label: "Décoration", color: "#D4A96A" },
   { id: "fleurs", label: "Fleurs", color: "#B8C9A3" },
   { id: "tenue", label: "Tenue", color: "#F2C4CE" },
-  { id: "decoration", label: "Décoration", color: "#D4A96A" },
-  { id: "photo", label: "Photo", color: "#B8C9D9" },
-  { id: "gateau", label: "Gâteau", color: "#E8D5A3" },
+  { id: "lieu", label: "Lieu", color: "#B8C9D9" },
+  { id: "musique", label: "Musique", color: "#C4A0C0" },
   { id: "papeterie", label: "Papeterie", color: "#C4A882" },
+  { id: "coiffure", label: "Coiffure/Maquillage", color: "#F0D0A0" },
+  { id: "gateau", label: "Gâteau", color: "#E8D5A3" },
+  { id: "photo", label: "Photo", color: "#A0C4D4" },
   { id: "autre", label: "Autre", color: "#CCCCCC" },
+];
+
+const THEME_PALETTES: { name: string; colors: string[] }[] = [
+  { name: "Bohème", colors: ["#C96E2C", "#7E9A63", "#F4ECDD", "#D4A340", "#8B6E3E"] },
+  { name: "Romantique", colors: ["#B5586E", "#F2A7B8", "#FFF0F3", "#8E3A5C", "#C9A07A"] },
+  { name: "Champêtre", colors: ["#6B8C3E", "#D4B896", "#F3F1E5", "#4A6B2A", "#B8A080"] },
+  { name: "Moderne", colors: ["#323232", "#C2A03A", "#F6F6F6", "#1A1A1A", "#8C8C8C"] },
+  { name: "Classique", colors: ["#1E3A5F", "#C4961A", "#F5F4F2", "#8C7A5C", "#2C5282"] },
+  { name: "Tropical", colors: ["#1F7A5C", "#E4A83A", "#F1F7F4", "#15614A", "#A8D5C2"] },
 ];
 
 function tagColor(tag: string): string {
@@ -203,10 +217,69 @@ function Swatch({
   );
 }
 
+/* ──────────────────── ThemePalettes component ───────────────── */
+
+function ThemePalettes({ onCopy }: { onCopy: (name: string, colors: string[]) => void }) {
+  return (
+    <div className="mb-10">
+      <div className="flex items-center gap-2 mb-4">
+        <Icon name="palette" size={18} className="text-primary" />
+        <h2 className="text-[18px] font-semibold tracking-tight">
+          Palettes de thèmes populaires
+        </h2>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {THEME_PALETTES.map((theme) => (
+          <button
+            key={theme.name}
+            type="button"
+            className="group rounded-xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none"
+            style={{ borderColor: "var(--line)", background: "var(--surface)" }}
+            onClick={() => onCopy(theme.name, theme.colors)}
+            title={`Copier la palette ${theme.name}`}
+          >
+            <div className="flex gap-2 mb-3">
+              {theme.colors.map((c) => (
+                <span
+                  key={c}
+                  className="w-8 h-8 rounded-full border-2 border-white shadow-sm flex-shrink-0 transition group-hover:scale-105"
+                  style={{ background: c, borderColor: "var(--line)" }}
+                />
+              ))}
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[13px] font-semibold">{theme.name}</span>
+              <span
+                className="text-[11px] font-medium opacity-0 group-hover:opacity-100 transition flex items-center gap-1"
+                style={{ color: "var(--primary)" }}
+              >
+                <Icon name="copy" size={11} />
+                Copier
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {theme.colors.map((c) => (
+                <span
+                  key={c}
+                  className="text-[9.5px] font-mono px-1.5 py-0.5 rounded"
+                  style={{ background: "var(--surface-3)", color: "var(--text-3)" }}
+                >
+                  {c.toUpperCase()}
+                </span>
+              ))}
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ──────────────────── Main page ─────────────────────────────── */
 
 export default function MoodboardPage() {
   const { state } = useStore();
+  const toast = useToast();
   const [mounted, setMounted] = useState(false);
   const [data, setData] = useState<MoodData>(DEFAULT_DATA);
   const [syncing, setSyncing] = useState(false);
@@ -562,6 +635,158 @@ export default function MoodboardPage() {
     navigator.clipboard.writeText(parts.join("\n")).catch(() => {});
   }
 
+  function copyThemePalette(name: string, colors: string[]) {
+    navigator.clipboard
+      .writeText(colors.join(", "))
+      .then(() => {
+        toast(`Palette ${name} copiée !`);
+      })
+      .catch(() => {
+        toast(`Palette ${name} copiée !`);
+      });
+  }
+
+  function exportPdf() {
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const pageW = doc.internal.pageSize.getWidth();
+    const terracotta: [number, number, number] = [201, 110, 44];
+    const white: [number, number, number] = [255, 255, 255];
+    const darkGray: [number, number, number] = [50, 50, 50];
+    const lightGray: [number, number, number] = [245, 243, 240];
+
+    // ── Header band ──────────────────────────────────────────────
+    doc.setFillColor(...terracotta);
+    doc.rect(0, 0, pageW, 36, "F");
+    doc.setTextColor(...white);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    const title =
+      partnerA && partnerB
+        ? `Mood Board — ${partnerA} & ${partnerB}`
+        : "Mood Board";
+    doc.text(title, pageW / 2, 16, { align: "center" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text("Tableau d'inspiration — The Cockpit", pageW / 2, 24, { align: "center" });
+    const exportDate = new Date().toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+    doc.text(`Exporté le ${exportDate}`, pageW / 2, 30, { align: "center" });
+
+    let y = 44;
+
+    // ── Style sélectionné ────────────────────────────────────────
+    const styleObj = STYLES.find((s) => s.id === data.selectedStyle);
+    doc.setTextColor(...darkGray);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("Style de mariage", 14, y);
+    y += 6;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setFillColor(...lightGray);
+    doc.roundedRect(14, y, pageW - 28, 12, 2, 2, "F");
+    doc.text(
+      styleObj ? `${styleObj.name} — ${styleObj.desc}` : "Non défini",
+      18,
+      y + 8
+    );
+    y += 20;
+
+    // ── Palettes ─────────────────────────────────────────────────
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("Palettes de couleurs", 14, y);
+    y += 6;
+
+    if (data.palettes.length > 0) {
+      autoTable(doc, {
+        startY: y,
+        head: [["Palette", "Couleurs (hex)", "Principale"]],
+        body: data.palettes.map((p) => [
+          p.name,
+          p.colors.join("  ·  "),
+          p.isPrimary ? "Oui" : "—",
+        ]),
+        headStyles: { fillColor: terracotta, textColor: white, fontStyle: "bold", fontSize: 9 },
+        bodyStyles: { fontSize: 9, textColor: darkGray },
+        alternateRowStyles: { fillColor: lightGray },
+        margin: { left: 14, right: 14 },
+        tableWidth: pageW - 28,
+      });
+      y = (doc as any).lastAutoTable.finalY + 10;
+    } else {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.text("Aucune palette enregistrée.", 14, y + 5);
+      y += 14;
+    }
+
+    // ── Inspirations ─────────────────────────────────────────────
+    if (y > 240) { doc.addPage(); y = 20; }
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(...darkGray);
+    doc.text(`Inspirations (${data.cards.length})`, 14, y);
+    y += 6;
+
+    if (data.cards.length > 0) {
+      const tagLabel = (tag: string) => TAGS.find((t) => t.id === tag)?.label ?? tag;
+      autoTable(doc, {
+        startY: y,
+        head: [["Titre", "Catégorie", "URL", "Note"]],
+        body: data.cards.map((c) => [
+          (c.pinned ? "[épinglé] " : "") + c.title,
+          tagLabel(c.tag),
+          c.url ? c.url.replace(/^https?:\/\//, "") : "—",
+          c.note ?? "—",
+        ]),
+        headStyles: { fillColor: terracotta, textColor: white, fontStyle: "bold", fontSize: 9 },
+        bodyStyles: { fontSize: 8, textColor: darkGray },
+        alternateRowStyles: { fillColor: lightGray },
+        columnStyles: {
+          0: { cellWidth: 42 },
+          1: { cellWidth: 28 },
+          2: { cellWidth: 55 },
+          3: { cellWidth: "auto" as any },
+        },
+        margin: { left: 14, right: 14 },
+        tableWidth: pageW - 28,
+        didParseCell: (hookData) => {
+          // Wrap long URLs
+          if (hookData.column.index === 2 && typeof hookData.cell.raw === "string") {
+            hookData.cell.styles.overflow = "linebreak";
+          }
+        },
+      });
+      y = (doc as any).lastAutoTable.finalY + 10;
+    } else {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.text("Aucune inspiration enregistrée.", 14, y + 5);
+    }
+
+    // ── Footer ───────────────────────────────────────────────────
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(160, 140, 120);
+      doc.text(
+        `The Cockpit — Mood Board  •  Page ${i}/${pageCount}`,
+        pageW / 2,
+        doc.internal.pageSize.getHeight() - 8,
+        { align: "center" }
+      );
+    }
+
+    doc.save(`mood-board${partnerA ? `-${partnerA.toLowerCase()}` : ""}.pdf`);
+  }
+
   /* ─── Derived ────────────────────────────────────────────── */
 
   const filteredCards =
@@ -607,9 +832,14 @@ export default function MoodboardPage() {
         }
         sub="Votre tableau d'inspiration : style, couleurs et idées pour votre mariage"
         actions={
-          <Button variant="secondary" size="sm" icon="download" onClick={downloadCss}>
-            Palette CSS
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" size="sm" icon="download" onClick={downloadCss}>
+              Palette CSS
+            </Button>
+            <Button variant="primary" size="sm" icon="file-text" onClick={exportPdf}>
+              Exporter PDF
+            </Button>
+          </div>
         }
       />
 
@@ -685,6 +915,9 @@ export default function MoodboardPage() {
           />
         </div>
       </section>
+
+      {/* ═══════════ Theme Palettes ════════════════════════ */}
+      <ThemePalettes onCopy={copyThemePalette} />
 
       {/* ═══════════ Section 2 — Color Palettes ════════════ */}
       <section className="mb-10">
@@ -967,6 +1200,13 @@ export default function MoodboardPage() {
                 card={card}
                 onPin={togglePin}
                 onDelete={removeCard}
+                onCopyLink={(url) => {
+                  navigator.clipboard.writeText(url).then(() => {
+                    toast("Lien copié !");
+                  }).catch(() => {
+                    toast("Lien copié !");
+                  });
+                }}
               />
             ))}
           </div>
@@ -1217,13 +1457,29 @@ function InspirationCardComp({
   card,
   onPin,
   onDelete,
+  onCopyLink,
 }: {
   card: InspirationCard;
   onPin: (id: number | null) => void;
   onDelete: (id: number | null) => void;
+  onCopyLink: (url: string) => void;
 }) {
+  const [shareOpen, setShareOpen] = useState(false);
+  const shareRef = useRef<HTMLDivElement>(null);
   const accentColor = card.color ?? tagColor(card.tag);
   const tagObj = TAGS.find((t) => t.id === card.tag);
+
+  // Close share menu on outside click
+  useEffect(() => {
+    if (!shareOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (shareRef.current && !shareRef.current.contains(e.target as Node)) {
+        setShareOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [shareOpen]);
 
   return (
     <div
@@ -1274,15 +1530,63 @@ function InspirationCardComp({
             >
               <Icon name="pin" size={14} strokeWidth={card.pinned ? 2.5 : 1.7} />
             </button>
-            <button
-              type="button"
-              title="Supprimer"
-              onClick={() => onDelete(card.id)}
-              className="w-7 h-7 rounded-md flex items-center justify-center transition hover:bg-hover hover:text-red-500"
-              style={{ color: "var(--text-3)" }}
-            >
-              <Icon name="trash" size={14} />
-            </button>
+
+            {/* Share / more menu */}
+            <div className="relative" ref={shareRef}>
+              <button
+                type="button"
+                title="Plus d'options"
+                onClick={() => setShareOpen((v) => !v)}
+                className="w-7 h-7 rounded-md flex items-center justify-center transition hover:bg-hover"
+                style={{ color: "var(--text-3)" }}
+              >
+                <Icon name="more-horizontal" size={14} />
+              </button>
+              {shareOpen && (
+                <div
+                  className="absolute right-0 top-8 z-20 min-w-[148px] rounded-xl border shadow-lg py-1 animate-fade"
+                  style={{ background: "var(--surface)", borderColor: "var(--line)" }}
+                >
+                  {card.url && (
+                    <button
+                      type="button"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-[12.5px] text-left hover:bg-hover transition"
+                      style={{ color: "var(--text)" }}
+                      onClick={() => {
+                        onCopyLink(card.url!);
+                        setShareOpen(false);
+                      }}
+                    >
+                      <Icon name="link" size={13} />
+                      Copier le lien
+                    </button>
+                  )}
+                  {!card.url && (
+                    <div
+                      className="px-3 py-2 text-[11.5px] italic"
+                      style={{ color: "var(--text-3)" }}
+                    >
+                      Aucune URL
+                    </div>
+                  )}
+                  <div
+                    className="my-1 border-t"
+                    style={{ borderColor: "var(--line)" }}
+                  />
+                  <button
+                    type="button"
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-[12.5px] text-left hover:bg-hover transition text-red-500"
+                    onClick={() => {
+                      setShareOpen(false);
+                      onDelete(card.id);
+                    }}
+                  >
+                    <Icon name="trash" size={13} />
+                    Supprimer
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
