@@ -21,22 +21,37 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
   const { pathname } = request.nextUrl;
 
-  const publicPaths = ["/", "/login", "/signup", "/auth", "/reset-password", "/rsvp", "/share"];
+  const publicPaths = ["/", "/login", "/signup", "/auth", "/reset-password", "/update-password", "/rsvp", "/share"];
   const isPublic = publicPaths.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
-  // Redirige les non-authentifiés vers /login (sauf pages publiques)
-  if (!user && !isPublic) {
+  // Si la route est publique, on laisse passer sans appel Supabase
+  // → évite les cold start failures qui crashent le middleware sur la landing page
+  if (isPublic && !pathname.startsWith("/admin")) {
+    // Pas de cache pour éviter que les redirections passées soient mises en cache navigateur
+    supabaseResponse.headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
+    return supabaseResponse;
+  }
+
+  // Pour les routes protégées, on vérifie l'authentification
+  let user = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch {
+    // En cas d'erreur Supabase (cold start, réseau), on redirige vers /login
+    // plutôt que de laisser crasher le middleware
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  // Redirige les non-authentifiés vers /login
+  if (!user) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
   // Protection des routes /admin : super_admin uniquement
   if (pathname.startsWith("/admin")) {
-    if (!user) {
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
     const { data: profile } = await supabase
       .from("profiles")
       .select("account_type")
@@ -46,9 +61,6 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }
-
-  // On NE redirige PAS les utilisateurs authentifiés depuis /login
-  // La page login gère elle-même la redirection (évite les boucles)
 
   return supabaseResponse;
 }
