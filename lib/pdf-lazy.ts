@@ -1,87 +1,75 @@
 /**
- * Lazy PDF loaders — dynamically import jsPDF only when the user clicks Export.
- * Replace static imports in pages with these async wrappers to reduce initial bundle size.
- *
- * Usage in a page:
- *   import { lazyExportDayJPDF } from "@/lib/pdf-lazy";
- *   // in onClick:
- *   await lazyExportDayJPDF(events, partnerA, partnerB, date);
+ * Lazy PDF loaders — import jsPDF only when the user clicks Export.
+ * Each function dynamically imports its PDF module on first call.
  */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function lazyExportDayJPDF(...args: any[]) {
-  const mod = await import("./pdf-dayj");
-  return mod.exportDayJPDF(...(args as Parameters<typeof mod.exportDayJPDF>));
+import type { Guest, TableSeat, Vendor, BudgetPost, Payment, DateCandidate, Task, Song, JournalEntry, AppState } from "./types";
+
+type DayEvent = { id: string; hour: number; minute: number; duration: number; title: string; description?: string; category: string; who: string; important: boolean };
+type TimelineItem = { id: number; date: string; title: string; category: string; who: string; done: boolean };
+type ChecklistCat = { id: string; label: string; icon: string };
+
+export async function lazyExportDayJPDF(events: DayEvent[], partnerA: string, partnerB: string, date: string) {
+  const { exportDayJPDF } = await import("./pdf-dayj");
+  return exportDayJPDF(events as any, partnerA, partnerB, date);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function lazyExportGuestListPDF(...args: any[]) {
-  const mod = await import("./pdf-guests");
-  return mod.exportGuestListPDF(...(args as any));
+export async function lazyExportGuestListPDF(guests: Guest[], partnerA: string, partnerB: string) {
+  const { exportGuestListPDF } = await import("./pdf-guests");
+  return exportGuestListPDF(guests, partnerA, partnerB);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function lazyExportPlaceCardsPDF(...args: any[]) {
-  const mod = await import("./pdf-placecards");
-  return mod.exportPlaceCardsPDF(...(args as any));
+export async function lazyExportPlaceCardsPDF(guests: Guest[], tables: TableSeat[], partnerA: string, partnerB: string) {
+  const { exportPlaceCardsPDF } = await import("./pdf-placecards");
+  return exportPlaceCardsPDF(guests, tables, partnerA, partnerB);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function lazyExportSeatingListPDF(...args: any[]) {
-  const mod = await import("./pdf-placecards");
-  return mod.exportSeatingListPDF(...(args as any));
+export async function lazyExportSeatingListPDF(guests: Guest[], tables: TableSeat[], partnerA: string, partnerB: string) {
+  const { exportSeatingListPDF } = await import("./pdf-placecards");
+  return exportSeatingListPDF(guests, tables, partnerA, partnerB);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function lazyExportBudgetPDF(...args: any[]) {
-  const mod = await import("./pdf-budget");
-  return mod.exportBudgetPDF(...(args as any));
+export async function lazyExportBudgetPDF(budget: BudgetPost[], payments: Payment[], budgetTotal: number, partnerA: string, partnerB: string) {
+  const { exportBudgetPDF } = await import("./pdf-budget");
+  return exportBudgetPDF(budget, payments, budgetTotal, partnerA, partnerB);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function lazyExportChecklistPDF(...args: any[]) {
-  const mod = await import("./pdf-checklist");
-  return mod.exportChecklistPDF(...(args as any));
+export async function lazyExportChecklistPDF(tasks: Task[], cats: ChecklistCat[], partnerA: string, partnerB: string) {
+  const { exportChecklistPDF } = await import("./pdf-checklist");
+  return exportChecklistPDF(tasks, cats, partnerA, partnerB);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function lazyExportVendorsPDF(...args: any[]) {
-  const mod = await import("./pdf-vendors");
-  return mod.exportVendorsPDF(...(args as any));
+export async function lazyExportVendorsPDF(vendors: Vendor[], partnerA: string, partnerB: string) {
+  const { exportVendorsPDF } = await import("./pdf-vendors");
+  return exportVendorsPDF(vendors, partnerA, partnerB);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function lazyExportMusicPDF(...args: any[]) {
-  const mod = await import("./pdf-music");
-  return mod.exportMusicPDF(...(args as any));
+export async function lazyExportMusicPDF(songs: Song[], partnerA: string, partnerB: string) {
+  const { exportMusicPDF } = await import("./pdf-music");
+  return exportMusicPDF(songs, partnerA, partnerB);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function lazyExportPaymentsPDF(...args: any[]) {
-  const mod = await import("./pdf-payments");
-  return mod.exportPaymentsPDF(...(args as any));
+export async function lazyExportPaymentsPDF(payments: Payment[], partnerA: string, partnerB: string) {
+  const { exportPaymentsPDF } = await import("./pdf-payments");
+  return exportPaymentsPDF(payments, partnerA, partnerB);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function lazyExportDatesPDF(...args: any[]) {
-  const mod = await import("./pdf-dates");
-  return mod.exportDatesPDF(...(args as any));
+export async function lazyExportDatesPDF(candidates: DateCandidate[], selectedDate: number, partnerA: string, partnerB: string) {
+  const { exportDatesPDF } = await import("./pdf-dates");
+  return exportDatesPDF(candidates, selectedDate, partnerA, partnerB);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function lazyExportTimelinePDF(...args: any[]) {
-  const mod = await import("./pdf-timeline");
-  return mod.exportTimelinePDF(...(args as any));
+export async function lazyExportTimelinePDF(items: TimelineItem[], partnerA: string, partnerB: string, weddingDate: string) {
+  const { exportTimelinePDF } = await import("./pdf-timeline");
+  return exportTimelinePDF(items as any, partnerA, partnerB, weddingDate);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function lazyExportJournalPDF(...args: any[]) {
-  const mod = await import("./pdf-journal");
-  return mod.exportJournalPDF(...(args as any));
+export async function lazyExportJournalPDF(entries: JournalEntry[], partnerA: string, partnerB: string) {
+  const { exportJournalPDF } = await import("./pdf-journal");
+  return exportJournalPDF(entries, partnerA, partnerB);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function lazyExportWeddingReport(...args: any[]) {
-  const mod = await import("./pdf-report");
-  return mod.exportWeddingReport(...(args as any));
+export async function lazyExportWeddingReport(state: AppState) {
+  const { exportWeddingReport } = await import("./pdf-report");
+  return exportWeddingReport(state);
 }
