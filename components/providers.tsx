@@ -45,8 +45,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const publicPaths = ["/login", "/signup", "/onboarding"];
-    const isPublic = publicPaths.some((p) => pathname.startsWith(p));
+    const publicPaths = ["/", "/login", "/signup", "/onboarding", "/update-password", "/rsvp", "/share", "/auth"];
+    const isPublic = publicPaths.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
     loadAll()
       .then((data) => {

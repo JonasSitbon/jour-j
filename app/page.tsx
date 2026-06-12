@@ -532,11 +532,20 @@ function BentoCard({ f, index }: { f: typeof FEATURES[0]; index: number }) {
 function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(false);
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 32);
     window.addEventListener("scroll", fn, { passive: true });
     return () => window.removeEventListener("scroll", fn);
+  }, []);
+
+  useEffect(() => {
+    import("@/lib/supabase").then(({ createClient }) => {
+      createClient().auth.getSession().then(({ data }) => {
+        setLoggedIn(!!data.session);
+      });
+    });
   }, []);
 
   const links = [
@@ -575,17 +584,27 @@ function Nav() {
         </div>
 
         <div className="hidden md:flex items-center gap-3 ml-auto">
-          <Link href="/login" className="text-[13.5px] font-medium transition-colors px-4 py-2"
-            style={{ color: TEXT_MID }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = TC)}
-            onMouseLeave={(e) => (e.currentTarget.style.color = TEXT_MID)}>
-            Connexion
-          </Link>
-          <Link href="/signup"
-            className="px-5 py-2 rounded-lg text-[13.5px] font-semibold text-white transition-all hover:scale-105 active:scale-95"
-            style={{ background: TC, boxShadow: `0 4px 14px ${TC}40` }}>
-            Commencer gratuitement
-          </Link>
+          {loggedIn ? (
+            <Link href="/dashboard"
+              className="px-5 py-2 rounded-lg text-[13.5px] font-semibold text-white transition-all hover:scale-105 active:scale-95"
+              style={{ background: TC, boxShadow: `0 4px 14px ${TC}40` }}>
+              Mon tableau de bord →
+            </Link>
+          ) : (
+            <>
+              <Link href="/login" className="text-[13.5px] font-medium transition-colors px-4 py-2 rounded-lg"
+                style={{ color: TEXT_MID }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = TC)}
+                onMouseLeave={(e) => (e.currentTarget.style.color = TEXT_MID)}>
+                Connexion
+              </Link>
+              <Link href="/signup"
+                className="px-5 py-2 rounded-lg text-[13.5px] font-semibold text-white transition-all hover:scale-105 active:scale-95"
+                style={{ background: TC, boxShadow: `0 4px 14px ${TC}40` }}>
+                Commencer gratuitement
+              </Link>
+            </>
+          )}
         </div>
 
         <button className="md:hidden ml-auto transition-colors" style={{ color: TEXT_MID }}
@@ -607,11 +626,19 @@ function Nav() {
                   className="text-[14px] font-medium py-1 transition-colors"
                   style={{ color: TEXT_MID }}>{l.label}</a>
               ))}
-              <Link href="/signup" onClick={() => setMobileOpen(false)}
-                className="mt-2 py-3 rounded-xl text-center text-[14px] font-semibold text-white"
-                style={{ background: TC }}>
-                Commencer gratuitement →
-              </Link>
+              {loggedIn ? (
+                <Link href="/dashboard" onClick={() => setMobileOpen(false)}
+                  className="mt-2 py-3 rounded-xl text-center text-[14px] font-semibold text-white"
+                  style={{ background: TC }}>
+                  Mon tableau de bord →
+                </Link>
+              ) : (
+                <Link href="/signup" onClick={() => setMobileOpen(false)}
+                  className="mt-2 py-3 rounded-xl text-center text-[14px] font-semibold text-white"
+                  style={{ background: TC }}>
+                  Commencer gratuitement →
+                </Link>
+              )}
             </div>
           </motion.div>
         )}
