@@ -275,7 +275,7 @@ export default function DatesPage() {
       <PageHead title="Sélecteur de dates" sub="Comparez vos dates selon la météo réelle historique, les disponibilités et les jours fériés."
         actions={<>
           {/* Country holiday toggle */}
-          <div className="relative">
+          <div className="relative" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => setShowCountryMenu((v) => !v)}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium border transition ${showCountryMenu ? "bg-primary-soft border-primary text-primary-700" : "border-line text-text-2 hover:border-primary/40 hover:text-text"}`}
@@ -290,7 +290,7 @@ export default function DatesPage() {
               {loadingHols && <Icon name="refresh" size={12} className="animate-spin ml-1" />}
             </button>
             {showCountryMenu && (
-              <div className="absolute right-0 top-full mt-1 z-50 bg-surface border border-line rounded-xl shadow-lg p-2 min-w-[180px]" onClick={(e) => e.stopPropagation()}>
+              <div className="absolute right-0 top-full mt-1 z-50 bg-surface border border-line rounded-xl shadow-lg p-2 min-w-[180px]">
                 <div className="text-[11px] text-text-3 px-2 pb-1.5 font-semibold uppercase tracking-wide">Jours fériés par pays</div>
                 {COUNTRIES.map((c) => (
                   <button key={c.code}

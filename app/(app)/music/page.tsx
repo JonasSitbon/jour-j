@@ -235,9 +235,7 @@ export default function MusicPage() {
     setApiSearching(true);
     setApiResults([]);
     try {
-      const res = await fetch(
-        `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&media=music&limit=10&country=fr`
-      );
+      const res = await fetch(`/api/music-search?q=${encodeURIComponent(q)}`);
       const json = await res.json();
       setApiResults(json.results ?? []);
     } catch {
