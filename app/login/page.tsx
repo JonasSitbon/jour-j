@@ -56,7 +56,7 @@ export default function LoginPage() {
       options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
     });
     setLoading(false);
-    if (error) { setErr("Impossible d'envoyer le lien, réessayez."); return; }
+    if (error) { setErr(error.message); return; }
     setMagicSent(true);
   };
 
