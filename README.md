@@ -1,105 +1,113 @@
-# Jour J — Next.js + Tailwind CSS
+# Jour J / The Cockpit — application de planification de mariage
 
-Application web de gestion de mariage (PWA responsive). Code source complet,
-porté depuis le prototype HTML, en **Next.js 14 (App Router) · TypeScript · Tailwind CSS**.
+Application web (PWA responsive) pour organiser un mariage de bout en bout :
+invités & RSVP, budget partagé, prestataires, paiements, checklist, déroulé du
+jour J, cérémonie, playlist, plan de table, moodboard, journal de bord, et
+collaboration multi-utilisateurs avec rôles.
+
+**Stack :** Next.js 14 (App Router) · TypeScript · Tailwind CSS 3 · Supabase
+(Postgres + Auth + RLS + Realtime) · Vitest · déployé sur Vercel.
 
 ## Démarrage
 
 ```bash
-cd jour-j-nextjs
 npm install
-npm run dev
-# http://localhost:3000  → redirige vers /dashboard
+cp .env.example .env.local   # puis renseigne tes clés Supabase
+npm run dev                  # http://localhost:3000
 ```
 
-> Le projet n'a pas été buildé dans l'environnement de conception : lancez
-> `npm install && npm run dev` chez vous pour valider. Aucune dépendance exotique
-> (Next, React, lucide-react, Tailwind).
+Variables d'environnement requises (voir `.env.example`) :
 
-## Stack
-
-| | |
+| Variable | Description |
 |---|---|
-| Framework | Next.js 14 (App Router, RSC + client components) |
-| Langage | TypeScript |
-| Styles | Tailwind CSS 3 + variables CSS (thèmes clair/sombre) |
-| Icônes | `lucide-react` |
-| État | React Context (`components/providers.tsx`) — aucune lib externe |
-| Police | Geist & Geist Mono via `next/font/google` |
+| `NEXT_PUBLIC_SUPABASE_URL` | URL du projet Supabase |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clé publique `anon` (jamais la `service_role`) |
 
-## Arborescence
+## Scripts
 
-```
-jour-j-nextjs/
-├── app/
-│   ├── layout.tsx            # <html>, polices, <Providers>
-│   ├── globals.css           # tokens (couleurs/ombres) + thèmes + @layer components
-│   ├── page.tsx              # redirige vers /dashboard
-│   ├── login/page.tsx        # écran de connexion (hors shell)
-│   └── (app)/                # groupe de routes avec le shell (sidebar/topbar/bottom-nav)
-│       ├── layout.tsx        # <AppShell>
-│       ├── dashboard/page.tsx
-│       ├── dates/page.tsx
-│       ├── guests/page.tsx       # liste + cards + plan de table (drag & drop) + hébergements
-│       ├── vendors/page.tsx      # devis + scoring A/B/C + comparateur pondéré
-│       ├── budget/page.tsx       # camembert + répartition + qui paie quoi
-│       ├── payments/page.tsx     # timeline + filtres + cash + soldes
-│       ├── checklist/page.tsx    # catégories + sous-tâches + mode Jour J
-│       └── settings/page.tsx
-├── components/
-│   ├── providers.tsx         # StoreProvider, ThemeProvider, Toast + hooks (useStore/useTheme/useToast)
-│   ├── shell.tsx             # AppShell (responsive) + PageHead
-│   ├── ui.tsx                # kit UI : Button, Card, Badge, Input, Select, Modal, Drawer, Ring, Donut…
-│   └── icon.tsx              # <Icon name="…"> (mapping lucide) + <Logo>
-├── lib/
-│   ├── types.ts              # types du domaine
-│   ├── data.ts               # données neutres initiales (couple fictif, prestataires, budget…)
-│   └── format.ts             # helpers € / dates FR / J-xx
-├── tailwind.config.ts
-├── globals.css (dans app/)
-└── tsconfig.json (alias @/* → racine)
-```
+| Commande | Effet |
+|---|---|
+| `npm run dev` | Serveur de développement |
+| `npm run build` | Build de production |
+| `npm test` | Suite de tests Vitest (logique pure) |
+| `npm run test:watch` | Tests en mode watch |
+| `npm run lint` | ESLint (next lint) |
 
-## Design system
+## Base de données & migrations
 
-Les couleurs sont des **variables CSS** définies dans `app/globals.css` (thème clair par
-défaut + `[data-theme="dark"]`), exposées à Tailwind dans `tailwind.config.ts` :
+> ⚠️ Il n'y a pas encore de CLI Supabase branchée : les migrations sont des
+> fichiers SQL à exécuter **manuellement et dans l'ordre** dans
+> `Supabase → SQL Editor`. Les exécuter dans le désordre, ou en sauter une,
+> laisse la base dans un état incohérent (c'est l'origine des correctifs 14–15).
 
-- `primary` (orange terre) · `gold` (jaune) · `sage` (succès) · `coral` (alerte)
-- neutres beige pastel : `bg`, `surface`, `surface-2/3`, `line`, `text`, `text-2/3`
-- helpers : `bg-primary`, `text-text-2`, `border-line`, `shadow-md`, `rounded-card`…
+Ordre d'exécution sur une base neuve :
 
-> Les modificateurs d'opacité (`bg-primary/50`) ne marchent pas sur ces tokens
-> (ce sont des `var()`). Utilisez les variantes `-soft` / `-softer`.
+1. `supabase/seed.sql` — création des tables de données
+2. `supabase/rls.sql` — RLS de base (⚠️ remplacé plus bas par migration15)
+3. `migration.sql` → `migration3.sql` — `user_id`, météo, villes
+4. `migration5.sql`, `migration6.sql` — tokens RSVP & partage public
+5. `migration7.sql` — profils, multi-mariage, `wedding_access`, rôles
+6. `migration8.sql` → `migration13.sql` — journal, moodboard, cadeaux,
+   cérémonie, chansons, contacts
+7. `migration_rbac.sql` — permissions de rôles admin
+8. `migration14_fix_rls.sql` — correctif récursion RLS
+9. **`migration15_security_fix.sql`** — durcissement sécurité : supprime les
+   politiques `anon` ouvertes, ajoute les RPC par token, écriture par rôle.
+   Idempotent et tolérant aux tables absentes (affiche un `NOTICE`). À relancer
+   après avoir créé une table manquante.
+10. **`migration16_invitations_rsvp_message.sql`** — invitations
+    collaborateurs fonctionnelles + message RSVP séparé de la note privée
 
-Le thème est piloté par `data-theme` sur `<html>` via `useTheme()` (persisté en `localStorage`).
+Vérification post-migration 15 — cette requête doit renvoyer **0 ligne** :
 
-## État / données
-
-`components/providers.tsx` expose un store minimal :
-
-```tsx
-const { state, update } = useStore();
-update("guests", (list) => [...list, nouvelInvite]); // mise à jour immuable
+```sql
+SELECT tablename, policyname FROM pg_policies
+WHERE schemaname = 'public' AND roles::text LIKE '%anon%';
 ```
 
-Les données initiales sont dans `lib/data.ts`. **Pour brancher une vraie API**, remplacez
-`initialState` par un fetch (Server Component / route handler / React Query) et conservez la
-forme des types de `lib/types.ts`. Les actions (`toast(...)`, exports PDF, import CSV, envoi
-de rappels) sont actuellement simulées — branchez-y vos endpoints.
+### Accès public (sans compte)
 
-## Intégrer dans un projet Next.js existant
+Les pages publiques `/rsvp/[token]`, `/share/[token]` et `/invite/[token]`
+n'interrogent **jamais** les tables directement. Elles passent par des
+fonctions `SECURITY DEFINER` qui exigent le token exact et ne renvoient que les
+colonnes nécessaires : `get_rsvp_info`, `submit_rsvp`, `get_share_data`,
+`get_invite_info`, `accept_wedding_invite`.
 
-1. Copiez `components/`, `lib/`, et les routes de `app/(app)/` + `app/login/`.
-2. Fusionnez `tailwind.config.ts` (clé `theme.extend`) et collez le bloc tokens + `@layer`
-   de `app/globals.css` dans votre CSS global.
-3. Assurez l'alias `@/*` dans `tsconfig.json` (ou adaptez les imports).
-4. Enveloppez la zone applicative avec `<Providers>` (déjà fait dans `app/layout.tsx`).
-5. `npm i lucide-react` si absent.
+## Rôles & permissions
 
-## Notes
+- **Au niveau base** (source de vérité) : `has_wedding_access()` autorise la
+  lecture à tout membre accepté ; `can_edit_wedding()` réserve l'écriture aux
+  rôles `owner` / `admin` / `editor`. Un `viewer` est en lecture seule.
+- **Au niveau UI** : `lib/roles.ts` filtre la navigation par rôle,
+  `components/role-guard.tsx` bloque l'accès aux pages interdites via l'URL et
+  affiche un bandeau lecture seule.
 
-- **Auth** : `/login` est une maquette (redirige vers `/dashboard`). Branchez votre
-  solution (NextAuth, Clerk, Supabase…) et protégez le groupe `(app)`.
-- **Responsive** : sidebar desktop, bottom-bar + menu plein écran sur mobile (`md` breakpoint).
-- **Accessibilité** : focus visibles, `role="switch"`, contrastes AA sur les surfaces beige.
+## Architecture
+
+```
+app/
+  (app)/            pages authentifiées (shell + RoleGuard)
+  admin/            back-office super_admin
+  invite|rsvp|share/[token]/   pages publiques par token
+  api/              routes serveur (recherche musique, templates email)
+components/
+  providers.tsx     store global (Context) + sync optimiste avec rollback
+  shell.tsx         layout app (sidebar/topbar/nav par rôle)
+  role-guard.tsx    garde d'accès par rôle
+lib/
+  db.ts             chargement + synchronisation Supabase, mappers
+  budget.ts         logique de répartition du budget (testée)
+  roles.ts          définition des rôles et permissions (testée)
+  types.ts          types partagés
+supabase/           migrations SQL (voir ci-dessus)
+```
+
+Le store (`components/providers.tsx`) applique les mutations de façon
+optimiste : en cas d'échec de sauvegarde Supabase, l'état est restauré et un
+toast d'erreur s'affiche.
+
+## Tests & CI
+
+`npm test` couvre la logique pure (répartition du budget, accès par rôle,
+mappers de la base). La CI GitHub Actions (`.github/workflows/ci.yml`) exécute
+typecheck + tests + build à chaque push et pull request.
