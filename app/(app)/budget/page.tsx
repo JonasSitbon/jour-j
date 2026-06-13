@@ -8,6 +8,7 @@ import { Card, Badge, Button, Select, Donut, Drawer, Field, Input } from "@/comp
 import { PageHead } from "@/components/shell";
 import { PageTutorial } from "@/components/tutorial";
 import type { BudgetPost, Payment } from "@/lib/types";
+import { BUDGET_RULES as RULES, splitPost } from "@/lib/budget";
 import { lazyExportBudgetPDF } from "@/lib/pdf-lazy";
 import {
   PieChart, Pie, Cell, Tooltip as ReTooltip, Legend, ResponsiveContainer,
@@ -62,25 +63,7 @@ function matchBudgetPosts(posts: BudgetPost[], keywords: string[]): number {
     .reduce((s, p) => s + p.planned, 0);
 }
 
-const RULES: Record<string, string> = {
-  split50: "50 / 50", byGuests: "Au prorata des invités", onlyA: "Pris en charge par A",
-  onlyB: "Pris en charge par B", family: "Contribution familles", custom: "Personnalisé",
-};
 const PALETTE = ["#C96E2C", "#D6A22F", "#7E9A63", "#C0533A", "#E0B05A", "#9C6B3A", "#8FA873", "#B98A5C", "#D98B4E", "#C7A86A", "#A08A4E", "#7C6F4A"];
-
-function splitPost(b: BudgetPost, ctx: { A: string; B: string; ga: number; gb: number }) {
-  const amt = b.planned; const out: Record<string, number> = {};
-  const add = (k: string, v: number) => { out[k] = (out[k] || 0) + v; };
-  switch (b.rule) {
-    case "onlyA": add(ctx.A, amt); break;
-    case "onlyB": add(ctx.B, amt); break;
-    case "byGuests": { const tot = ctx.ga + ctx.gb || 1; add(ctx.A, amt * ctx.ga / tot); add(ctx.B, amt * ctx.gb / tot); break; }
-    case "family": add("Famille " + ctx.A, amt / 2); add("Famille " + ctx.B, amt / 2); break;
-    case "custom": add(ctx.A, amt * (b.custom?.A || 0) / 100); add(ctx.B, amt * (b.custom?.B || 0) / 100); break;
-    default: add(ctx.A, amt / 2); add(ctx.B, amt / 2);
-  }
-  return out;
-}
 
 /* ─── New Post Drawer with 2-step wizard ───────────────────────────────── */
 interface PostPreset {

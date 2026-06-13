@@ -11,26 +11,26 @@ export function setActiveWedding(id: number) {
 }
 
 // ── Mappers Guest ────────────────────────────────────────────
-function guestToDb(g: Guest) {
+export function guestToDb(g: Guest) {
   return { id: g.id, name: g.name, side: g.side, rsvp: g.rsvp, diet: g.diet, table_id: g.table, lodging: g.lodging, child: g.child, transport: g.transport, gift: g.gift, group_name: g.group, note: g.note };
 }
-function guestFromDb(r: Record<string, any>): Guest {
+export function guestFromDb(r: Record<string, any>): Guest {
   return { id: r.id, name: r.name, side: r.side, rsvp: r.rsvp, diet: r.diet, table: r.table_id, lodging: r.lodging, child: r.child, transport: r.transport, gift: r.gift, group: r.group_name, note: r.note, rsvpToken: r.rsvp_token ?? undefined, rsvpMessage: r.rsvp_message ?? "" };
 }
 
 // ── Mappers Vendor ───────────────────────────────────────────
-function vendorToDb(v: Vendor) {
+export function vendorToDb(v: Vendor) {
   return { id: v.id, cat: v.cat, name: v.name, total: v.total, status: v.status, score: v.score, scores: v.scores, included: v.included, contact: v.contact, phone: v.phone, email: v.email, last_contact: v.lastContact, docs: v.docs };
 }
-function vendorFromDb(r: Record<string, any>): Vendor {
+export function vendorFromDb(r: Record<string, any>): Vendor {
   return { id: r.id, cat: r.cat, name: r.name, total: r.total, status: r.status, score: r.score, scores: r.scores, included: r.included, contact: r.contact, phone: r.phone, email: r.email, lastContact: r.last_contact, docs: r.docs };
 }
 
 // ── Mappers Payment ──────────────────────────────────────────
-function paymentToDb(p: Payment) {
+export function paymentToDb(p: Payment) {
   return { id: p.id, vendor: p.vendor, label: p.label, amount: p.amount, due: p.due, paid_date: p.paidDate, who: p.who, method: p.method, status: p.status, receipt: p.receipt };
 }
-function paymentFromDb(r: Record<string, any>): Payment {
+export function paymentFromDb(r: Record<string, any>): Payment {
   return { id: r.id, vendor: r.vendor, label: r.label, amount: r.amount, due: r.due, paidDate: r.paid_date, who: r.who, method: r.method, status: r.status, receipt: r.receipt };
 }
 
