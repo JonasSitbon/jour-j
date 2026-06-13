@@ -23,7 +23,7 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  const publicPaths = ["/", "/login", "/signup", "/auth", "/reset-password", "/update-password", "/rsvp", "/share", "/invite"];
+  const publicPaths = ["/", "/login", "/signup", "/auth", "/reset-password", "/update-password", "/rsvp", "/share", "/invite", "/privacy"];
   const isPublic = publicPaths.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
   // Si la route est publique, on laisse passer sans appel Supabase
