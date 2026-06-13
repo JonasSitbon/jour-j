@@ -86,14 +86,31 @@ export function Providers({ children }: { children: React.ReactNode }) {
     setLoading(false);
   }, []);
 
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const pushToast = useCallback((msg: string, type: "ok" | "err" = "ok") => {
+    const id = Math.random();
+    setToasts((t) => [...t, { id, msg, type }]);
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 2600);
+  }, []);
+
   const update = useCallback(<K extends keyof AppState>(key: K, value: Updater<K>) => {
     setState((s) => {
       const prevVal = s[key];
       const newVal = typeof value === "function" ? (value as any)(prevVal) : value;
-      void syncKey(key, newVal, prevVal);
+      // Mise à jour optimiste ; en cas d'échec de la sauvegarde (réseau,
+      // session expirée, droits insuffisants) → rollback + toast
+      Promise.resolve(syncKey(key, newVal, prevVal))
+        .then((res: any) => {
+          if (res && res.error) throw res.error;
+        })
+        .catch((e) => {
+          console.error(`[sync] échec de sauvegarde pour "${String(key)}"`, e);
+          setState((s2) => ({ ...s2, [key]: prevVal }));
+          pushToast("Échec de la sauvegarde — modification annulée", "err");
+        });
       return { ...s, [key]: newVal };
     });
-  }, []);
+  }, [pushToast]);
 
   const [theme, setThemeState] = useState<Theme>("light");
   useEffect(() => {
@@ -122,13 +139,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
     if (weddingTheme === "boheme") document.documentElement.removeAttribute("data-wedding-theme");
     else document.documentElement.setAttribute("data-wedding-theme", weddingTheme);
   }, [weddingTheme]);
-
-  const [toasts, setToasts] = useState<Toast[]>([]);
-  const pushToast = useCallback((msg: string, type: "ok" | "err" = "ok") => {
-    const id = Math.random();
-    setToasts((t) => [...t, { id, msg, type }]);
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 2600);
-  }, []);
 
   const isPublicPage = ["/", "/login", "/signup", "/onboarding"].some((p) => pathname === p || pathname.startsWith(p + "/"));
   const showSpinner = loading && !isPublicPage;

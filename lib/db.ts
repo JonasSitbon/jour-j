@@ -51,14 +51,21 @@ async function syncArray<T extends { id: string | number }>(
 ) {
   const c = createClient();
   const wId = currentWeddingId;
+  if (!wId) throw new Error(`syncArray(${table}) : aucun mariage actif`);
   const prevIds = new Set(prevItems.map((x) => x.id));
   const newIds  = new Set(newItems.map((x) => x.id));
   const removed = [...prevIds].filter((id) => !newIds.has(id));
-  if (removed.length) await c.from(table).delete().in("id", removed);
+  if (removed.length) {
+    // Scopé au mariage actif : les ids générés côté client peuvent
+    // entrer en collision entre deux mariages
+    const { error } = await c.from(table).delete().in("id", removed).eq("wedding_id", wId);
+    if (error) throw error;
+  }
   if (newItems.length) {
-    await c.from(table).upsert(
+    const { error } = await c.from(table).upsert(
       newItems.map((x) => ({ ...toDb(x), wedding_id: wId })) as any
     );
+    if (error) throw error;
   }
 }
 

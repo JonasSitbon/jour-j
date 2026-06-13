@@ -9,11 +9,6 @@ import { updateProfile, inviteToWedding, revokeWeddingAccess, updateWeddingAcces
 import { createClient } from "@/lib/supabase";
 import type { WeddingRole } from "@/lib/types";
 import { VenueAutocomplete } from "@/components/venue-autocomplete";
-import {
-  COLLABORATOR_ROLES,
-  DEFAULT_ROLE_PERMISSIONS,
-  type CollaboratorRoleName,
-} from "@/lib/roles";
 
 // ── Constantes ───────────────────────────────────────────────────────────────
 
@@ -588,261 +583,6 @@ function DataPrivacySection() {
   );
 }
 
-// ── Section Équipe & Accès ────────────────────────────────────────────────────
-
-const COLLAB_ROLE_OPTIONS: { value: CollaboratorRoleName; label: string }[] = [
-  { value: "admin",        label: "Administrateur — accès complet sauf paramètres" },
-  { value: "coordinateur", label: "Coordinateur — logistique et invités" },
-  { value: "dj",           label: "DJ / Musicien — musique et programme" },
-  { value: "traiteur",     label: "Traiteur — invités, budget et déroulé" },
-  { value: "photographe",  label: "Photographe — déroulé, cérémonie, timeline" },
-  { value: "lecteur",      label: "Lecteur — lecture seule" },
-];
-
-interface MockMember {
-  id: string;
-  name: string;
-  email: string;
-  role: CollaboratorRoleName;
-  status: "active" | "pending";
-}
-
-function InviteCollaboratorModal({ onClose }: { onClose: () => void }) {
-  const toast = useToast();
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState<CollaboratorRoleName>("coordinateur");
-  const [sent, setSent] = useState(false);
-  const [inviteLink, setInviteLink] = useState("");
-
-  const roleMeta = COLLABORATOR_ROLES[role];
-
-  const handleSend = () => {
-    if (!email.includes("@")) { toast("Email invalide", "err"); return; }
-    // Generate a fake token
-    const token = Array.from(crypto.getRandomValues(new Uint8Array(10)))
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-    const link = `${window.location.origin}/invitation/${token}?role=${role}&email=${encodeURIComponent(email)}`;
-    setInviteLink(link);
-    setSent(true);
-  };
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(inviteLink);
-    toast("Lien copié !");
-  };
-
-  return (
-    <Modal
-      title="Inviter un collaborateur"
-      onClose={onClose}
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>Fermer</Button>
-          {!sent ? (
-            <Button variant="primary" icon="mail" onClick={handleSend}>
-              Générer le lien
-            </Button>
-          ) : (
-            <Button variant="primary" icon="copy" onClick={handleCopy}>
-              Copier le lien
-            </Button>
-          )}
-        </>
-      }
-    >
-      <div className="flex flex-col gap-5">
-        {!sent ? (
-          <>
-            <Field label="Adresse email du collaborateur">
-              <Input
-                icon="mail"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="collaborateur@email.fr"
-              />
-            </Field>
-
-            <Field label="Rôle">
-              <Select
-                value={role}
-                onChange={(v) => setRole(v as CollaboratorRoleName)}
-                options={COLLAB_ROLE_OPTIONS}
-              />
-            </Field>
-
-            {/* Role description card */}
-            <div className="bg-surface-2 rounded-card border border-line p-4 flex flex-col gap-1.5">
-              <div className="flex items-center gap-2.5 mb-1">
-                <span className="text-xl">{roleMeta.emoji}</span>
-                <div>
-                  <div className="text-sm font-semibold">{roleMeta.label}</div>
-                  <div className="text-[12px] text-text-2">{roleMeta.description}</div>
-                </div>
-              </div>
-              <div className="text-[11.5px] text-text-3 mt-1">Pages accessibles :</div>
-              <div className="flex flex-wrap gap-1.5 mt-0.5">
-                {(DEFAULT_ROLE_PERMISSIONS[role] ?? []).map((pageId) => (
-                  <span
-                    key={pageId}
-                    className="px-2 py-0.5 rounded bg-primary-soft text-primary-700 text-[11px] font-medium"
-                  >
-                    {pageId}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="text-text-2 text-[12.5px] flex gap-2 items-start">
-              <Icon name="info" size={15} className="shrink-0 mt-0.5" />
-              Un lien d'invitation unique sera généré. Envoyez-le à la personne concernée.
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="bg-surface-2 rounded-card border border-line p-4 flex flex-col gap-3">
-              <div className="flex items-center gap-2 text-[13px] font-medium text-text">
-                <Icon name="check-circle" size={16} className="text-sage" />
-                Lien d'invitation généré pour <strong>{email}</strong>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  readOnly
-                  value={inviteLink}
-                  className="flex-1 bg-surface border border-line rounded-md px-3 py-2 text-[11.5px] font-mono text-text-2 focus:outline-none"
-                />
-                <Button variant="secondary" size="sm" icon="copy" onClick={handleCopy}>
-                  Copier
-                </Button>
-              </div>
-            </div>
-            <div className="flex items-start gap-2 text-[12.5px] text-text-2">
-              <Icon name="info" size={15} className="shrink-0 mt-0.5" />
-              Ce lien expire dans 7 jours. La personne pourra créer un compte ou se connecter pour rejoindre votre espace mariage.
-            </div>
-          </>
-        )}
-      </div>
-    </Modal>
-  );
-}
-
-function TeamSection() {
-  const { state } = useStore();
-  const toast = useToast();
-  const [inviting, setInviting] = useState(false);
-
-  // Mock members derived from state.members, augmented with collaborator role names
-  const mockMembers: MockMember[] = [
-    ...(state.members.length > 0
-      ? state.members.map((m, i) => ({
-          id: String(m.id),
-          name: m.name,
-          email: m.email,
-          role: (["owner", "admin", "coordinateur", "dj", "traiteur", "photographe", "lecteur"][
-            i % 7
-          ] as CollaboratorRoleName),
-          status: "active" as const,
-        }))
-      : [
-          {
-            id: "mock-1",
-            name: "Marie Dupont",
-            email: "marie@example.com",
-            role: "coordinateur" as CollaboratorRoleName,
-            status: "active" as const,
-          },
-          {
-            id: "mock-2",
-            name: "DJ Alex",
-            email: "alex@djpro.fr",
-            role: "dj" as CollaboratorRoleName,
-            status: "pending" as const,
-          },
-        ]),
-  ];
-
-  return (
-    <>
-      <Card>
-        <div className="flex items-center justify-between mb-5">
-          <div className="sec-title">
-            <Icon name="users" size={17} className="text-text-3" />
-            Équipe &amp; Accès
-          </div>
-          <Button variant="primary" size="sm" icon="plus" onClick={() => setInviting(true)}>
-            Inviter un collaborateur
-          </Button>
-        </div>
-
-        <p className="text-[12.5px] text-text-2 mb-5">
-          Invitez vos prestataires ou coordinateurs à accéder à certaines sections de votre espace mariage.
-          Chaque rôle dispose d'un accès limité aux pages qui le concernent.
-        </p>
-
-        {/* Member list */}
-        {mockMembers.length === 0 ? (
-          <div className="py-8 text-center text-[13px] text-text-2">
-            Aucun collaborateur pour l'instant.
-          </div>
-        ) : (
-          <div className="flex flex-col divide-y divide-line">
-            {mockMembers.map((m) => {
-              const meta = COLLABORATOR_ROLES[m.role];
-              return (
-                <div key={m.id} className="flex items-center gap-3.5 py-4">
-                  <Avatar name={m.name} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-semibold">{m.name}</span>
-                      <span className="text-lg leading-none">{meta.emoji}</span>
-                      <Badge tone={m.status === "pending" ? "amber" : "sage"}>
-                        {m.status === "pending" ? "Invitation en attente" : meta.label}
-                      </Badge>
-                    </div>
-                    <div className="text-[12px] text-text-2 mt-0.5">{m.email}</div>
-                  </div>
-                  <button
-                    className="icon-btn w-8 h-8 text-coral shrink-0"
-                    title="Retirer le collaborateur"
-                    onClick={() => toast(`Accès de ${m.name} révoqué`)}
-                  >
-                    <Icon name="trash" size={15} />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Role reference */}
-        <div className="mt-5 border-t border-line pt-5">
-          <div className="text-[11.5px] font-semibold uppercase tracking-wider text-text-3 mb-3">
-            Rôles disponibles
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {(Object.entries(COLLABORATOR_ROLES) as [CollaboratorRoleName, (typeof COLLABORATOR_ROLES)[CollaboratorRoleName]][])
-              .filter(([r]) => r !== "owner")
-              .map(([r, meta]) => (
-                <div
-                  key={r}
-                  className="flex items-start gap-2.5 px-3 py-2.5 rounded-card border border-line bg-surface-2"
-                >
-                  <span className="text-base mt-0.5">{meta.emoji}</span>
-                  <div className="min-w-0">
-                    <div className="text-[12.5px] font-semibold">{meta.label}</div>
-                    <div className="text-[11.5px] text-text-2 mt-0.5">{meta.description}</div>
-                  </div>
-                </div>
-              ))}
-          </div>
-        </div>
-      </Card>
-
-      {inviting && <InviteCollaboratorModal onClose={() => setInviting(false)} />}
-    </>
-  );
-}
 
 // ── Page principale ───────────────────────────────────────────────────────────
 
@@ -859,7 +599,6 @@ export default function SettingsPage() {
     ["profile",       "Mon profil",    "user"],
     ["wedding",       "Mariage",       "rings"],
     ["access",        "Accès",         "users"],
-    ["team",          "Équipe",        "users"],
     ["account",       "Compte",        "key"],
     ["notif",         "Notifications", "bell"],
     ["data",          "Données",       "save"],
@@ -870,7 +609,7 @@ export default function SettingsPage() {
 
   // ── CSV export ──────────────────────────────────────────────────────────────
   const exportGuestsCsv = () => {
-    const headers = ["Nom", "Côté", "RSVP", "Régime", "Table", "Hébergement", "Enfant", "Transport", "Cadeau", "Groupe", "Notes"];
+    const headers = ["Nom", "Côté", "RSVP", "Régime", "Table", "Hébergement", "Enfant", "Transport", "Cadeau", "Groupe", "Notes", "Message RSVP"];
     const rsvpLabel: Record<string, string> = { yes: "Confirmé", pending: "En attente", declined: "Décliné" };
     const dietLabel: Record<string, string> = { none: "Standard", vegetarien: "Végétarien", vegan: "Vegan", "sans gluten": "Sans gluten", "sans lactose": "Sans lactose" };
     const rows = state.guests.map((g: any) => [
@@ -885,6 +624,7 @@ export default function SettingsPage() {
       g.gift ? "Oui" : "",
       g.group,
       g.note,
+      g.rsvpMessage || "",
     ]);
     const csv = [headers, ...rows].map((r: any[]) => r.map((c: any) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
@@ -1033,7 +773,6 @@ export default function SettingsPage() {
           {sec === "access" && <AccessSection />}
 
           {/* ── Équipe ─────────────────────────────────────────────────────── */}
-          {sec === "team" && <TeamSection />}
 
           {/* ── Compte ─────────────────────────────────────────────────────── */}
           {sec === "account" && <AccountSection />}
