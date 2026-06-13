@@ -34,6 +34,5 @@ module.exports = withSentryConfig(nextConfig, {
   project: process.env.SENTRY_PROJECT,
   silent: !process.env.CI,
   authToken: process.env.SENTRY_AUTH_TOKEN,
-  disableLogger: true,
   telemetry: false,
 });
