@@ -1,3 +1,5 @@
+const { withSentryConfig } = require("@sentry/nextjs");
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -17,10 +19,21 @@ const nextConfig = {
   // Production source maps disabled for smaller bundles
   productionBrowserSourceMaps: false,
 
-  // Package import optimizations — tree-shake large libs
+  // Active le hook instrumentation.ts (Sentry) — stable en Next 15, expérimental en 14.2
   experimental: {
+    instrumentationHook: true,
+    // Package import optimizations — tree-shake large libs
     optimizePackageImports: ["lucide-react", "framer-motion", "recharts"],
   },
 };
 
-module.exports = nextConfig;
+// withSentryConfig n'a d'effet de reporting qu'avec NEXT_PUBLIC_SENTRY_DSN défini ;
+// l'upload de source maps ne s'active qu'avec SENTRY_AUTH_TOKEN (sinon ignoré).
+module.exports = withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  silent: !process.env.CI,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  disableLogger: true,
+  telemetry: false,
+});

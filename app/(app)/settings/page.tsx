@@ -548,12 +548,40 @@ function DeleteAccountWithSignOutModal({ onClose }: { onClose: () => void }) {
 // ── Section Données & confidentialité ─────────────────────────────────────────
 
 function DataPrivacySection() {
+  const { state } = useStore();
   const toast = useToast();
   const [deletingAccount, setDeletingAccount] = useState(false);
 
   const handleExport = () => {
-    toast("Export en cours...");
-    setTimeout(() => toast("Données exportées !"), 1800);
+    // Export réel : un instantané JSON de toutes les données du mariage actif
+    const w = state.wedding;
+    const snapshot = {
+      exportedAt: new Date().toISOString(),
+      app: "Jour J",
+      wedding: w,
+      guests: state.guests,
+      tables: state.tables,
+      vendors: state.vendors,
+      budget: state.budget,
+      budgetTotal: state.budgetTotal,
+      contributions: state.contributions,
+      payments: state.payments,
+      tasks: state.tasks,
+      dayJ: state.dayJ,
+      dateCandidates: state.dateCandidates,
+      members: state.members,
+    };
+    const slug = `${(w.partnerA || "mariage")}-${(w.partnerB || "")}`
+      .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "mariage";
+    const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `jour-j_${slug}_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast("Données exportées");
   };
 
   return (
