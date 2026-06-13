@@ -35,12 +35,15 @@ Variables d'environnement requises (voir `.env.example`) :
 
 ## Base de données & migrations
 
-> ⚠️ Il n'y a pas encore de CLI Supabase branchée : les migrations sont des
-> fichiers SQL à exécuter **manuellement et dans l'ordre** dans
-> `Supabase → SQL Editor`. Les exécuter dans le désordre, ou en sauter une,
-> laisse la base dans un état incohérent (c'est l'origine des correctifs 14–15).
+Le **CLI Supabase** est maintenant configuré (`supabase/config.toml`). Les
+nouvelles migrations vont dans `supabase/migrations/` via `npm run db:new`,
+puis `npm run db:push`. Voir `supabase/migrations/README.md` pour la liaison
+initiale (login + baselining d'une base déjà existante).
 
-Ordre d'exécution sur une base neuve :
+> ⚠️ Les fichiers `supabase/migration*.sql` à la racine sont l'**historique
+> appliqué manuellement** sur la prod (avant le CLI). Ils restent pour
+> référence mais ne doivent pas être re-joués via le CLI. Sur une base **neuve**
+> sans CLI, on peut encore les exécuter dans l'ordre dans `SQL Editor` :
 
 1. `supabase/seed.sql` — création des tables de données
 2. `supabase/rls.sql` — RLS de base (⚠️ remplacé plus bas par migration15)

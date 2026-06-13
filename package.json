@@ -8,7 +8,11 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:new": "supabase migration new",
+    "db:push": "supabase db push",
+    "db:pull": "supabase db pull",
+    "db:diff": "supabase db diff"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.57.0",
@@ -36,6 +40,7 @@
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.35",
     "postcss": "^8.4.39",
+    "supabase": "^2.106.0",
     "tailwindcss": "^3.4.7",
     "typescript": "^5",
     "vitest": "^2.1.9"
