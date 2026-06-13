@@ -472,7 +472,7 @@ function WeddingSwitcher({ collapsed }: { collapsed: boolean }) {
 
 function Brand({ collapsed }: { collapsed: boolean }) {
   return (
-    <div className={`flex items-center mb-4 ${collapsed ? "justify-center px-1" : "gap-2.5 px-2"}`}>
+    <div className={`flex items-center ${collapsed ? "justify-center px-0 mb-0" : "gap-2.5 px-2 mb-4"}`}>
       <div className="w-[32px] h-[32px] flex items-center justify-center text-primary shrink-0">
         <Logo size={30} />
       </div>
@@ -561,6 +561,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const current = pathname?.split("/")[1] || "dashboard";
 
   const { state } = useStore();
+  const { theme } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -606,9 +607,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       >
         <div className={`flex flex-col h-full ${collapsed ? "px-1.5 py-4" : "px-2 py-4"}`}>
 
-          {/* Brand + collapse toggle */}
-          <div className="flex items-center mb-1">
-            <div className="flex-1 min-w-0">
+          {/* Brand + collapse toggle.
+              Replié : empilés verticalement (logo centré au-dessus, bouton
+              dessous) pour éviter que le bouton chevauche le logo. */}
+          <div className={`mb-1 flex ${collapsed ? "flex-col items-center gap-1.5" : "items-center"}`}>
+            <div className={collapsed ? "" : "flex-1 min-w-0"}>
               <Brand collapsed={collapsed} />
             </div>
             <motion.button
@@ -616,7 +619,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               title={collapsed ? "Développer" : "Réduire"}
               className={`shrink-0 w-6 h-6 flex items-center justify-center rounded-[5px]
                          text-text-3 hover:bg-hover hover:text-text-2 transition-colors
-                         ${collapsed ? "mb-4 mx-auto" : "-mt-4 -mr-1"}`}
+                         ${collapsed ? "" : "-mt-4 -mr-1"}`}
               whileTap={{ scale: 0.88 }}
             >
               <Icon name={collapsed ? "chevronR" : "chevronL"} size={13} />
@@ -639,7 +642,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             )}
             {collapsed && (
-              <NavTooltip label={`Thème : ${useTheme().theme === "light" ? "clair" : "sombre"}`}>
+              <NavTooltip label={`Thème : ${theme === "light" ? "clair" : "sombre"}`}>
                 <div className="flex justify-center pt-1">
                   <ThemeToggle />
                 </div>
