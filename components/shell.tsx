@@ -489,7 +489,7 @@ function Brand({ collapsed }: { collapsed: boolean }) {
               Jour <b className="font-bold">J</b>
             </span>
             <span className="text-[10px] text-text-3 font-mono tracking-wider whitespace-nowrap">
-              wedding studio
+              by The Cockpit
             </span>
           </motion.div>
         )}

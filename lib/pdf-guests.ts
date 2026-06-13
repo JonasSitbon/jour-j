@@ -96,7 +96,7 @@ export function exportGuestListPDF(guests: Guest[], partnerA: string, partnerB: 
       doc.setFontSize(8);
       doc.setTextColor(160, 140, 120);
       doc.text(
-        `Page ${data.pageNumber} — Jour J`,
+        `Page ${data.pageNumber} — Jour J · by The Cockpit`,
         148.5, doc.internal.pageSize.height - 6,
         { align: "center" }
       );

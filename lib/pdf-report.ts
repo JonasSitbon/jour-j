@@ -46,7 +46,7 @@ function header(doc: jsPDF, title: string, partnerA: string, partnerB: string) {
 function footer(doc: jsPDF, pageNum: number, totalPages: number) {
   doc.setFontSize(7.5);
   doc.setTextColor(...C.muted);
-  doc.text(`Page ${pageNum} / ${totalPages} — Jour J`, 105, 291, { align: "center" });
+  doc.text(`Page ${pageNum} / ${totalPages} — Jour J · by The Cockpit`, 105, 291, { align: "center" });
 }
 
 function sectionTitle(doc: jsPDF, text: string, y: number): number {

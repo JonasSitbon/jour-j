@@ -89,7 +89,7 @@ export default function LoginPage() {
         style={{ background: "radial-gradient(120% 90% at 12% 10%, color-mix(in srgb, var(--primary) 22%, transparent), transparent 60%), radial-gradient(100% 100% at 95% 95%, color-mix(in srgb, var(--gold) 18%, transparent), transparent 55%), var(--surface-3)" }}>
         <div className="relative z-[1] flex items-center gap-3">
           <div className="w-10 h-10 text-primary"><Logo size={38} /></div>
-          <div><div className="text-[17px] font-semibold">Jour <b>J</b></div><div className="text-[11px] text-text-3 font-mono">wedding studio</div></div>
+          <div><div className="text-[17px] font-semibold">Jour <b>J</b></div><div className="text-[11px] text-text-3 font-mono">by The Cockpit</div></div>
         </div>
         <div className="relative z-[1] max-w-[460px]">
           <h2 className="text-[34px] font-semibold tracking-[-.03em] leading-[1.18]">Organisez le plus beau jour de votre vie, <em className="not-italic text-primary">sereinement</em>.</h2>

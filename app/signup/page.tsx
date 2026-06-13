@@ -58,7 +58,7 @@ export default function SignupPage() {
           <div className="w-10 h-10 text-primary"><Logo size={38} /></div>
           <div>
             <div className="text-[17px] font-semibold">Jour <b>J</b></div>
-            <div className="text-[11px] text-text-3 font-mono">wedding studio</div>
+            <div className="text-[11px] text-text-3 font-mono">by The Cockpit</div>
           </div>
         </div>
 

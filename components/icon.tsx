@@ -6,6 +6,7 @@ import {
   Flower2, Car, Sparkles, List, Eye, LogOut, PieChart, BarChart3, Cloud, CloudRain, Droplet,
   Heart, Home, Link, Receipt, Flag, User, Baby, BedDouble, Leaf, Gift, Copy, Save, Key,
   RotateCw, Thermometer, Play, Pause,
+  Activity, Server, Database, Zap,
   type LucideIcon,
 } from "lucide-react";
 
@@ -22,6 +23,7 @@ const MAP: Record<string, LucideIcon> = {
   rain: CloudRain, droplet: Droplet, heart: Heart, home: Home, link: Link, receipt: Receipt,
   flag: Flag, user: User, baby: Baby, bed: BedDouble, leaf: Leaf, gift: Gift, copy: Copy,
   save: Save, key: Key, refresh: RotateCw, temp: Thermometer, play: Play, pause: Pause,
+  activity: Activity, server: Server, database: Database, zap: Zap,
 };
 
 export function Icon({ name, size = 20, className, strokeWidth = 1.7, style }: { name: string; size?: number; className?: string; strokeWidth?: number; style?: React.CSSProperties }) {
@@ -31,8 +33,11 @@ export function Icon({ name, size = 20, className, strokeWidth = 1.7, style }: {
 
 /** Logo : deux anneaux entrelacés + solitaire doré */
 export function Logo({ size = 34 }: { size?: number }) {
+  // viewBox carré et centré sur le contenu (centre ≈ 22,22) pour que les
+  // bagues restent centrées quelle que soit la taille — évite le décalage
+  // quand la sidebar est repliée.
   return (
-    <svg width={size} height={size} viewBox="0 0 44 40" fill="none" aria-label="Jour J">
+    <svg width={size} height={size} viewBox="0 -1.75 44 44" fill="none" aria-label="Jour J">
       <circle cx={16} cy={25} r={10.5} fill="none" stroke="var(--primary)" strokeWidth={2.4} />
       <circle cx={28} cy={25} r={10.5} fill="none" stroke="var(--gold)" strokeWidth={2.4} />
       <path d="M16 5 l3.4 3.6 -3.4 4.2 -3.4 -4.2 z" fill="var(--gold)" stroke="var(--surface)" strokeWidth={1} strokeLinejoin="round" />
