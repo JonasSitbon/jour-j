@@ -1031,14 +1031,17 @@ export default function BudgetPage() {
   const remaining = state.budgetTotal - planned;
   const ga = state.guests.filter((g) => g.side === "A" && g.rsvp !== "declined").length;
   const gb = state.guests.filter((g) => g.side === "B" && g.rsvp !== "declined").length;
-  const ctx = { A: state.wedding.partnerA, B: state.wedding.partnerB, ga, gb };
+  const ctx = useMemo(
+    () => ({ A: state.wedding.partnerA, B: state.wedding.partnerB, ga, gb }),
+    [state.wedding.partnerA, state.wedding.partnerB, ga, gb]
+  );
 
   const donutData = state.budget.map((b, i) => ({ label: b.label, value: b.planned, color: PALETTE[i % PALETTE.length], id: b.id }));
   const payers = useMemo(() => {
     const acc: Record<string, number> = {};
     state.budget.forEach((b) => { const s = splitPost(b, ctx); Object.entries(s).forEach(([k, v]) => { acc[k] = (acc[k] || 0) + v; }); });
     return acc;
-  }, [state.budget, ga, gb]);
+  }, [state.budget, ctx]);
 
   const [activeTab, setActiveTab] = useState<"overview" | "benchmark" | "nationale" | "charts">("overview");
   const [seeding, setSeeding] = useState(false);

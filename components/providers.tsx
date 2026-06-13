@@ -54,7 +54,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       if (data) {
         setState((s) => ({ ...s, ...data }));
         setLoading(false);
-        if (pathname === "/") router.push("/dashboard");
+        // Pas de redirection automatique : un utilisateur connecté reste sur
+        // la page où il est (la landing lui propose « Accès à mon mariage »).
+        // Les pages login/signup gèrent elles-mêmes leur redirection.
       } else if (!isPublic) {
         // Invitation en attente (parcours signup/confirmation email) → on y retourne
         const pendingInvite = localStorage.getItem("jj_pending_invite");
@@ -71,6 +73,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
       if (event === "SIGNED_IN") boot();
     });
     return () => subscription.unsubscribe();
+    // Boot applicatif au montage uniquement (pas de re-run par navigation)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const reloadAll = useCallback(async () => {

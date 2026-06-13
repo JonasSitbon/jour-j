@@ -44,6 +44,8 @@ export default function LoginPage() {
       setLoggedInNoWedding(true);
       setChecking(false);
     });
+    // Vérification de session au montage uniquement
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const submit = async (e: React.FormEvent) => {

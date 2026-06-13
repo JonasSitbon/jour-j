@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useStore } from "@/components/providers";
 import { Icon } from "@/components/icon";
 import { Button, Empty } from "@/components/ui";
@@ -51,6 +51,8 @@ export default function DayJPage() {
     setChecked(loadChecked());
     setNowMinutes(getNowMinutes());
     setMounted(true);
+    // Chargement initial au montage uniquement (today/weddingDate lus une fois)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Tick current time every minute
@@ -62,7 +64,9 @@ export default function DayJPage() {
 
   // Active day object
   const activeDay = days.find((d) => d.id === activeDayId) ?? days[0];
-  const events = activeDay?.events ?? [];
+  // useMemo pour stabiliser la référence (sinon l'effet d'auto-scroll
+  // se relancerait à chaque rendu)
+  const events = useMemo(() => activeDay?.events ?? [], [activeDay]);
 
   // Is the active day today (for live mode)?
   const isWeddingDay = !!(activeDay?.date && activeDay.date === today);

@@ -795,11 +795,19 @@ function Nav() {
 
         <div className="hidden md:flex items-center gap-3 ml-auto">
           {loggedIn ? (
-            <Link href="/dashboard"
-              className="px-5 py-2 rounded-full text-[13.5px] font-semibold text-white transition-all hover:scale-105 active:scale-95"
-              style={{ background: TC, boxShadow: `0 4px 14px ${TC}40` }}>
-              Mon tableau de bord →
-            </Link>
+            <>
+              <Link href="/settings" className="flex items-center gap-2 text-[13.5px] font-medium transition-colors px-4 py-2 rounded-full"
+                style={{ color: TEXT_MID }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = TC)}
+                onMouseLeave={(e) => (e.currentTarget.style.color = TEXT_MID)}>
+                <Ic name="users" size={15} />Mon compte
+              </Link>
+              <Link href="/dashboard"
+                className="px-5 py-2 rounded-full text-[13.5px] font-semibold text-white transition-all hover:scale-105 active:scale-95"
+                style={{ background: TC, boxShadow: `0 4px 14px ${TC}40` }}>
+                Accès à mon mariage →
+              </Link>
+            </>
           ) : (
             <>
               <Link href="/login" className="text-[13.5px] font-medium transition-colors px-4 py-2 rounded-full"
@@ -811,7 +819,7 @@ function Nav() {
               <Link href="/signup"
                 className="px-5 py-2 rounded-full text-[13.5px] font-semibold text-white transition-all hover:scale-105 active:scale-95"
                 style={{ background: TC, boxShadow: `0 4px 14px ${TC}40` }}>
-                Commencer gratuitement
+                Inscrivez-vous
               </Link>
             </>
           )}
@@ -837,17 +845,31 @@ function Nav() {
                   style={{ color: TEXT_MID }}>{l.label}</a>
               ))}
               {loggedIn ? (
-                <Link href="/dashboard" onClick={() => setMobileOpen(false)}
-                  className="mt-2 py-3 rounded-xl text-center text-[14px] font-semibold text-white"
-                  style={{ background: TC }}>
-                  Mon tableau de bord →
-                </Link>
+                <>
+                  <Link href="/dashboard" onClick={() => setMobileOpen(false)}
+                    className="mt-2 py-3 rounded-xl text-center text-[14px] font-semibold text-white"
+                    style={{ background: TC }}>
+                    Accès à mon mariage →
+                  </Link>
+                  <Link href="/settings" onClick={() => setMobileOpen(false)}
+                    className="py-2.5 rounded-xl text-center text-[14px] font-medium border"
+                    style={{ color: TEXT_MID, borderColor: "rgba(201,110,44,0.2)" }}>
+                    Mon compte
+                  </Link>
+                </>
               ) : (
-                <Link href="/signup" onClick={() => setMobileOpen(false)}
-                  className="mt-2 py-3 rounded-xl text-center text-[14px] font-semibold text-white"
-                  style={{ background: TC }}>
-                  Commencer gratuitement →
-                </Link>
+                <>
+                  <Link href="/signup" onClick={() => setMobileOpen(false)}
+                    className="mt-2 py-3 rounded-xl text-center text-[14px] font-semibold text-white"
+                    style={{ background: TC }}>
+                    Inscrivez-vous →
+                  </Link>
+                  <Link href="/login" onClick={() => setMobileOpen(false)}
+                    className="py-2.5 rounded-xl text-center text-[14px] font-medium border"
+                    style={{ color: TEXT_MID, borderColor: "rgba(201,110,44,0.2)" }}>
+                    Connexion
+                  </Link>
+                </>
               )}
             </div>
           </motion.div>

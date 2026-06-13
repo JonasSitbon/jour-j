@@ -663,6 +663,8 @@ export default function MusicPage() {
                           {/* Artwork + play preview */}
                           <div className="relative shrink-0">
                             {r.artworkUrl60 && (
+                              // Petite vignette externe (iTunes) — next/image superflu ici
+                              // eslint-disable-next-line @next/next/no-img-element
                               <img src={r.artworkUrl60} alt="" className="w-9 h-9 rounded-[6px] object-cover" />
                             )}
                             {r.previewUrl && (

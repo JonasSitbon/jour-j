@@ -4,10 +4,9 @@ const { withSentryConfig } = require("@sentry/nextjs");
 const nextConfig = {
   reactStrictMode: true,
 
-  // ESLint disponible via `npm run lint`, mais ne bloque PAS le build/déploiement
-  // (le codebase n'est pas encore entièrement lint-clean). À passer à false une
-  // fois les avertissements traités.
-  eslint: { ignoreDuringBuilds: true },
+  // Codebase lint-clean : ESLint bloque désormais le build en cas d'erreur
+  // (les warnings éventuels ne bloquent pas).
+  eslint: { ignoreDuringBuilds: false },
 
   // Better image optimization
   images: {
