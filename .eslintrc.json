@@ -1,6 +1,6 @@
 {
   "extends": "next/core-web-vitals",
-  "ignorePatterns": ["lib/**/*.test.ts", ".next/**", "node_modules/**"],
+  "ignorePatterns": ["**/*.test.ts", ".next/**", "node_modules/**"],
   "rules": {
     "react/no-unescaped-entities": "off"
   }
