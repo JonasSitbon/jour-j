@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "The Cockpit — Tableau de bord mariage";
+export const alt = "Jour J — Tableau de bord mariage";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -25,7 +25,7 @@ export default async function Image() {
             <span style={{ color: "white", fontSize: 28 }}>💍</span>
           </div>
           <span style={{ fontSize: 42, fontWeight: 700, color: "#1C1C1E", letterSpacing: -1 }}>
-            The Cockpit
+            Jour J
           </span>
         </div>
         <p style={{ fontSize: 22, color: "#6B6B6B", textAlign: "center", maxWidth: 700, lineHeight: 1.4 }}>

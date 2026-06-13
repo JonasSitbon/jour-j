@@ -155,7 +155,7 @@ export default function RsvpPage({ params }: { params: { token: string } }) {
       <div style={{ minHeight: "100vh", background: "#F4ECDD", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 16px", fontFamily: "system-ui" }}>
         <div style={{ maxWidth: 520, width: "100%" }}>
           <div style={S.logoBox}>
-            <span style={S.logo}>the cockpit</span>
+            <span style={S.logo}>jour j</span>
           </div>
           <div style={{ ...S.card, textAlign: "center", padding: "40px 36px" }}>
             <div style={{ fontSize: 60, marginBottom: 16 }}>💌</div>
@@ -183,7 +183,7 @@ export default function RsvpPage({ params }: { params: { token: string } }) {
           </div>
           <p style={{ textAlign: "center", marginTop: 24, fontSize: 12, color: "#BBA98A", lineHeight: 1.6 }}>
             Vos informations seront uniquement partagées avec les mariés.<br />
-            Powered by <strong>The Cockpit</strong> — <a href="https://the-cockpit.fr" style={{ color: "#BBA98A" }}>the-cockpit.fr</a>
+            Powered by <strong>Jour J</strong> — <a href="https://the-cockpit.fr" style={{ color: "#BBA98A" }}>the-cockpit.fr</a>
           </p>
         </div>
       </div>
@@ -197,7 +197,7 @@ export default function RsvpPage({ params }: { params: { token: string } }) {
 
         {/* Logo */}
         <div style={S.logoBox}>
-          <span style={S.logo}>the cockpit</span>
+          <span style={S.logo}>jour j</span>
         </div>
 
         {/* Wedding info */}
@@ -331,7 +331,7 @@ export default function RsvpPage({ params }: { params: { token: string } }) {
 
         <p style={{ textAlign: "center", marginTop: 24, fontSize: 12, color: "#BBA98A", lineHeight: 1.6 }}>
           Vos informations seront uniquement partagées avec les mariés.<br />
-          Powered by <strong>The Cockpit</strong> — <a href="https://the-cockpit.fr" style={{ color: "#BBA98A" }}>the-cockpit.fr</a>
+          Powered by <strong>Jour J</strong> — <a href="https://the-cockpit.fr" style={{ color: "#BBA98A" }}>the-cockpit.fr</a>
         </p>
       </div>
     </div>

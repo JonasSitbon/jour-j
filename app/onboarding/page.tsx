@@ -208,7 +208,7 @@ export default function OnboardingPage() {
         {step === 1 && (
           <div className="flex flex-col gap-6 p-7 rounded-card border" style={{ background: "var(--surface)", borderColor: "var(--line)" }}>
             <div>
-              <h1 className="text-[26px] font-semibold tracking-[-.03em] mb-1">Bienvenue sur The Cockpit !</h1>
+              <h1 className="text-[26px] font-semibold tracking-[-.03em] mb-1">Bienvenue sur Jour J !</h1>
               <p className="text-text-2 text-[14.5px]">Vous êtes...</p>
             </div>
 

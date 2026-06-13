@@ -5,7 +5,7 @@ const BASE = `<!DOCTYPE html>
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>The Cockpit</title>
+<title>Jour J</title>
 </head>
 <body style="margin:0;padding:0;background:#F4ECDD;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#F4ECDD;padding:40px 16px;">
@@ -17,7 +17,7 @@ const BASE = `<!DOCTYPE html>
         <td style="background:#1C1208;border-radius:12px 12px 0 0;padding:28px 40px;text-align:center;">
           <div style="display:inline-flex;align-items:center;gap:10px;">
             <div style="width:36px;height:36px;background:#C96E2C;border-radius:8px;display:inline-block;line-height:36px;text-align:center;font-size:18px;font-weight:900;color:#FFFAF2;">J</div>
-            <span style="font-size:20px;font-weight:700;color:#FFFAF2;letter-spacing:-0.02em;">The <strong>Cockpit</strong></span>
+            <span style="font-size:20px;font-weight:700;color:#FFFAF2;letter-spacing:-0.02em;">Jour J</span>
           </div>
         </td>
       </tr>
@@ -32,7 +32,7 @@ const BASE = `<!DOCTYPE html>
       <!-- Footer -->
       <tr>
         <td style="background:#FDFAF5;border:1px solid #E8E2D8;border-top:none;border-radius:0 0 12px 12px;padding:20px 40px;text-align:center;">
-          <p style="margin:0 0 6px;font-size:12px;color:#A08B78;">Cet email a été envoyé par <strong>The Cockpit</strong> — Planification de mariage</p>
+          <p style="margin:0 0 6px;font-size:12px;color:#A08B78;">Cet email a été envoyé par <strong>Jour J</strong> by The Cockpit — Planification de mariage</p>
           <p style="margin:0;font-size:11px;color:#C5B8A8;">Si vous n'avez pas demandé cet email, ignorez-le simplement.</p>
         </td>
       </tr>
@@ -50,7 +50,7 @@ const TEMPLATES: Record<string, string> = {
     <div style="width:48px;height:4px;background:#C96E2C;border-radius:2px;margin-bottom:28px;"></div>
 
     <h1 style="margin:0 0 12px;font-size:26px;font-weight:700;color:#1C1208;letter-spacing:-0.02em;line-height:1.2;">
-      Bienvenue sur<br/>The Cockpit 💍
+      Bienvenue sur<br/>Jour J 💍
     </h1>
     <p style="margin:0 0 24px;font-size:15px;color:#6B5744;line-height:1.7;">
       Votre compte est presque prêt. Cliquez sur le bouton ci-dessous pour confirmer votre adresse email et accéder à votre espace de planification.
@@ -89,7 +89,7 @@ const TEMPLATES: Record<string, string> = {
       Vous êtes invité(e) à collaborer 🥂
     </h1>
     <p style="margin:0 0 24px;font-size:15px;color:#6B5744;line-height:1.7;">
-      Quelqu'un vous a invité(e) à rejoindre un espace mariage sur <strong>The Cockpit</strong>. Cliquez ci-dessous pour accepter l'invitation et accéder à l'organisation.
+      Quelqu'un vous a invité(e) à rejoindre un espace mariage sur <strong>Jour J</strong>. Cliquez ci-dessous pour accepter l'invitation et accéder à l'organisation.
     </p>
 
     <!-- CTA -->
@@ -113,7 +113,7 @@ const TEMPLATES: Record<string, string> = {
     <div style="border-top:1px solid #F0E8DC;margin:28px 0;"></div>
 
     <p style="margin:0;font-size:13px;color:#A08B78;">
-      ✦ &nbsp;The Cockpit — L'outil tout-en-un pour organiser un mariage parfait.
+      ✦ &nbsp;Jour J — L'outil tout-en-un pour organiser un mariage parfait.
     </p>
   `),
 
@@ -125,7 +125,7 @@ const TEMPLATES: Record<string, string> = {
       Votre lien de connexion ✨
     </h1>
     <p style="margin:0 0 24px;font-size:15px;color:#6B5744;line-height:1.7;">
-      Vous avez demandé à vous connecter à <strong>The Cockpit</strong> sans mot de passe. Cliquez sur le bouton ci-dessous pour accéder directement à votre espace mariage.
+      Vous avez demandé à vous connecter à <strong>Jour J</strong> sans mot de passe. Cliquez sur le bouton ci-dessous pour accéder directement à votre espace mariage.
     </p>
 
     <!-- CTA -->
@@ -156,7 +156,7 @@ const TEMPLATES: Record<string, string> = {
     <div style="border-top:1px solid #F0E8DC;margin:28px 0;"></div>
 
     <p style="margin:0;font-size:13px;color:#A08B78;">
-      ✦ &nbsp;The Cockpit — Connectez-vous en toute simplicité.
+      ✦ &nbsp;Jour J — Connectez-vous en toute simplicité.
     </p>
   `),
 
@@ -168,7 +168,7 @@ const TEMPLATES: Record<string, string> = {
       Réinitialisation de<br/>votre mot de passe 🔑
     </h1>
     <p style="margin:0 0 6px;font-size:15px;color:#6B5744;line-height:1.7;">
-      Vous avez demandé à réinitialiser le mot de passe de votre compte <strong>The Cockpit</strong> associé à l'adresse :
+      Vous avez demandé à réinitialiser le mot de passe de votre compte <strong>Jour J</strong> associé à l'adresse :
     </p>
     <p style="margin:0 0 24px;font-size:14px;font-weight:600;color:#1C1208;">{{ .Email }}</p>
 

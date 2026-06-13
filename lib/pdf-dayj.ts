@@ -138,7 +138,7 @@ export function exportDayJPDF(events: DayEvent[], partnerA: string, partnerB: st
       doc.setFontSize(8);
       doc.setTextColor(160, 140, 120);
       doc.text(
-        `Page ${data.pageNumber} — Planning Jour J — The Cockpit`,
+        `Page ${data.pageNumber} — Planning Jour J`,
         105, doc.internal.pageSize.height - 6,
         { align: "center" }
       );

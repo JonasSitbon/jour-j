@@ -335,7 +335,7 @@ export default function SharePage({ params }: { params: { token: string } }) {
         {/* Footer */}
         <div style={{ textAlign: "center", marginTop: 40, paddingTop: 24, borderTop: "1px solid #E8DFD0" }}>
           <div style={{ display: "inline-block", background: "#382F23", padding: "7px 16px", borderRadius: 9, color: "#F4ECDD", fontSize: 13, fontWeight: 800, letterSpacing: 3, textTransform: "lowercase", marginBottom: 10 }}>
-            the cockpit
+            jour j
           </div>
           <p style={{ margin: 0, fontSize: 12, color: "#BBA98A" }}>Vue en lecture seule · Partagé par {w.partner_a} &amp; {w.partner_b}</p>
         </div>

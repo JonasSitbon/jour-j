@@ -948,7 +948,7 @@ function InteractiveDemo() {
             <div className="w-44 shrink-0 flex flex-col border-r overflow-hidden" style={{ background: WARM_SOFT, borderColor: "rgba(201,110,44,0.1)" }}>
               <div className="px-3 py-2.5 border-b flex items-center gap-2 shrink-0" style={{ borderColor: "rgba(201,110,44,0.08)" }}>
                 <div style={{ color: TC }}><Logo size={18} /></div>
-                <span className="text-[12px] font-semibold" style={{ color: BROWN_DARK }}>The <b>Cockpit</b></span>
+                <span className="text-[12px] font-semibold" style={{ color: BROWN_DARK }}>Jour J</span>
               </div>
               <div className="mx-2.5 mt-2.5 mb-1 rounded-lg p-2.5 text-white text-[9px] shrink-0"
                 style={{ background: `linear-gradient(135deg, ${TC}, #9B4A1A)` }}>
@@ -1121,7 +1121,7 @@ function Nav() {
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center gap-8">
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
           <div className="w-8 h-8" style={{ color: TC }}><Logo size={30} /></div>
-          <span className="text-[16px] font-semibold" style={{ color: BROWN_DARK }}>The <b>Cockpit</b></span>
+          <span className="text-[16px] font-semibold" style={{ color: BROWN_DARK }}>Jour J</span>
         </Link>
 
         <div className="hidden md:flex items-center gap-6 flex-1">
@@ -1713,8 +1713,8 @@ function Spotlight({
 // ─── Testimonials ──────────────────────────────────────────────────────────────
 
 const TESTIMONIALS = [
-  { name: "Camille & Thomas", date: "Juin 2026", photo: "CT", text: "The Cockpit nous a sauvé la mise ! En quelques semaines nous avions tout organisé. Le plan de table en drag & drop est magique.", score: 5 },
-  { name: "Marie Lefebvre", role: "Wedding planner", photo: "ML", text: "Je gère 12 mariages simultanément avec The Cockpit. La collaboration multi-utilisateurs et les rôles me font gagner 3h par semaine.", score: 5 },
+  { name: "Camille & Thomas", date: "Juin 2026", photo: "CT", text: "Jour J nous a sauvé la mise ! En quelques semaines nous avions tout organisé. Le plan de table en drag & drop est magique.", score: 5 },
+  { name: "Marie Lefebvre", role: "Wedding planner", photo: "ML", text: "Je gère 12 mariages simultanément avec Jour J. La collaboration multi-utilisateurs et les rôles me font gagner 3h par semaine.", score: 5 },
   { name: "Sophie & Alexis", date: "Septembre 2026", photo: "SA", text: "Le sélecteur de dates avec la météo en temps réel nous a aidés à choisir la date parfaite. Et le mode Jour J EN DIRECT était incroyable !", score: 5 },
   { name: "Juliette Moreau", role: "Planner indépendante", photo: "JM", text: "Enfin un outil qui pense aussi aux planners. Je créé un espace par client en 2 minutes. L'export PDF pour les prestataires est top.", score: 5 },
   { name: "Emma & Lucas", date: "Mai 2026", photo: "EL", text: "La checklist avec 250+ tâches pré-remplies nous a évité d'oublier des choses. Le budget avec comparaison nationale était très utile.", score: 5 },
@@ -1735,7 +1735,7 @@ function Testimonials() {
         <FadeIn className="text-center mb-16">
           <Pill>Témoignages</Pill>
           <h2 className="text-[clamp(1.8rem,4vw,2.6rem)] font-bold mt-4 tracking-tight" style={{ color: TEXT_DARK }}>
-            Des couples qui ont dit <span style={{ color: TC }}>oui</span> à The Cockpit.
+            Des couples qui ont dit <span style={{ color: TC }}>oui</span> à Jour J.
           </h2>
         </FadeIn>
 
@@ -1833,7 +1833,7 @@ function PricingCTA() {
             Gratuit.<br /><span style={{ color: TC }}>Pour toujours.</span>
           </h2>
           <p className="text-[16px] mb-10 leading-relaxed" style={{ color: TEXT_MID }}>
-            The Cockpit est 100% gratuit. Pas d'essai, pas de carte bancaire, pas de limite de temps. Tous les modules, tous les exports, toutes les fonctionnalités.
+            Jour J est 100% gratuit. Pas d'essai, pas de carte bancaire, pas de limite de temps. Tous les modules, tous les exports, toutes les fonctionnalités.
           </p>
         </FadeIn>
 
@@ -1879,11 +1879,11 @@ function PricingCTA() {
 // ─── FAQ ────────────────────────────────────────────────────────────────────────
 
 const FAQS = [
-  { q: "The Cockpit est-il vraiment gratuit ?", a: "Oui, complètement et sans limite. Aucune carte bancaire n'est requise. Tous les modules sont accessibles dès la création de votre compte." },
+  { q: "Jour J est-il vraiment gratuit ?", a: "Oui, complètement et sans limite. Aucune carte bancaire n'est requise. Tous les modules sont accessibles dès la création de votre compte." },
   { q: "Combien de mariages puis-je gérer ?", a: "Jusqu'à 5 mariages par compte. Les wedding planners peuvent gérer plusieurs clients depuis le même tableau de bord avec une interface dédiée." },
   { q: "Puis-je collaborer avec mon partenaire ou ma wedding planner ?", a: "Oui ! Vous pouvez inviter des collaborateurs avec différents rôles : Administrateur, Éditeur ou Lecteur. Chaque rôle a des permissions précises." },
   { q: "Mes données sont-elles sécurisées ?", a: "Vos données sont hébergées sur des serveurs sécurisés et chiffrées. Seul vous et vos collaborateurs autorisés y ont accès — nous ne partageons jamais vos informations." },
-  { q: "L'application fonctionne-t-elle sur mobile ?", a: "Oui, The Cockpit fonctionne sur tous les appareils — téléphone, tablette, ordinateur. Vous pouvez même l'installer sur votre écran d'accueil iOS ou Android, comme une vraie application." },
+  { q: "L'application fonctionne-t-elle sur mobile ?", a: "Oui, Jour J fonctionne sur tous les appareils — téléphone, tablette, ordinateur. Vous pouvez même l'installer sur votre écran d'accueil iOS ou Android, comme une vraie application." },
   { q: "Puis-je exporter mes données ?", a: "Oui, vous pouvez exporter votre liste d'invités en CSV, votre budget en PDF, votre plan de table, votre playlist et bien plus. Toutes vos données vous appartiennent." },
   { q: "Comment fonctionne la météo pour choisir ma date ?", a: "L'outil météo affiche automatiquement les prévisions pour votre ville et vos dates candidates : température, probabilité de pluie, ensoleillement. Vous obtenez un score pour chaque date afin de choisir sereinement." },
   { q: "Puis-je partager mon espace mariage avec ma famille ?", a: "Oui, via un lien de partage en lecture seule que vous générez depuis les paramètres. Vos proches voient les informations essentielles sans pouvoir modifier quoi que ce soit." },
@@ -1962,7 +1962,7 @@ function Footer() {
           <div>
             <Link href="/" className="flex items-center gap-2.5 mb-4">
               <div className="w-8 h-8" style={{ color: TC }}><Logo size={30} /></div>
-              <span className="text-[16px] font-semibold text-white">The <b>Cockpit</b></span>
+              <span className="text-[16px] font-semibold text-white">Jour J</span>
             </Link>
             <p className="text-[13.5px] leading-relaxed mb-5" style={{ color: "rgba(253,250,245,0.55)" }}>
               L'outil tout-en-un pour organiser votre mariage parfait. Budget, invités, prestataires, planning et Jour J — tout en un.
@@ -1991,7 +1991,7 @@ function Footer() {
         <div className="border-t pt-6 flex flex-col sm:flex-row items-center justify-between gap-3"
           style={{ borderColor: "rgba(255,255,255,0.08)" }}>
           <p className="text-[12.5px]" style={{ color: "rgba(253,250,245,0.3)" }}>
-            © 2026 The Cockpit. Tous droits réservés.
+            © 2026 Jour J by The Cockpit. Tous droits réservés.
           </p>
           <p className="text-[12px]" style={{ color: "rgba(253,250,245,0.25)" }}>
             Fait avec 💍 pour les futurs mariés de France
@@ -2039,7 +2039,7 @@ function FinalCTA() {
             Votre mariage mérite<br />le meilleur outil.
           </h2>
           <p className="text-[16px] mb-10" style={{ color: TEXT_MID }}>
-            Rejoignez des centaines de couples et de wedding planners qui font confiance à The Cockpit.
+            Rejoignez des centaines de couples et de wedding planners qui font confiance à Jour J.
           </p>
           <Link href="/signup"
             className="inline-flex items-center gap-3 px-10 py-4 rounded-2xl text-[16px] font-bold text-white transition-all hover:scale-105 active:scale-95"
@@ -2198,7 +2198,7 @@ function ForPlanners() {
           <Pill>Wedding Planners</Pill>
           <h2 className="text-[clamp(1.8rem,3.5vw,2.5rem)] font-bold mt-5 mb-3 tracking-tight leading-tight" style={{ color: TEXT_DARK }}>
             Wedding planner ?<br />
-            <span style={{ color: TC }}>The Cockpit est fait pour vous aussi.</span>
+            <span style={{ color: TC }}>Jour J est fait pour vous aussi.</span>
           </h2>
           <p className="text-[15px] mb-6 leading-relaxed" style={{ color: TEXT_MID }}>
             Gérez jusqu'à 5 mariages simultanément depuis un seul tableau de bord.
@@ -2305,7 +2305,7 @@ function ComparisonTable() {
         <FadeIn className="text-center mb-16">
           <Pill>Comparaison</Pill>
           <h2 className="text-[clamp(1.8rem,4vw,2.8rem)] font-bold mt-4 tracking-tight" style={{ color: TEXT_DARK }}>
-            Pourquoi The Cockpit<br />
+            Pourquoi Jour J<br />
             <span style={{ color: TC }}>plutôt qu'un tableur ?</span>
           </h2>
           <p className="mt-4 text-[15px] max-w-xl mx-auto" style={{ color: TEXT_MID }}>
@@ -2319,10 +2319,10 @@ function ComparisonTable() {
             {/* Header */}
             <div className="grid grid-cols-[2fr_1fr_1fr_1fr] border-b" style={{ borderColor: "rgba(201,110,44,0.1)", background: "#FFFFFF" }}>
               <div className="px-5 py-4" />
-              {/* The Cockpit header — highlighted */}
+              {/* Jour J header — highlighted */}
               <div className="px-4 py-4 flex flex-col items-center justify-center border-l border-r"
                 style={{ background: `${TC}10`, borderColor: `${TC}25` }}>
-                <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: TC }}>The Cockpit</span>
+                <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: TC }}>Jour J</span>
               </div>
               <div className="px-4 py-4 flex items-center justify-center border-r" style={{ borderColor: "rgba(201,110,44,0.08)", background: BG_CREAM }}>
                 <span className="text-[11px] font-semibold" style={{ color: TEXT_LIGHT }}>Tableur Excel</span>
@@ -2365,7 +2365,7 @@ function ComparisonTable() {
           <Link href="/signup"
             className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl text-[15px] font-semibold text-white transition-all hover:scale-105 active:scale-95"
             style={{ background: TC, boxShadow: `0 8px 28px ${TC}40` }}>
-            Essayer The Cockpit gratuitement →
+            Essayer Jour J gratuitement →
           </Link>
         </FadeIn>
       </div>

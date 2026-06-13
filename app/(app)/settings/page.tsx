@@ -971,7 +971,7 @@ export default function SettingsPage() {
           {sec === "integrations" && (
             <Card>
               <div className="sec-title mb-1"><Icon name="link" size={17} className="text-text-3" />Intégrations</div>
-              <p className="text-[12.5px] text-text-2 mb-5">Connectez vos outils préférés à The Cockpit. Ces intégrations seront disponibles prochainement.</p>
+              <p className="text-[12.5px] text-text-2 mb-5">Connectez vos outils préférés à Jour J. Ces intégrations seront disponibles prochainement.</p>
               <div className="flex flex-col gap-0">
                 {[
                   { emoji: "📅", name: "Google Calendar",  desc: "Synchronisez vos dates clés et échéances directement dans votre calendrier Google" },

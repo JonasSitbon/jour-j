@@ -667,7 +667,7 @@ export default function MoodboardPage() {
     doc.text(title, pageW / 2, 16, { align: "center" });
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-    doc.text("Tableau d'inspiration — The Cockpit", pageW / 2, 24, { align: "center" });
+    doc.text("Tableau d'inspiration — Jour J", pageW / 2, 24, { align: "center" });
     const exportDate = new Date().toLocaleDateString("fr-FR", {
       day: "2-digit",
       month: "long",
@@ -777,7 +777,7 @@ export default function MoodboardPage() {
       doc.setFontSize(8);
       doc.setTextColor(160, 140, 120);
       doc.text(
-        `The Cockpit — Mood Board  •  Page ${i}/${pageCount}`,
+        `Jour J — Mood Board  •  Page ${i}/${pageCount}`,
         pageW / 2,
         doc.internal.pageSize.getHeight() - 8,
         { align: "center" }

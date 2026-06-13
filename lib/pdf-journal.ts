@@ -117,7 +117,7 @@ export function exportJournalPDF(
       doc.setFontSize(8);
       doc.setTextColor(160, 140, 120);
       doc.text(
-        `Page ${data.pageNumber} — The Cockpit Wedding Studio`,
+        `Page ${data.pageNumber} — Jour J`,
         105,
         doc.internal.pageSize.height - 6,
         { align: "center" }

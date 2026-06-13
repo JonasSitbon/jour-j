@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "The Cockpit — Organisez votre mariage",
-    short_name: "The Cockpit",
+    name: "Jour J — Organisez votre mariage",
+    short_name: "Jour J",
     description: "L'application tout-en-un pour organiser votre mariage parfait. Budget, invités, prestataires, planning, musique et Jour J.",
     start_url: "/dashboard",
     display: "standalone",

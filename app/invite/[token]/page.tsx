@@ -111,7 +111,7 @@ export default function InvitePage({ params }: { params: { token: string } }) {
     <div style={S.page}>
       <div style={S.wrap}>
         <div style={S.logoBox}>
-          <span style={S.logo}>the cockpit</span>
+          <span style={S.logo}>jour j</span>
         </div>
 
         <div style={S.card}>
@@ -174,7 +174,7 @@ export default function InvitePage({ params }: { params: { token: string } }) {
         </div>
 
         <p style={{ textAlign: "center", marginTop: 24, fontSize: 12, color: "#BBA98A", lineHeight: 1.6 }}>
-          Powered by <strong>The Cockpit</strong> — <a href="https://the-cockpit.fr" style={{ color: "#BBA98A" }}>the-cockpit.fr</a>
+          Powered by <strong>Jour J</strong> — <a href="https://the-cockpit.fr" style={{ color: "#BBA98A" }}>the-cockpit.fr</a>
         </p>
       </div>
     </div>

@@ -46,7 +46,7 @@ function header(doc: jsPDF, title: string, partnerA: string, partnerB: string) {
 function footer(doc: jsPDF, pageNum: number, totalPages: number) {
   doc.setFontSize(7.5);
   doc.setTextColor(...C.muted);
-  doc.text(`Page ${pageNum} / ${totalPages} — The Cockpit Wedding Studio`, 105, 291, { align: "center" });
+  doc.text(`Page ${pageNum} / ${totalPages} — Jour J`, 105, 291, { align: "center" });
 }
 
 function sectionTitle(doc: jsPDF, text: string, y: number): number {
@@ -94,7 +94,7 @@ function drawCover(doc: jsPDF, state: AppState) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor(244, 236, 221);
-  doc.text("THE COCKPIT", 17, 28);
+  doc.text("JOUR J", 17, 28);
 
   // Names
   doc.setFont("helvetica", "bold");

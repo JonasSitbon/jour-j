@@ -108,7 +108,7 @@ export default function NotFound() {
             color: "#B0A090",
           }}
         >
-          The Cockpit — Organisation de mariage
+          Jour J — Organisation de mariage
         </p>
       </div>
     </div>

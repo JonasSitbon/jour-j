@@ -258,7 +258,7 @@ export function exportSeatingListPDF(
     doc.setPage(i);
     doc.setFontSize(7.5);
     doc.setTextColor(160, 140, 120);
-    doc.text(`Page ${i}/${pageCount} — The Cockpit Wedding Studio`, 105, 291, { align: "center" });
+    doc.text(`Page ${i}/${pageCount} — Jour J`, 105, 291, { align: "center" });
   }
 
   doc.save(`plan-de-table-${partnerA}-${partnerB}.pdf`);
