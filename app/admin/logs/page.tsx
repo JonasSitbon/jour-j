@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase";
 import { Icon } from "@/components/icon";
 
 type CheckState = "checking" | "ok" | "fail" | "warn";
+type ErrorLevel = "info" | "warning" | "error" | "critical";
 
 interface Check {
   id: string;
@@ -14,6 +15,18 @@ interface Check {
   state: CheckState;
   detail: string;
   latencyMs?: number;
+}
+
+interface ErrorLog {
+  id: string;
+  level: ErrorLevel;
+  message: string;
+  stack: string | null;
+  path: string | null;
+  notified: boolean;
+  resolved: boolean;
+  created_at: string;
+  metadata: Record<string, unknown>;
 }
 
 interface Metrics {
@@ -29,14 +42,29 @@ const STATE_META: Record<CheckState, { label: string; color: string; bg: string 
   fail:     { label: "Échec",         color: "#f87171", bg: "#f8717122" },
 };
 
+const LEVEL_META: Record<ErrorLevel, { label: string; color: string; bg: string; icon: string }> = {
+  info:     { label: "Info",     color: "#60a5fa", bg: "#60a5fa18", icon: "info"     },
+  warning:  { label: "Warning",  color: "#fbbf24", bg: "#fbbf2418", icon: "alert"    },
+  error:    { label: "Erreur",   color: "#f87171", bg: "#f8717118", icon: "alert"    },
+  critical: { label: "Critique", color: "#ef4444", bg: "#ef444430", icon: "activity" },
+};
+
 function StatusPill({ state }: { state: CheckState }) {
   const m = STATE_META[state];
   return (
-    <span
-      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-semibold shrink-0"
-      style={{ background: m.bg, color: m.color }}
-    >
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-semibold shrink-0"
+      style={{ background: m.bg, color: m.color }}>
       <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: m.color }} />
+      {m.label}
+    </span>
+  );
+}
+
+function LevelBadge({ level }: { level: ErrorLevel }) {
+  const m = LEVEL_META[level];
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold shrink-0"
+      style={{ background: m.bg, color: m.color }}>
       {m.label}
     </span>
   );
@@ -48,12 +76,18 @@ export default function AdminLogsPage() {
   const [lastRun, setLastRun] = useState<Date | null>(null);
   const [running, setRunning] = useState(false);
 
+  // Error logs
+  const [errorLogs, setErrorLogs] = useState<ErrorLog[]>([]);
+  const [errorFilter, setErrorFilter] = useState<ErrorLevel | "all">("all");
+  const [showStack, setShowStack] = useState<string | null>(null);
+  const [errorStats, setErrorStats] = useState<Record<ErrorLevel, number>>({ info: 0, warning: 0, error: 0, critical: 0 });
+
   const runChecks = useCallback(async () => {
     setRunning(true);
     const sb = createClient();
     const results: Check[] = [];
 
-    // ── 1. Base de données Supabase (requête timée) ──────────────
+    // ── 1. Base de données ─────────────────────────────────────────
     {
       const t0 = performance.now();
       const { error } = await sb.from("profiles").select("id", { count: "exact", head: true });
@@ -67,7 +101,7 @@ export default function AdminLogsPage() {
       });
     }
 
-    // ── 2. Authentification ──────────────────────────────────────
+    // ── 2. Authentification ────────────────────────────────────────
     {
       const t0 = performance.now();
       const { data, error } = await sb.auth.getUser();
@@ -81,18 +115,29 @@ export default function AdminLogsPage() {
       });
     }
 
-    // ── 3. Sentry (monitoring d'erreurs) ─────────────────────────
+    // ── 3. Sentry ──────────────────────────────────────────────────
     {
       const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
       results.push({
-        id: "sentry", label: "Monitoring d'erreurs", icon: "activity",
-        desc: "Sentry",
+        id: "sentry", label: "Sentry (monitoring externe)", icon: "activity",
+        desc: "Capture & alertes Sentry",
         state: dsn ? "ok" : "warn",
-        detail: dsn ? "DSN configuré — capture active" : "Aucun DSN — monitoring inactif",
+        detail: dsn ? "DSN configuré — capture active" : "Aucun DSN — désactivé",
       });
     }
 
-    // ── 4. Recherche musicale (iTunes via /api) ──────────────────
+    // ── 4. Webhook monitoring ──────────────────────────────────────
+    {
+      const url = process.env.NEXT_PUBLIC_MONITORING_WEBHOOK_CONFIGURED;
+      results.push({
+        id: "webhook", label: "Webhook alertes erreurs", icon: "mail",
+        desc: "MONITORING_WEBHOOK_URL",
+        state: url ? "ok" : "warn",
+        detail: url ? "Configuré — notifications actives" : "Non configuré — set MONITORING_WEBHOOK_URL dans .env",
+      });
+    }
+
+    // ── 5. API musique ─────────────────────────────────────────────
     {
       const t0 = performance.now();
       try {
@@ -108,40 +153,23 @@ export default function AdminLogsPage() {
           latencyMs: ms,
         });
       } catch (e) {
-        results.push({
-          id: "music", label: "Recherche musicale", icon: "music",
-          desc: "API iTunes Search", state: "fail",
-          detail: e instanceof Error ? e.message : "Inaccessible",
-        });
+        results.push({ id: "music", label: "Recherche musicale", icon: "music", desc: "API iTunes Search", state: "fail", detail: e instanceof Error ? e.message : "Inaccessible" });
       }
     }
 
-    // ── 5. Géocodage (Nominatim / OpenStreetMap) ─────────────────
+    // ── 6. Géocodage ───────────────────────────────────────────────
     {
       const t0 = performance.now();
       try {
-        const res = await fetch(
-          "https://nominatim.openstreetmap.org/search?q=Paris&format=json&limit=1",
-          { headers: { "Accept-Language": "fr" } }
-        );
+        const res = await fetch("https://nominatim.openstreetmap.org/search?q=Paris&format=json&limit=1", { headers: { "Accept-Language": "fr" } });
         const ms = Math.round(performance.now() - t0);
-        results.push({
-          id: "geo", label: "Géocodage des lieux", icon: "pin",
-          desc: "Nominatim (OpenStreetMap)",
-          state: res.ok ? "ok" : "fail",
-          detail: res.ok ? `Réponse en ${ms} ms` : `HTTP ${res.status}`,
-          latencyMs: ms,
-        });
+        results.push({ id: "geo", label: "Géocodage des lieux", icon: "pin", desc: "Nominatim (OpenStreetMap)", state: res.ok ? "ok" : "fail", detail: res.ok ? `Réponse en ${ms} ms` : `HTTP ${res.status}`, latencyMs: ms });
       } catch (e) {
-        results.push({
-          id: "geo", label: "Géocodage des lieux", icon: "pin",
-          desc: "Nominatim (OpenStreetMap)", state: "fail",
-          detail: e instanceof Error ? e.message : "Inaccessible",
-        });
+        results.push({ id: "geo", label: "Géocodage des lieux", icon: "pin", desc: "Nominatim (OpenStreetMap)", state: "fail", detail: e instanceof Error ? e.message : "Inaccessible" });
       }
     }
 
-    // ── 6. Configuration (variables d'environnement) ─────────────
+    // ── 7. Variables d'environnement ───────────────────────────────
     {
       const envs = [
         ["NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL],
@@ -149,16 +177,16 @@ export default function AdminLogsPage() {
       ] as const;
       const missing = envs.filter(([, v]) => !v).map(([k]) => k);
       results.push({
-        id: "env", label: "Configuration", icon: "server",
-        desc: "Variables d'environnement requises",
+        id: "env", label: "Variables d'environnement", icon: "server",
+        desc: "Variables requises",
         state: missing.length ? "fail" : "ok",
-        detail: missing.length ? `Manquante(s) : ${missing.join(", ")}` : "Toutes les variables requises sont présentes",
+        detail: missing.length ? `Manquante(s) : ${missing.join(", ")}` : "Toutes présentes",
       });
     }
 
     setChecks(results);
 
-    // ── Métriques plateforme (super admin) ───────────────────────
+    // ── Métriques plateforme ───────────────────────────────────────
     const [{ count: profiles }, { count: weddings }, { data: types }] = await Promise.all([
       sb.from("profiles").select("id", { count: "exact", head: true }),
       sb.from("wedding").select("id", { count: "exact", head: true }),
@@ -170,16 +198,48 @@ export default function AdminLogsPage() {
       byType[t] = (byType[t] || 0) + 1;
     }
     setMetrics({ profiles: profiles ?? null, weddings: weddings ?? null, byType });
-
     setLastRun(new Date());
     setRunning(false);
   }, []);
 
-  useEffect(() => { runChecks(); }, [runChecks]);
+  const loadErrorLogs = useCallback(async () => {
+    const sb = createClient();
+    const { data } = await sb
+      .from("error_logs")
+      .select("id, level, message, stack, path, notified, resolved, created_at, metadata")
+      .order("created_at", { ascending: false })
+      .limit(100);
 
-  const okCount = checks.filter((c) => c.state === "ok").length;
+    const logs = (data ?? []) as ErrorLog[];
+    setErrorLogs(logs);
+
+    const stats = { info: 0, warning: 0, error: 0, critical: 0 };
+    for (const l of logs) stats[l.level] = (stats[l.level] ?? 0) + 1;
+    setErrorStats(stats);
+  }, []);
+
+  const markResolved = async (id: string) => {
+    const sb = createClient();
+    await sb.from("error_logs").update({ resolved: true }).eq("id", id);
+    setErrorLogs((prev) => prev.map((l) => l.id === id ? { ...l, resolved: true } : l));
+  };
+
+  useEffect(() => {
+    runChecks();
+    loadErrorLogs();
+  }, [runChecks, loadErrorLogs]);
+
+  const okCount   = checks.filter((c) => c.state === "ok").length;
   const failCount = checks.filter((c) => c.state === "fail").length;
   const warnCount = checks.filter((c) => c.state === "warn").length;
+
+  const filteredLogs = errorFilter === "all"
+    ? errorLogs
+    : errorLogs.filter((l) => l.level === errorFilter);
+
+  function fmtDate(iso: string) {
+    return new Date(iso).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  }
 
   return (
     <div className="p-8 max-w-[1100px] mx-auto" style={{ color: "#e8e4dc" }}>
@@ -188,28 +248,25 @@ export default function AdminLogsPage() {
         <div>
           <h1 className="text-[22px] font-bold flex items-center gap-2.5" style={{ color: "#f0ead8" }}>
             <Icon name="activity" size={20} />
-            Logs &amp; Statut système
+            Logs &amp; Monitoring
           </h1>
           <p className="text-[13px] mt-1" style={{ color: "#9ca3af" }}>
-            État en temps réel des intégrations et services de la plateforme.
-            {lastRun && <> Dernière vérification : {lastRun.toLocaleTimeString("fr-FR")}.</>}
+            État en temps réel des services + suivi des erreurs applicatives.
+            {lastRun && <> Dernière vérif : {lastRun.toLocaleTimeString("fr-FR")}.</>}
           </p>
         </div>
-        <button
-          onClick={runChecks}
-          disabled={running}
+        <button onClick={() => { runChecks(); loadErrorLogs(); }} disabled={running}
           className="flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-semibold shrink-0 transition-colors disabled:opacity-60"
-          style={{ background: "#C96E2C", color: "#fffaf2" }}
-        >
+          style={{ background: "#C96E2C", color: "#fffaf2" }}>
           <Icon name="refresh" size={15} className={running ? "animate-spin" : ""} />
           {running ? "Vérification…" : "Relancer"}
         </button>
       </div>
 
-      {/* Résumé */}
+      {/* Résumé santé */}
       <div className="grid grid-cols-3 gap-3 mb-7">
         {[
-          { label: "Opérationnels", value: okCount, color: "#4ade80" },
+          { label: "Services OK", value: okCount, color: "#4ade80" },
           { label: "Avertissements", value: warnCount, color: "#fbbf24" },
           { label: "En échec", value: failCount, color: "#f87171" },
         ].map((s) => (
@@ -220,27 +277,141 @@ export default function AdminLogsPage() {
         ))}
       </div>
 
-      {/* Liste des checks */}
-      <div className="rounded-xl border overflow-hidden mb-7" style={{ background: "#1a1a2e", borderColor: "#2a2a3e" }}>
+      {/* Checks */}
+      <div className="rounded-xl border overflow-hidden mb-8" style={{ background: "#1a1a2e", borderColor: "#2a2a3e" }}>
         <div className="px-5 py-3 border-b text-[12px] font-semibold uppercase tracking-wider" style={{ borderColor: "#2a2a3e", color: "#6b7280" }}>
           Intégrations &amp; services
         </div>
         {checks.length === 0 ? (
           <div className="px-5 py-8 text-center text-[13px]" style={{ color: "#6b7280" }}>Vérification en cours…</div>
-        ) : (
-          checks.map((c) => (
-            <div key={c.id} className="flex items-center gap-4 px-5 py-4 border-b last:border-0" style={{ borderColor: "#2a2a3e" }}>
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: "#22223a", color: "#9ca3af" }}>
-                <Icon name={c.icon} size={17} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[14px] font-medium" style={{ color: "#e8e4dc" }}>{c.label}</div>
-                <div className="text-[12px] mt-0.5" style={{ color: "#6b7280" }}>{c.desc} — {c.detail}</div>
-              </div>
-              <StatusPill state={c.state} />
+        ) : checks.map((c) => (
+          <div key={c.id} className="flex items-center gap-4 px-5 py-4 border-b last:border-0" style={{ borderColor: "#2a2a3e" }}>
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: "#22223a", color: "#9ca3af" }}>
+              <Icon name={c.icon} size={17} />
             </div>
-          ))
-        )}
+            <div className="flex-1 min-w-0">
+              <div className="text-[14px] font-medium" style={{ color: "#e8e4dc" }}>{c.label}</div>
+              <div className="text-[12px] mt-0.5" style={{ color: "#6b7280" }}>{c.desc} — {c.detail}</div>
+            </div>
+            {c.latencyMs !== undefined && (
+              <span className="text-[11px] font-mono" style={{ color: c.latencyMs < 200 ? "#4ade80" : c.latencyMs < 800 ? "#fbbf24" : "#f87171" }}>
+                {c.latencyMs}ms
+              </span>
+            )}
+            <StatusPill state={c.state} />
+          </div>
+        ))}
+      </div>
+
+      {/* ── Erreurs applicatives ── */}
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <h2 className="text-[15px] font-semibold" style={{ color: "#f0ead8" }}>
+          Erreurs applicatives
+          {errorStats.critical > 0 && (
+            <span className="ml-2 text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: "#ef444430", color: "#ef4444" }}>
+              {errorStats.critical} critique{errorStats.critical > 1 ? "s" : ""}
+            </span>
+          )}
+        </h2>
+        <div className="flex gap-1.5">
+          {(["all", "critical", "error", "warning", "info"] as const).map((f) => (
+            <button key={f} onClick={() => setErrorFilter(f)}
+              className="px-3 py-1 rounded-lg text-[12px] font-medium transition-colors"
+              style={{
+                background: errorFilter === f ? "#C96E2C22" : "#1a1a2e",
+                color: errorFilter === f ? "#e2945a" : "#6b7280",
+                border: errorFilter === f ? "1px solid #C96E2C44" : "1px solid #2a2a3e",
+              }}>
+              {f === "all" ? `Tous (${errorLogs.length})` : `${LEVEL_META[f].label} (${errorStats[f]})`}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Stats erreurs */}
+      <div className="grid grid-cols-4 gap-3 mb-4">
+        {(["critical", "error", "warning", "info"] as const).map((l) => {
+          const m = LEVEL_META[l];
+          return (
+            <div key={l} className="rounded-xl p-3.5 border flex items-center gap-3"
+              style={{ background: "#1a1a2e", borderColor: errorStats[l] > 0 && l !== "info" ? m.color + "40" : "#2a2a3e" }}>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: m.bg, color: m.color }}>
+                <Icon name={m.icon} size={15} />
+              </div>
+              <div>
+                <div className="text-xl font-bold leading-none" style={{ color: errorStats[l] > 0 ? m.color : "#4b5563" }}>{errorStats[l]}</div>
+                <div className="text-[11px] mt-0.5" style={{ color: "#6b7280" }}>{m.label}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="rounded-xl border overflow-hidden mb-8" style={{ background: "#1a1a2e", borderColor: "#2a2a3e" }}>
+        {filteredLogs.length === 0 ? (
+          <div className="px-5 py-12 text-center text-[13px]" style={{ color: "#4b5563" }}>
+            {errorFilter === "all" ? "Aucune erreur enregistrée" : `Aucune erreur de niveau « ${errorFilter} »`}
+          </div>
+        ) : filteredLogs.map((log, i) => {
+          const m = LEVEL_META[log.level];
+          const isExpanded = showStack === log.id;
+          return (
+            <div key={log.id} className="border-b last:border-0" style={{ borderColor: "#2a2a3e", opacity: log.resolved ? 0.45 : 1 }}>
+              <div className="flex items-start gap-3 px-5 py-3.5"
+                style={{ background: i % 2 === 0 ? "transparent" : "#0f1117" }}>
+                <div className="w-7 h-7 rounded flex items-center justify-center shrink-0 mt-0.5"
+                  style={{ background: m.bg, color: m.color }}>
+                  <Icon name={m.icon} size={13} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <LevelBadge level={log.level} />
+                    {log.path && (
+                      <span className="text-[11px] font-mono" style={{ color: "#4b5563" }}>{log.path}</span>
+                    )}
+                    {log.notified && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "#fbbf2418", color: "#fbbf24" }}>
+                        webhook envoyé
+                      </span>
+                    )}
+                    {log.resolved && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "#4ade8018", color: "#4ade80" }}>
+                        résolu
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[13px] mt-1 font-mono leading-snug" style={{ color: "#d1cec8" }}>
+                    {log.message}
+                  </div>
+                  <div className="flex items-center gap-3 mt-1.5">
+                    <span className="text-[11px]" style={{ color: "#4b5563" }}>{fmtDate(log.created_at)}</span>
+                    {log.stack && (
+                      <button onClick={() => setShowStack(isExpanded ? null : log.id)}
+                        className="text-[11px] underline transition-colors hover:opacity-80"
+                        style={{ color: "#6b7280" }}>
+                        {isExpanded ? "Masquer" : "Stack trace"}
+                      </button>
+                    )}
+                    {!log.resolved && (
+                      <button onClick={() => markResolved(log.id)}
+                        className="text-[11px] underline transition-colors hover:opacity-80"
+                        style={{ color: "#4ade80" }}>
+                        Marquer résolu
+                      </button>
+                    )}
+                  </div>
+                  {isExpanded && log.stack && (
+                    <pre className="mt-2 p-3 rounded-lg text-[11px] font-mono overflow-x-auto leading-relaxed max-h-48"
+                      style={{ background: "#0a0a14", color: "#9ca3af" }}>
+                      {log.stack}
+                    </pre>
+                  )}
+                </div>
+                <span className="text-[10px] shrink-0" style={{ color: "#2a2a3e" }}>#{log.id.slice(0, 6)}</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Métriques plateforme */}
@@ -250,10 +421,10 @@ export default function AdminLogsPage() {
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-px" style={{ background: "#2a2a3e" }}>
           {[
-            { label: "Utilisateurs", value: metrics.profiles, icon: "users" },
-            { label: "Mariages", value: metrics.weddings, icon: "rings" },
-            { label: "Couples", value: metrics.byType["couple"] ?? 0, icon: "heart" },
-            { label: "Wedding planners", value: metrics.byType["planner"] ?? 0, icon: "star" },
+            { label: "Utilisateurs",      value: metrics.profiles,            icon: "users" },
+            { label: "Mariages",          value: metrics.weddings,            icon: "rings" },
+            { label: "Couples",           value: metrics.byType["couple"]  ?? 0, icon: "heart" },
+            { label: "Wedding planners",  value: metrics.byType["planner"] ?? 0, icon: "star"  },
           ].map((m) => (
             <div key={m.label} className="px-5 py-4 flex flex-col gap-1" style={{ background: "#1a1a2e" }}>
               <div className="flex items-center gap-1.5 text-[11.5px]" style={{ color: "#6b7280" }}>
