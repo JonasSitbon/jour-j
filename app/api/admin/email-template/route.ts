@@ -8,6 +8,8 @@ const BASE = `<!DOCTYPE html>
 <title>Jour J</title>
 </head>
 <body style="margin:0;padding:0;background:#F4ECDD;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+<!-- tracking pixel: remplacer {{TYPE}} par le nom du template (confirmation, invite…) -->
+<img src="https://the-cockpit.fr/api/track/open?t={{TYPE}}" width="1" height="1" style="display:none;border:0;" alt="" />
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#F4ECDD;padding:40px 16px;">
   <tr><td align="center">
     <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
@@ -76,9 +78,14 @@ const TEMPLATES: Record<string, string> = {
     <!-- Divider -->
     <div style="border-top:1px solid #F0E8DC;margin:28px 0;"></div>
 
-    <p style="margin:0;font-size:13px;color:#A08B78;">
+    <!-- Divider -->
+    <div style="border-top:1px solid #F0E8DC;margin:28px 0;"></div>
+
+    <p style="margin:0 0 12px;font-size:13px;color:#A08B78;">
       ✦ &nbsp;Organisez votre mariage avec soin — invités, budget, planning, plan de table et Jour J.
     </p>
+    <a href="https://the-cockpit.fr/api/track/click?url=https%3A%2F%2Fthe-cockpit.fr%2Fdashboard&t=confirmation_dashboard"
+       style="font-size:12px;color:#C96E2C;text-decoration:underline;">Accéder directement à mon espace →</a>
   `),
 
   invite: BASE.replace("{{BODY}}", `
@@ -112,9 +119,11 @@ const TEMPLATES: Record<string, string> = {
     <!-- Divider -->
     <div style="border-top:1px solid #F0E8DC;margin:28px 0;"></div>
 
-    <p style="margin:0;font-size:13px;color:#A08B78;">
+    <p style="margin:0 0 12px;font-size:13px;color:#A08B78;">
       ✦ &nbsp;Jour J — L'outil tout-en-un pour organiser un mariage parfait.
     </p>
+    <a href="https://the-cockpit.fr/api/track/click?url=https%3A%2F%2Fthe-cockpit.fr%2Fdashboard&t=invite_dashboard"
+       style="font-size:12px;color:#7E9A63;text-decoration:underline;">Accéder directement à mon espace →</a>
   `),
 
   "magic-link": BASE.replace("{{BODY}}", `
@@ -155,9 +164,11 @@ const TEMPLATES: Record<string, string> = {
     <!-- Divider -->
     <div style="border-top:1px solid #F0E8DC;margin:28px 0;"></div>
 
-    <p style="margin:0;font-size:13px;color:#A08B78;">
+    <p style="margin:0 0 12px;font-size:13px;color:#A08B78;">
       ✦ &nbsp;Jour J — Connectez-vous en toute simplicité.
     </p>
+    <a href="https://the-cockpit.fr/api/track/click?url=https%3A%2F%2Fthe-cockpit.fr%2Fdashboard&t=magic_link_dashboard"
+       style="font-size:12px;color:#6B4A8C;text-decoration:underline;">Accéder directement à mon espace →</a>
   `),
 
   "reset-password": BASE.replace("{{BODY}}", `
@@ -202,7 +213,9 @@ export async function GET(request: NextRequest) {
   const id = request.nextUrl.searchParams.get("id") ?? "";
   const html = TEMPLATES[id];
   if (!html) return new NextResponse("Not found", { status: 404 });
-  return new NextResponse(html, {
+  // Inject tracking type into pixel URL
+  const rendered = html.replace("{{TYPE}}", encodeURIComponent(id));
+  return new NextResponse(rendered, {
     headers: { "Content-Type": "text/html; charset=utf-8" },
   });
 }

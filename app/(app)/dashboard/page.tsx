@@ -1069,12 +1069,12 @@ export default function DashboardPage() {
   const [greeting, setGreeting] = useState<string>("");
   useEffect(() => {
     const h = new Date().getHours();
-    const name = w.partnerA || "";
+    const name = state.profile?.firstName || w.partnerA || "";
     if (h >= 6  && h < 12) setGreeting(`Bonjour ${name} 👋`);
     else if (h >= 12 && h < 18) setGreeting(`Bon après-midi ${name} 👋`);
     else if (h >= 18 && h < 23) setGreeting(`Bonsoir ${name} 👋`);
     else                         setGreeting(`Bonne nuit ${name} 🌙`);
-  }, [w.partnerA]);
+  }, [state.profile?.firstName, w.partnerA]);
 
   const todayFr = useMemo(() =>
     new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }), []);
@@ -1200,7 +1200,7 @@ export default function DashboardPage() {
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
           <h1 className="text-[26px] font-semibold tracking-[-.025em]">
-            {isNewUser ? "Bienvenue dans Jour J 🎉" : (greeting || `Bonjour ${w.partnerA} 👋`)}
+            {isNewUser ? "Bienvenue dans Jour J 🎉" : (greeting || `Bonjour ${state.profile?.firstName || w.partnerA} 👋`)}
           </h1>
           <div className="text-sm text-text-2 mt-1 capitalize">
             {isNewUser

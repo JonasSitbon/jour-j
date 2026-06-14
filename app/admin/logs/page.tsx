@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase";
 import { Icon } from "@/components/icon";
 
-type CheckState = "checking" | "ok" | "fail" | "warn";
+type CheckState = "checking" | "ok" | "fail" | "warn" | "optional";
 type ErrorLevel = "info" | "warning" | "error" | "critical";
 
 interface Check {
@@ -36,10 +36,11 @@ interface Metrics {
 }
 
 const STATE_META: Record<CheckState, { label: string; color: string; bg: string }> = {
-  checking: { label: "Vérification…", color: "#9ca3af", bg: "#9ca3af22" },
-  ok:       { label: "Opérationnel",  color: "#4ade80", bg: "#4ade8022" },
-  warn:     { label: "Non configuré", color: "#fbbf24", bg: "#fbbf2422" },
-  fail:     { label: "Échec",         color: "#f87171", bg: "#f8717122" },
+  checking: { label: "Vérification…",    color: "#9ca3af", bg: "#9ca3af22" },
+  ok:       { label: "Opérationnel",     color: "#4ade80", bg: "#4ade8022" },
+  warn:     { label: "Non configuré",    color: "#fbbf24", bg: "#fbbf2422" },
+  fail:     { label: "Échec",            color: "#f87171", bg: "#f8717122" },
+  optional: { label: "Non activé",       color: "#6b7280", bg: "#6b728022" },
 };
 
 const LEVEL_META: Record<ErrorLevel, { label: string; color: string; bg: string; icon: string }> = {
@@ -115,25 +116,38 @@ export default function AdminLogsPage() {
       });
     }
 
-    // ── 3. Sentry ──────────────────────────────────────────────────
+    // ── 3. Alertes email Resend ────────────────────────────────────
+    {
+      const t0 = performance.now();
+      try {
+        const res = await fetch("/api/admin/health");
+        const ms = Math.round(performance.now() - t0);
+        const json: { resend: boolean; alertEmail: boolean } = await res.json();
+        const ok = json.resend && json.alertEmail;
+        results.push({
+          id: "resend", label: "Alertes email (Resend)", icon: "mail",
+          desc: "Notifications erreur/critique par mail",
+          state: ok ? "ok" : json.resend ? "warn" : "warn",
+          detail: ok
+            ? `Configuré — envoi depuis monitoring@the-cockpit.fr · ${ms} ms`
+            : !json.resend
+              ? "RESEND_API_KEY manquante — alertes désactivées"
+              : "MONITORING_ALERT_EMAIL manquant",
+          latencyMs: ms,
+        });
+      } catch {
+        results.push({ id: "resend", label: "Alertes email (Resend)", icon: "mail", desc: "Notifications erreur/critique par mail", state: "fail", detail: "Endpoint /api/admin/health inaccessible" });
+      }
+    }
+
+    // ── 4. Sentry (optionnel) ──────────────────────────────────────
     {
       const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
       results.push({
-        id: "sentry", label: "Sentry (monitoring externe)", icon: "activity",
-        desc: "Capture & alertes Sentry",
-        state: dsn ? "ok" : "warn",
-        detail: dsn ? "DSN configuré — capture active" : "Aucun DSN — désactivé",
-      });
-    }
-
-    // ── 4. Webhook monitoring ──────────────────────────────────────
-    {
-      const url = process.env.NEXT_PUBLIC_MONITORING_WEBHOOK_CONFIGURED;
-      results.push({
-        id: "webhook", label: "Webhook alertes erreurs", icon: "mail",
-        desc: "MONITORING_WEBHOOK_URL",
-        state: url ? "ok" : "warn",
-        detail: url ? "Configuré — notifications actives" : "Non configuré — set MONITORING_WEBHOOK_URL dans .env",
+        id: "sentry", label: "Sentry (optionnel)", icon: "activity",
+        desc: "Double capture d'erreurs externe — non requis",
+        state: dsn ? "ok" : "optional",
+        detail: dsn ? "DSN configuré — double capture active" : "Non activé — alertes Resend suffisantes",
       });
     }
 
