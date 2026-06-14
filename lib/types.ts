@@ -185,6 +185,8 @@ export interface Wedding {
 export type AccountType = "couple" | "planner" | "super_admin";
 export type WeddingRole = "owner" | "admin" | "editor" | "viewer";
 
+export type SubscriptionPlan = "couple_monthly" | "couple_annual" | "planner_monthly" | "planner_annual" | null;
+
 export interface Profile {
   id: string;
   firstName: string;
@@ -192,6 +194,9 @@ export interface Profile {
   avatarUrl: string | null;
   accountType: AccountType;
   trialEndsAt: string | null;
+  isSubscribed: boolean;
+  subscribedAt: string | null;
+  plan: SubscriptionPlan;
 }
 
 export interface WeddingSummary {

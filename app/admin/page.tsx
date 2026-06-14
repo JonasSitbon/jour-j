@@ -16,6 +16,7 @@ interface Stats {
   trialsActive: number;
   trialsExpiringSoon: number;
   trialsExpired: number;
+  subscribed: number;
 }
 
 interface RecentUser {
@@ -25,6 +26,8 @@ interface RecentUser {
   account_type: string;
   created_at: string;
   trial_ends_at: string | null;
+  is_subscribed: boolean;
+  plan: string | null;
 }
 
 interface DayCount {
@@ -99,7 +102,7 @@ export default function AdminDashboard() {
       const monthAgo = new Date(now.getTime() - 30 * 86_400_000);
 
       const [{ data: profiles }, { data: weddings }, { data: events }] = await Promise.all([
-        c.from("profiles").select("id, first_name, last_name, account_type, created_at, trial_ends_at").order("created_at", { ascending: false }),
+        c.from("profiles").select("id, first_name, last_name, account_type, created_at, trial_ends_at, is_subscribed, plan").order("created_at", { ascending: false }),
         c.from("wedding").select("id, created_at", { count: "exact" }),
         c.from("analytics_events").select("id, event_name, path, metadata, created_at").order("created_at", { ascending: false }).limit(200),
       ]);
@@ -121,7 +124,8 @@ export default function AdminDashboard() {
         const end = new Date(p.trial_ends_at);
         return end > now && end <= new Date(now.getTime() + 3 * 86_400_000);
       }).length;
-      const trialsExpired = allProfiles.filter((p) => p.trial_ends_at && new Date(p.trial_ends_at) <= now).length;
+      const trialsExpired = allProfiles.filter((p) => p.trial_ends_at && new Date(p.trial_ends_at) <= now && !p.is_subscribed).length;
+      const subscribed    = allProfiles.filter((p) => p.is_subscribed).length;
 
       // ── 30-day chart ─────────────────────────────────────────────────────────
       const days: DayCount[] = [];
@@ -141,7 +145,7 @@ export default function AdminDashboard() {
         .map(([event_name, count]) => ({ event_name, count }))
         .sort((a, b) => b.count - a.count);
 
-      setStats({ totalUsers: allProfiles.length, totalWeddings: (weddings ?? []).length, newThisWeek, newThisMonth, couples, planners, super_admins: superAdmins, trialsActive, trialsExpiringSoon, trialsExpired });
+      setStats({ totalUsers: allProfiles.length, totalWeddings: (weddings ?? []).length, newThisWeek, newThisMonth, couples, planners, super_admins: superAdmins, trialsActive, trialsExpiringSoon, trialsExpired, subscribed });
       setRecent(allProfiles.slice(0, 6) as RecentUser[]);
       setChart(days);
       setEventCounts(eCounts);
@@ -196,13 +200,85 @@ export default function AdminDashboard() {
             <StatCard label="Nouveaux ce mois" value={stats.newThisMonth} icon="calendar" color="#fbbf24" />
           </div>
 
+          {/* ── Abonnements ── */}
+          <h2 className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: "#4b5563" }}>Abonnements</h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <StatCard label="Abonnés payants" value={stats.subscribed} icon="check-circle" color="#4ade80"
+              sub={stats.subscribed > 0 ? `${Math.round((stats.subscribed / stats.totalUsers) * 100)}% des comptes` : "Aucun abonné"} />
+            <StatCard label="En essai" value={stats.trialsActive} icon="clock" color="#fbbf24"
+              sub={stats.trialsExpiringSoon > 0 ? `dont ${stats.trialsExpiringSoon} expirent dans 3j` : undefined} />
+            <StatCard label="Essai expiré (non payé)" value={stats.trialsExpired} icon="alert" color="#ef4444" />
+            <StatCard label="Taux conversion" value={stats.totalUsers > 0 ? `${Math.round((stats.subscribed / stats.totalUsers) * 100)}%` : "—"} icon="bars" color="#c084fc" />
+          </div>
+
+          {/* ── Liste comptes avec statut ── */}
+          <div className="rounded-xl border overflow-hidden mb-8" style={{ background: "#1a1a2e", borderColor: "#2a2a3e" }}>
+            <div className="px-5 py-3 border-b flex items-center justify-between" style={{ borderColor: "#2a2a3e" }}>
+              <h2 className="text-sm font-semibold" style={{ color: "#9ca3af" }}>Comptes — Abonnement &amp; Essai</h2>
+              <Link href="/admin/users" className="text-[11px] transition-colors hover:opacity-70" style={{ color: "#C96E2C" }}>Voir tous →</Link>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-[12.5px]">
+                <thead>
+                  <tr style={{ background: "#0f1117", color: "#4b5563" }}>
+                    {["Compte", "Type", "Statut", "Essai / Plan", "Inscrit le"].map((h) => (
+                      <th key={h} className="px-4 py-2.5 text-left font-semibold text-[11px] uppercase tracking-wider">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {recent.map((u, i) => {
+                    const name = [u.first_name, u.last_name].filter(Boolean).join(" ") || "—";
+                    const badge = accountTypeBadge[u.account_type] ?? { bg: "#33333344", color: "#9ca3af", label: u.account_type };
+                    const trial = trialStatus(u.trial_ends_at);
+                    const isExpired = u.trial_ends_at && new Date(u.trial_ends_at) <= new Date() && !u.is_subscribed;
+                    return (
+                      <tr key={u.id} style={{ background: i % 2 === 0 ? "transparent" : "#0f1117" }}>
+                        <td className="px-4 py-2.5">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                              style={{ background: "#C96E2C22", color: "#e2945a" }}>
+                              {(name[0] || "?").toUpperCase()}
+                            </div>
+                            <span style={{ color: "#d1cec8" }}>{name}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold"
+                            style={{ background: badge.bg, color: badge.color }}>{badge.label}</span>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          {u.is_subscribed ? (
+                            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: "#4ade8022", color: "#4ade80" }}>✓ Abonné</span>
+                          ) : isExpired ? (
+                            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: "#ef444422", color: "#ef4444" }}>Expiré</span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: "#fbbf2422", color: "#fbbf24" }}>Essai</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2.5" style={{ color: "#6b7280" }}>
+                          {u.is_subscribed
+                            ? (u.plan ?? "—")
+                            : trial
+                              ? <span style={{ color: trial.color }}>{trial.label}</span>
+                              : "—"}
+                        </td>
+                        <td className="px-4 py-2.5" style={{ color: "#4b5563" }}>{fmtDate(u.created_at)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           {/* ── Essai ── */}
-          <h2 className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: "#4b5563" }}>Essais 7 jours</h2>
+          <h2 className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: "#4b5563" }}>Prospects (essai en cours)</h2>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             <StatCard label="Essais actifs" value={stats.trialsActive} icon="clock" color="#4ade80"
               sub={stats.trialsExpiringSoon > 0 ? `dont ${stats.trialsExpiringSoon} expirent dans 3j` : undefined} />
-            <StatCard label="Essais expirés" value={stats.trialsExpired} icon="alert" color="#ef4444" />
-            <StatCard label="Prospects (essai actif)" value={stats.trialsActive} icon="flag" color="#60a5fa" href="/admin/users" />
+            <StatCard label="Essais expirés (non convertis)" value={stats.trialsExpired} icon="alert" color="#ef4444" />
+            <StatCard label="Prospects à relancer" value={stats.trialsExpiringSoon} icon="flag" color="#60a5fa" />
           </div>
 
           {/* ── Répartition comptes + actions ── */}

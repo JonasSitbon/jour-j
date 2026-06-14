@@ -558,29 +558,46 @@ function UserCard({ collapsed, onAction }: { collapsed: boolean; onAction?: () =
 
 function TrialBanner() {
   const { state } = useStore();
-  const trialEndsAt = state.profile?.trialEndsAt;
+  const profile = state.profile;
+  if (!profile) return null;
+  // Abonnés actifs : pas de bandeau
+  if (profile.isSubscribed) return null;
+  const trialEndsAt = profile.trialEndsAt;
   if (!trialEndsAt) return null;
 
   const daysLeft = Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / 86_400_000);
-  if (daysLeft > 3) return null;
 
+  // Expiré — le blocage complet est géré dans providers.tsx, ici juste le bandeau rouge
   if (daysLeft <= 0) {
     return (
       <div className="flex items-center gap-2.5 px-5 py-2.5 text-[13px] shrink-0"
         style={{ background: "var(--coral-soft)", color: "var(--coral)", borderBottom: "1px solid rgba(217,79,79,0.15)" }}>
         <Icon name="alert" size={14} />
         <span>Votre essai gratuit a expiré.</span>
-        <a href="/#pricing" className="font-semibold underline ml-1 hover:opacity-80">Choisir un plan →</a>
+        <a href="/subscribe" className="font-semibold underline ml-1 hover:opacity-80">Choisir un plan →</a>
       </div>
     );
   }
 
+  // Derniers jours : orange vif
+  if (daysLeft <= 3) {
+    return (
+      <div className="flex items-center gap-2.5 px-5 py-2.5 text-[13px] shrink-0"
+        style={{ background: "rgba(251,191,36,0.1)", color: "#b45309", borderBottom: "1px solid rgba(251,191,36,0.2)" }}>
+        <Icon name="clock" size={14} />
+        <span>Plus que <strong>{daysLeft} jour{daysLeft > 1 ? "s" : ""}</strong> d&apos;essai gratuit.</span>
+        <a href="/subscribe" className="font-semibold underline ml-1 hover:opacity-80">Choisir un plan →</a>
+      </div>
+    );
+  }
+
+  // Essai en cours (4-7 jours) : bandeau discret
   return (
     <div className="flex items-center gap-2.5 px-5 py-2.5 text-[13px] shrink-0"
-      style={{ background: "rgba(201,110,44,0.08)", color: "var(--primary)", borderBottom: "1px solid rgba(201,110,44,0.12)" }}>
-      <Icon name="clock" size={14} />
-      <span>Il vous reste <strong>{daysLeft} jour{daysLeft > 1 ? "s" : ""}</strong> d&apos;essai gratuit.</span>
-      <a href="/#pricing" className="font-semibold underline ml-1 hover:opacity-80">Voir les plans →</a>
+      style={{ background: "rgba(201,110,44,0.06)", color: "var(--primary)", borderBottom: "1px solid rgba(201,110,44,0.1)" }}>
+      <Icon name="sparkle" size={14} />
+      <span>Essai gratuit — <strong>{daysLeft} jours</strong> restants.</span>
+      <a href="/subscribe" className="font-semibold underline ml-1 hover:opacity-80">Voir les plans →</a>
     </div>
   );
 }

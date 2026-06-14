@@ -83,15 +83,18 @@ export async function loadProfile(): Promise<Profile | null> {
     const firstName = meta.first_name ?? (full.split(" ")[0] || "");
     const lastName  = meta.last_name  ?? (full.split(" ").slice(1).join(" ") || "");
     await c.from("profiles").insert({ id: user.id, first_name: firstName, last_name: lastName, avatar_url: meta.avatar_url ?? null, account_type: "couple" });
-    return { id: user.id, firstName, lastName, avatarUrl: meta.avatar_url ?? null, accountType: "couple", trialEndsAt: null };
+    return { id: user.id, firstName, lastName, avatarUrl: meta.avatar_url ?? null, accountType: "couple", trialEndsAt: null, isSubscribed: false, subscribedAt: null, plan: null };
   }
   return {
-    id: data.id,
-    firstName:   data.first_name   ?? "",
-    lastName:    data.last_name    ?? "",
-    avatarUrl:   data.avatar_url   ?? null,
-    accountType: data.account_type as AccountType,
-    trialEndsAt: data.trial_ends_at ?? null,
+    id:           data.id,
+    firstName:    data.first_name    ?? "",
+    lastName:     data.last_name     ?? "",
+    avatarUrl:    data.avatar_url    ?? null,
+    accountType:  data.account_type  as AccountType,
+    trialEndsAt:  data.trial_ends_at ?? null,
+    isSubscribed: data.is_subscribed  ?? false,
+    subscribedAt: data.subscribed_at  ?? null,
+    plan:         data.plan           ?? null,
   };
 }
 

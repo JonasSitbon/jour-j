@@ -46,7 +46,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const publicPaths = ["/", "/login", "/signup", "/onboarding", "/update-password", "/rsvp", "/share", "/auth", "/invite"];
+    const publicPaths = ["/", "/login", "/signup", "/onboarding", "/update-password", "/rsvp", "/share", "/auth", "/invite", "/subscribe", "/privacy", "/terms"];
     const isPublic = publicPaths.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
     async function boot() {
@@ -54,9 +54,18 @@ export function Providers({ children }: { children: React.ReactNode }) {
       if (data) {
         setState((s) => ({ ...s, ...data }));
         setLoading(false);
-        // Pas de redirection automatique : un utilisateur connecté reste sur
-        // la page où il est (la landing lui propose « Accès à mon mariage »).
-        // Les pages login/signup gèrent elles-mêmes leur redirection.
+
+        // Bloquer les essais expirés (sauf super_admin et abonnés)
+        if (!isPublic && data.profile && !data.profile.isSubscribed && data.profile.accountType !== "super_admin") {
+          const trialEndsAt = data.profile.trialEndsAt;
+          if (trialEndsAt) {
+            const expired = new Date(trialEndsAt).getTime() < Date.now();
+            if (expired && pathname !== "/subscribe") {
+              router.push("/subscribe");
+              return;
+            }
+          }
+        }
       } else if (!isPublic) {
         // Distingue "pas de session" (→ /login) de "session sans mariage" (→ /onboarding)
         const { data: { user } } = await createClient().auth.getUser();
