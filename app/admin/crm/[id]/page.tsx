@@ -22,6 +22,7 @@ interface Profile {
   created_at: string;
   crm_tags: string[] | null;
   crm_notes: string | null;
+  pipeline_stage: string | null;
 }
 
 interface CrmEvent {
@@ -53,7 +54,7 @@ interface WeddingRow {
   date: string | null;
   city: string | null;
   created_at: string;
-  role: string; // from wedding_access or "owner"
+  role: string;
 }
 
 interface TimelineItem {
@@ -63,6 +64,17 @@ interface TimelineItem {
   description: string | null;
   created_at: string;
   source: "crm" | "analytics";
+}
+
+interface CrmTask {
+  id: string;
+  title: string;
+  description: string | null;
+  task_type: string;
+  due_date: string | null;
+  priority: string;
+  completed: boolean;
+  created_at: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -114,9 +126,9 @@ function avatarColor(id: string): string {
 
 function analyticsToTimeline(ev: AnalyticsEvent): TimelineItem {
   const map: Record<string, { title: string; type: string }> = {
-    signup_complete: { title: "Inscription terminée", type: "signup" },
-    login:          { title: "Connexion", type: "login" },
-    email_opened:   { title: "Email ouvert", type: "email_sent" },
+    signup_complete:    { title: "Inscription terminée", type: "signup" },
+    login:              { title: "Connexion", type: "login" },
+    email_opened:       { title: "Email ouvert", type: "email_sent" },
     email_link_clicked: { title: "Lien email cliqué", type: "email_sent" },
   };
   const m = map[ev.event_name] ?? { title: ev.event_name, type: "login" };
@@ -159,28 +171,28 @@ const ROLE_COLOR: Record<string, { bg: string; color: string }> = {
 };
 
 const EVENT_ICON: Record<string, { icon: string; color: string }> = {
-  signup:            { icon: "users",         color: "#4ade80" },
-  trial_start:       { icon: "play",          color: "#60a5fa" },
-  trial_expired:     { icon: "alert",         color: "#f87171" },
-  subscription:      { icon: "check-circle",  color: "#4ade80" },
-  plan_change:       { icon: "refresh",       color: "#fbbf24" },
-  email_sent:        { icon: "mail",          color: "#60a5fa" },
-  admin_note:        { icon: "edit",          color: "#C96E2C" },
-  wedding_created:   { icon: "rings",         color: "#fbbf24" },
-  profile_updated:   { icon: "user",          color: "#9ca3af" },
-  role_change:       { icon: "key",           color: "#a78bfa" },
+  signup:             { icon: "users",        color: "#4ade80" },
+  trial_start:        { icon: "play",         color: "#60a5fa" },
+  trial_expired:      { icon: "alert",        color: "#f87171" },
+  subscription:       { icon: "check-circle", color: "#4ade80" },
+  plan_change:        { icon: "refresh",      color: "#fbbf24" },
+  email_sent:         { icon: "mail",         color: "#60a5fa" },
+  admin_note:         { icon: "edit",         color: "#C96E2C" },
+  wedding_created:    { icon: "rings",        color: "#fbbf24" },
+  profile_updated:    { icon: "user",         color: "#9ca3af" },
+  role_change:        { icon: "key",          color: "#a78bfa" },
   account_type_change:{ icon: "settings",     color: "#a78bfa" },
-  login:             { icon: "key",           color: "#6b7280" },
-  password_reset:    { icon: "refresh",       color: "#fbbf24" },
-  error:             { icon: "alert",         color: "#f87171" },
+  login:              { icon: "key",          color: "#6b7280" },
+  password_reset:     { icon: "refresh",      color: "#fbbf24" },
+  error:              { icon: "alert",        color: "#f87171" },
 };
 
 const TIMELINE_FILTERS = [
-  { id: "all",        label: "Tout" },
-  { id: "admin",      label: "Admin & notes" },
-  { id: "emails",     label: "Emails" },
-  { id: "weddings",   label: "Mariages" },
-  { id: "logins",     label: "Connexions" },
+  { id: "all",      label: "Tout" },
+  { id: "admin",    label: "Admin & notes" },
+  { id: "emails",   label: "Emails" },
+  { id: "weddings", label: "Mariages" },
+  { id: "logins",   label: "Connexions" },
 ] as const;
 type TimelineFilter = typeof TIMELINE_FILTERS[number]["id"];
 
@@ -191,6 +203,96 @@ function matchesFilter(item: TimelineItem, filter: TimelineFilter): boolean {
   if (filter === "weddings") return ["wedding_created"].includes(item.type);
   if (filter === "logins") return ["login", "signup", "trial_start", "password_reset"].includes(item.type);
   return true;
+}
+
+// ─── Pipeline stages ──────────────────────────────────────────────────────────
+
+const PIPELINE_STAGES: Array<{ value: string; label: string; color: string }> = [
+  { value: "prospect",    label: "Prospect",     color: "#6b7280" },
+  { value: "trial",       label: "Essai",        color: "#60a5fa" },
+  { value: "qualified",   label: "Qualifié",     color: "#fbbf24" },
+  { value: "offer_sent",  label: "Offre envoyée",color: "#f97316" },
+  { value: "negotiation", label: "Négociation",  color: "#a78bfa" },
+  { value: "won",         label: "Gagné",        color: "#4ade80" },
+  { value: "churned",     label: "Churné",       color: "#ef4444" },
+  { value: "lost",        label: "Perdu",        color: "#4b5563" },
+];
+
+// ─── Task type icons & priority colors ───────────────────────────────────────
+
+const TASK_TYPE_ICON: Record<string, string> = {
+  call:       "phone",
+  email:      "mail",
+  meeting:    "users",
+  task:       "check-circle",
+  follow_up:  "refresh",
+};
+
+const PRIORITY_COLOR: Record<string, string> = {
+  low:    "#6b7280",
+  medium: "#fbbf24",
+  high:   "#f97316",
+  urgent: "#ef4444",
+};
+
+// ─── Email templates ──────────────────────────────────────────────────────────
+
+function getEmailTemplates(firstName: string | null) {
+  const name = firstName ?? "vous";
+  return [
+    { value: "vide", label: "Vide", subject: "", body: "" },
+    {
+      value: "bienvenue",
+      label: "Bienvenue",
+      subject: "Bienvenue sur Jour J 🎉",
+      body: `<p>Bonjour ${name},</p>
+<p>Bienvenue sur <strong>Jour J</strong> ! Nous sommes ravis de vous accueillir.</p>
+<p>Jour J est votre assistant de mariage tout-en-un : planning, budget, prestataires, invités… tout est centralisé pour que vous puissiez profiter de la préparation de votre mariage l'esprit tranquille.</p>
+<p>N'hésitez pas à explorer l'application et à nous contacter si vous avez la moindre question.</p>
+<p>À très bientôt,<br/>L'équipe Jour J</p>`,
+    },
+    {
+      value: "relance_essai",
+      label: "Relance essai",
+      subject: "Votre essai Jour J expire bientôt",
+      body: `<p>Bonjour ${name},</p>
+<p>Votre période d'essai sur <strong>Jour J</strong> arrive à expiration très prochainement.</p>
+<p>Pour continuer à accéder à toutes les fonctionnalités et ne rien perdre de votre travail, passez à l'abonnement dès maintenant :</p>
+<p><a href="https://jour-j.app/tarifs">Voir les offres</a></p>
+<p>En cas de question, nous sommes là pour vous aider.</p>
+<p>L'équipe Jour J</p>`,
+    },
+    {
+      value: "essai_expire",
+      label: "Essai expiré",
+      subject: "Votre accès Jour J a expiré",
+      body: `<p>Bonjour ${name},</p>
+<p>Votre période d'essai sur <strong>Jour J</strong> est terminée. Votre accès aux fonctionnalités premium est maintenant limité.</p>
+<p>Reprenez votre préparation là où vous l'avez laissée en souscrivant à un abonnement :</p>
+<p><a href="https://jour-j.app/tarifs">Voir les offres</a></p>
+<p>Toutes vos données sont conservées et vous retrouverez votre avancement intact.</p>
+<p>L'équipe Jour J</p>`,
+    },
+    {
+      value: "confirmation_abo",
+      label: "Confirmation abonnement",
+      subject: "Votre abonnement Jour J est actif",
+      body: `<p>Bonjour ${name},</p>
+<p>Merci pour votre confiance ! Votre abonnement <strong>Jour J</strong> est maintenant actif.</p>
+<p>Vous avez accès à toutes les fonctionnalités sans limite pour préparer votre mariage sereinement.</p>
+<p>Si vous avez besoin d'aide ou avez des questions, notre équipe est disponible pour vous.</p>
+<p>Avec tout notre soutien pour ce grand jour,<br/>L'équipe Jour J</p>`,
+    },
+    {
+      value: "renouvellement",
+      label: "Renouvellement",
+      subject: "Renouvellement de votre abonnement",
+      body: `<p>Bonjour ${name},</p>
+<p>Votre abonnement <strong>Jour J</strong> vient d'être renouvelé avec succès.</p>
+<p>Vous continuez à bénéficier de toutes les fonctionnalités de l'application.</p>
+<p>Merci de votre fidélité,<br/>L'équipe Jour J</p>`,
+    },
+  ];
 }
 
 // ─── Inline editable field ────────────────────────────────────────────────────
@@ -290,6 +392,23 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
   const tagInputRef = useRef<HTMLInputElement>(null);
   const notesDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── Email modal state ──────────────────────────────────────────────────────
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailBody, setEmailBody] = useState("");
+  const [emailTemplate, setEmailTemplate] = useState("vide");
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+
+  // ── Tasks state ────────────────────────────────────────────────────────────
+  const [tasks, setTasks] = useState<CrmTask[]>([]);
+  const [showAddTask, setShowAddTask] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskType, setNewTaskType] = useState("task");
+  const [newTaskDue, setNewTaskDue] = useState("");
+  const [newTaskPriority, setNewTaskPriority] = useState("medium");
+  const [showCompletedTasks, setShowCompletedTasks] = useState(false);
+
   // ── Load all data ──────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -299,7 +418,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
       // Profile
       const { data: profileData } = await sb
         .from("profiles")
-        .select("id, first_name, last_name, email, phone, company, account_type, is_subscribed, plan, trial_ends_at, subscribed_at, created_at, crm_tags, crm_notes")
+        .select("id, first_name, last_name, email, phone, company, account_type, is_subscribed, plan, trial_ends_at, subscribed_at, created_at, crm_tags, crm_notes, pipeline_stage")
         .eq("id", userId)
         .maybeSingle();
       if (profileData) {
@@ -373,6 +492,16 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
       }
 
       setWeddings([...owned, ...accessWeddings]);
+
+      // Tasks
+      const { data: tasksData } = await sb
+        .from("crm_tasks")
+        .select("id, title, description, task_type, due_date, priority, completed, created_at")
+        .eq("user_id", userId)
+        .order("completed")
+        .order("due_date", { ascending: true });
+      setTasks((tasksData ?? []) as CrmTask[]);
+
       setLoading(false);
     }
     load();
@@ -384,6 +513,13 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
     await createClient().from("profiles").update({ [field]: value }).eq("id", userId);
     setProfile((prev) => prev ? { ...prev, [field]: value } : prev);
   }, [userId]);
+
+  // ── Update pipeline stage ──────────────────────────────────────────────────
+
+  async function updatePipelineStage(stage: string) {
+    await createClient().from("profiles").update({ pipeline_stage: stage }).eq("id", userId);
+    setProfile((prev) => prev ? { ...prev, pipeline_stage: stage } : prev);
+  }
 
   // ── Notes auto-save with debounce ─────────────────────────────────────────
 
@@ -460,6 +596,108 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
     setSavingNote(false);
   }
 
+  // ── Send email ─────────────────────────────────────────────────────────────
+
+  function handleTemplateChange(templateValue: string) {
+    setEmailTemplate(templateValue);
+    if (!profile) return;
+    const templates = getEmailTemplates(profile.first_name);
+    const tpl = templates.find((t) => t.value === templateValue);
+    if (tpl) {
+      setEmailSubject(tpl.subject);
+      setEmailBody(tpl.body);
+    }
+  }
+
+  async function sendEmail() {
+    if (!emailSubject.trim() || !emailBody.trim() || !profile?.email) return;
+    setSendingEmail(true);
+    try {
+      const res = await fetch("/api/admin/send-crm-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to_email: profile.email,
+          to_name: fullName,
+          to_user_id: userId,
+          subject: emailSubject,
+          body_html: emailBody,
+        }),
+      });
+      if (res.ok) {
+        setEmailSent(true);
+        // Add event to timeline
+        const newEvent: TimelineItem = {
+          id: `email-${Date.now()}`,
+          type: "email_sent",
+          title: `Email envoyé : ${emailSubject}`,
+          description: null,
+          created_at: new Date().toISOString(),
+          source: "crm",
+        };
+        setTimeline((prev) => [newEvent, ...prev]);
+        setTimeout(() => {
+          setShowEmailModal(false);
+          setEmailSent(false);
+          setEmailSubject("");
+          setEmailBody("");
+          setEmailTemplate("vide");
+        }, 2000);
+      }
+    } finally {
+      setSendingEmail(false);
+    }
+  }
+
+  function openEmailModal() {
+    setEmailSubject("");
+    setEmailBody("");
+    setEmailTemplate("vide");
+    setEmailSent(false);
+    setShowEmailModal(true);
+  }
+
+  // ── Tasks ──────────────────────────────────────────────────────────────────
+
+  async function toggleTask(task: CrmTask) {
+    const next = !task.completed;
+    await createClient()
+      .from("crm_tasks")
+      .update({ completed: next, completed_at: next ? new Date().toISOString() : null })
+      .eq("id", task.id);
+    setTasks((prev) =>
+      prev.map((t) => t.id === task.id ? { ...t, completed: next } : t)
+    );
+  }
+
+  async function deleteTask(taskId: string) {
+    await createClient().from("crm_tasks").delete().eq("id", taskId);
+    setTasks((prev) => prev.filter((t) => t.id !== taskId));
+  }
+
+  async function createTask() {
+    if (!newTaskTitle.trim()) return;
+    const { data } = await createClient()
+      .from("crm_tasks")
+      .insert({
+        user_id: userId,
+        title: newTaskTitle.trim(),
+        task_type: newTaskType,
+        due_date: newTaskDue || null,
+        priority: newTaskPriority,
+      })
+      .select("id, title, description, task_type, due_date, priority, completed, created_at")
+      .single();
+    if (data) {
+      setTasks((prev) => [data as CrmTask, ...prev]);
+    }
+    setNewTaskTitle("");
+    setNewTaskType("task");
+    setNewTaskDue("");
+    setNewTaskPriority("medium");
+    setShowAddTask(false);
+  }
+
   // ── Computed ──────────────────────────────────────────────────────────────
 
   const accountBadge = ACCOUNT_BADGE[profile?.account_type ?? "couple"] ?? { label: profile?.account_type ?? "", bg: "#33333344", color: "#9ca3af" };
@@ -485,6 +723,14 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
   }
 
   const fullName = [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") || "Utilisateur";
+  const phone = profile?.phone ?? "";
+  const hasPhone = phone.trim().length > 0;
+
+  const incompleteTasks = tasks.filter((t) => !t.completed);
+  const completedTasks = tasks.filter((t) => t.completed);
+  const visibleCompletedTasks = showCompletedTasks ? completedTasks : completedTasks.slice(0, 5);
+
+  const currentPipelineStage = PIPELINE_STAGES.find((s) => s.value === profile?.pipeline_stage);
 
   // ── Loading state ─────────────────────────────────────────────────────────
 
@@ -515,6 +761,140 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
   return (
     <div className="min-h-screen" style={{ background: "#0d0d1a", color: "#f0ead8" }}>
 
+      {/* ── Email compose modal ──────────────────────────────────────── */}
+      {showEmailModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "#0d0d1acc" }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowEmailModal(false); }}
+        >
+          <div
+            className="w-full rounded-2xl border overflow-hidden flex flex-col"
+            style={{ maxWidth: 700, background: "#1a1a2e", borderColor: "#2a2a3e", maxHeight: "90vh" }}
+          >
+            {/* Modal header */}
+            <div
+              className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0"
+              style={{ borderColor: "#2a2a3e" }}
+            >
+              <div>
+                <h2 className="text-[15px] font-bold" style={{ color: "#f0ead8" }}>
+                  Envoyer un email à {fullName}
+                </h2>
+                <p className="text-[12px] mt-0.5" style={{ color: "#6b7280" }}>
+                  {profile.email ?? "Aucun email"}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowEmailModal(false)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:opacity-70"
+                style={{ background: "#2a2a3e", color: "#9ca3af" }}
+              >
+                <Icon name="x" size={14} />
+              </button>
+            </div>
+
+            {/* Modal body */}
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+              {emailSent ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-3">
+                  <div
+                    className="w-14 h-14 rounded-full flex items-center justify-center"
+                    style={{ background: "#16562233" }}
+                  >
+                    <Icon name="check-circle" size={28} style={{ color: "#4ade80" }} />
+                  </div>
+                  <p className="text-[15px] font-semibold" style={{ color: "#4ade80" }}>Email envoyé !</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  {/* Template picker */}
+                  <div>
+                    <label className="text-[11px] font-semibold uppercase tracking-wider mb-1.5 block" style={{ color: "#4b5563" }}>
+                      Modèle
+                    </label>
+                    <select
+                      value={emailTemplate}
+                      onChange={(e) => handleTemplateChange(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border text-[13px] outline-none appearance-none"
+                      style={{ background: "#0d0d1a", borderColor: "#2a2a3e", color: "#e8e4dc" }}
+                    >
+                      {getEmailTemplates(profile.first_name).map((t) => (
+                        <option key={t.value} value={t.value}>{t.label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Subject */}
+                  <div>
+                    <label className="text-[11px] font-semibold uppercase tracking-wider mb-1.5 block" style={{ color: "#4b5563" }}>
+                      Objet
+                    </label>
+                    <input
+                      type="text"
+                      value={emailSubject}
+                      onChange={(e) => setEmailSubject(e.target.value)}
+                      placeholder="Objet de l'email…"
+                      className="w-full px-3 py-2 rounded-lg border text-[13px] outline-none"
+                      style={{ background: "#0d0d1a", borderColor: "#2a2a3e", color: "#e8e4dc" }}
+                    />
+                  </div>
+
+                  {/* Body */}
+                  <div>
+                    <label className="text-[11px] font-semibold uppercase tracking-wider mb-1.5 block" style={{ color: "#4b5563" }}>
+                      Corps du message (HTML autorisé)
+                    </label>
+                    <textarea
+                      value={emailBody}
+                      onChange={(e) => setEmailBody(e.target.value)}
+                      rows={10}
+                      placeholder="<p>Bonjour,</p><p>…</p>"
+                      className="w-full px-3 py-2.5 rounded-lg border text-[13px] outline-none resize-none leading-relaxed font-mono"
+                      style={{ background: "#0d0d1a", borderColor: "#2a2a3e", color: "#e8e4dc" }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal footer */}
+            {!emailSent && (
+              <div
+                className="flex items-center justify-end gap-3 px-6 py-4 border-t flex-shrink-0"
+                style={{ borderColor: "#2a2a3e" }}
+              >
+                <button
+                  onClick={() => setShowEmailModal(false)}
+                  className="px-4 py-2 rounded-lg text-[13px] font-medium border transition-colors hover:opacity-80"
+                  style={{ background: "transparent", borderColor: "#2a2a3e", color: "#9ca3af" }}
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={sendEmail}
+                  disabled={sendingEmail || !emailSubject.trim() || !emailBody.trim() || !profile.email}
+                  className="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-semibold transition-colors disabled:opacity-50"
+                  style={{ background: "#C96E2C", color: "#fffaf2" }}
+                >
+                  {sendingEmail ? (
+                    <>
+                      <div className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                      Envoi…
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="mail" size={14} />
+                      Envoyer
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ── Top header bar ────────────────────────────────────────────── */}
       <div
         className="flex items-center gap-4 px-6 py-4 border-b sticky top-0 z-20"
@@ -543,14 +923,64 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
           {statusBadge.label}
         </span>
         <div className="flex-1" />
-        <Link
-          href={`/admin/users`}
-          className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-[13px] font-medium border transition-colors hover:opacity-80"
-          style={{ background: "#1a1a2e", borderColor: "#2a2a3e", color: "#9ca3af" }}
-        >
-          <Icon name="edit" size={14} />
-          Modifier
-        </Link>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-2">
+          {/* Email button */}
+          <button
+            onClick={openEmailModal}
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors hover:opacity-80"
+            style={{ background: "#C96E2C22", border: "1px solid #C96E2C44", color: "#e2945a" }}
+          >
+            <Icon name="mail" size={14} />
+            Envoyer un email
+          </button>
+
+          {/* WhatsApp button */}
+          {hasPhone ? (
+            <a
+              href={`https://wa.me/${phone.replace(/\D/g, "")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors hover:opacity-80"
+              style={{ background: "#16562222", border: "1px solid #4ade8033", color: "#4ade80" }}
+            >
+              <Icon name="message" size={14} />
+              WhatsApp
+            </a>
+          ) : (
+            <button
+              disabled
+              title="Aucun téléphone"
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-[13px] font-medium opacity-40 cursor-not-allowed"
+              style={{ background: "#16562222", border: "1px solid #4ade8033", color: "#4ade80" }}
+            >
+              <Icon name="message" size={14} />
+              WhatsApp
+            </button>
+          )}
+
+          {/* SMS button */}
+          {hasPhone ? (
+            <a
+              href={`sms:${phone}`}
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors hover:opacity-80"
+              style={{ background: "#1e3a5f33", border: "1px solid #60a5fa33", color: "#60a5fa" }}
+            >
+              <Icon name="phone" size={14} />
+              SMS
+            </a>
+          ) : (
+            <button
+              disabled
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-[13px] font-medium opacity-40 cursor-not-allowed"
+              style={{ background: "#1e3a5f33", border: "1px solid #60a5fa33", color: "#60a5fa" }}
+            >
+              <Icon name="phone" size={14} />
+              SMS
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ── 3-column layout ───────────────────────────────────────────── */}
@@ -582,6 +1012,43 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
               <InlineField label="Email" value={profile.email ?? ""} field="email" onSave={updateProfile} placeholder="email@exemple.com" type="email" />
               <InlineField label="Téléphone" value={profile.phone ?? ""} field="phone" onSave={updateProfile} placeholder="+33 6 00 00 00 00" type="tel" />
               <InlineField label="Société" value={profile.company ?? ""} field="company" onSave={updateProfile} placeholder="Nom de la société" />
+            </div>
+
+            {/* ── Pipeline ── */}
+            <div className="mb-4">
+              <div className="text-[11px] font-semibold uppercase tracking-wider mb-2.5" style={{ color: "#4b5563" }}>
+                Pipeline
+              </div>
+              <div className="relative">
+                <select
+                  value={profile.pipeline_stage ?? ""}
+                  onChange={(e) => updatePipelineStage(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border text-[13px] outline-none appearance-none font-semibold pr-8"
+                  style={{
+                    background: "#0d0d1a",
+                    borderColor: currentPipelineStage ? currentPipelineStage.color + "55" : "#2a2a3e",
+                    color: currentPipelineStage ? currentPipelineStage.color : "#6b7280",
+                  }}
+                >
+                  <option value="" style={{ color: "#6b7280" }}>— Choisir un stade —</option>
+                  {PIPELINE_STAGES.map((s) => (
+                    <option key={s.value} value={s.value} style={{ color: s.color }}>
+                      {s.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <Icon name="chevronD" size={12} style={{ color: currentPipelineStage?.color ?? "#6b7280" }} />
+                </div>
+                {currentPipelineStage && (
+                  <div
+                    className="mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold inline-block"
+                    style={{ background: currentPipelineStage.color + "22", color: currentPipelineStage.color }}
+                  >
+                    {currentPipelineStage.label}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* ── Abonnement ── */}
@@ -887,96 +1354,307 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
           </div>
         </main>
 
-        {/* ══ RIGHT — Mariages liés (30%) ══════════════════════════════════ */}
+        {/* ══ RIGHT — Tasks + Mariages (30%) ════════════════════════════════ */}
         <aside
           className="w-[30%] flex-shrink-0 border-l overflow-y-auto"
           style={{ background: "#1a1a2e", borderColor: "#2a2a3e" }}
         >
           <div className="p-5">
-            <h2 className="text-[13px] font-semibold uppercase tracking-wider mb-4" style={{ color: "#4b5563" }}>
-              Mariages liés
-              <span
-                className="ml-2 text-[11px] font-bold px-1.5 py-0.5 rounded-full normal-case tracking-normal"
-                style={{ background: "#C96E2C22", color: "#e2945a" }}
-              >
-                {weddings.length}
-              </span>
-            </h2>
 
-            {weddings.length === 0 ? (
-              <div
-                className="rounded-xl border px-5 py-10 text-center"
-                style={{ borderColor: "#2a2a3e", borderStyle: "dashed" }}
-              >
-                <Icon name="rings" size={28} style={{ color: "#2a2a3e", margin: "0 auto 10px" }} />
-                <p className="text-[13px]" style={{ color: "#4b5563" }}>Aucun mariage associé</p>
+            {/* ── Tâches ── */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-[13px] font-semibold uppercase tracking-wider" style={{ color: "#4b5563" }}>
+                  Tâches
+                  <span
+                    className="ml-2 text-[11px] font-bold px-1.5 py-0.5 rounded-full normal-case tracking-normal"
+                    style={{ background: "#C96E2C22", color: "#e2945a" }}
+                  >
+                    {incompleteTasks.length}
+                  </span>
+                </h2>
+                <button
+                  onClick={() => setShowAddTask((p) => !p)}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[12px] font-medium border transition-colors hover:opacity-80"
+                  style={{
+                    background: showAddTask ? "#C96E2C22" : "transparent",
+                    borderColor: showAddTask ? "#C96E2C44" : "#2a2a3e",
+                    color: showAddTask ? "#e2945a" : "#6b7280",
+                  }}
+                >
+                  <Icon name="plus" size={12} />
+                  Nouvelle
+                </button>
               </div>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {weddings.map((w) => {
-                  const pNames = [w.partner_a, w.partner_b].filter(Boolean).join(" & ") || w.name || "Sans nom";
-                  const roleStyle = ROLE_COLOR[w.role] ?? { bg: "#33333344", color: "#9ca3af" };
-                  const roleLabel = ROLE_LABEL[w.role] ?? w.role;
 
-                  return (
+              {/* Add task form */}
+              {showAddTask && (
+                <div
+                  className="mb-3 p-3 rounded-xl border"
+                  style={{ background: "#0d0d1a", borderColor: "#2a2a3e" }}
+                >
+                  <input
+                    type="text"
+                    value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") createTask(); if (e.key === "Escape") setShowAddTask(false); }}
+                    placeholder="Titre de la tâche…"
+                    className="w-full px-3 py-1.5 rounded-lg border text-[13px] outline-none mb-2"
+                    style={{ background: "#1a1a2e", borderColor: "#2a2a3e", color: "#e8e4dc" }}
+                    autoFocus
+                  />
+                  <div className="flex gap-2 mb-2">
+                    <select
+                      value={newTaskType}
+                      onChange={(e) => setNewTaskType(e.target.value)}
+                      className="flex-1 px-2 py-1.5 rounded-lg border text-[12px] outline-none appearance-none"
+                      style={{ background: "#1a1a2e", borderColor: "#2a2a3e", color: "#e8e4dc" }}
+                    >
+                      <option value="task">Tâche</option>
+                      <option value="call">Appel</option>
+                      <option value="email">Email</option>
+                      <option value="meeting">Réunion</option>
+                      <option value="follow_up">Suivi</option>
+                    </select>
+                    <input
+                      type="date"
+                      value={newTaskDue}
+                      onChange={(e) => setNewTaskDue(e.target.value)}
+                      className="flex-1 px-2 py-1.5 rounded-lg border text-[12px] outline-none"
+                      style={{ background: "#1a1a2e", borderColor: "#2a2a3e", color: "#e8e4dc" }}
+                    />
+                    <select
+                      value={newTaskPriority}
+                      onChange={(e) => setNewTaskPriority(e.target.value)}
+                      className="flex-1 px-2 py-1.5 rounded-lg border text-[12px] outline-none appearance-none"
+                      style={{ background: "#1a1a2e", borderColor: "#2a2a3e", color: "#e8e4dc" }}
+                    >
+                      <option value="low">Basse</option>
+                      <option value="medium">Moyenne</option>
+                      <option value="high">Haute</option>
+                      <option value="urgent">Urgente</option>
+                    </select>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={createTask}
+                      disabled={!newTaskTitle.trim()}
+                      className="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-colors disabled:opacity-50"
+                      style={{ background: "#C96E2C", color: "#fffaf2" }}
+                    >
+                      Créer
+                    </button>
+                    <button
+                      onClick={() => setShowAddTask(false)}
+                      className="px-3 py-1.5 rounded-lg text-[12px] border transition-colors hover:opacity-80"
+                      style={{ background: "transparent", borderColor: "#2a2a3e", color: "#6b7280" }}
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Incomplete tasks */}
+              {incompleteTasks.length === 0 && completedTasks.length === 0 ? (
+                <div
+                  className="rounded-xl border px-4 py-8 text-center"
+                  style={{ borderColor: "#2a2a3e", borderStyle: "dashed" }}
+                >
+                  <Icon name="check-circle" size={24} style={{ color: "#2a2a3e", margin: "0 auto 8px" }} />
+                  <p className="text-[12px]" style={{ color: "#4b5563" }}>Aucune tâche</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1">
+                  {incompleteTasks.map((task) => (
                     <div
-                      key={w.id}
-                      className="rounded-xl border p-4 transition-colors"
+                      key={task.id}
+                      className="group flex items-center gap-2.5 px-3 py-2 rounded-lg border transition-colors hover:border-opacity-60"
                       style={{ background: "#0d0d1a", borderColor: "#2a2a3e" }}
                     >
-                      {/* Header row */}
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <div>
-                          <div className="text-[14px] font-semibold leading-snug" style={{ color: "#f0ead8" }}>
-                            {pNames}
-                          </div>
-                          {w.name && w.name !== pNames && (
-                            <div className="text-[11px] mt-0.5" style={{ color: "#6b7280" }}>{w.name}</div>
-                          )}
+                      {/* Checkbox */}
+                      <button
+                        onClick={() => toggleTask(task)}
+                        className="w-4 h-4 rounded-full border-2 flex-shrink-0 transition-colors hover:opacity-80"
+                        style={{ borderColor: PRIORITY_COLOR[task.priority] ?? "#6b7280", background: "transparent" }}
+                      />
+                      {/* Icon */}
+                      <Icon
+                        name={TASK_TYPE_ICON[task.task_type] ?? "check-circle"}
+                        size={12}
+                        style={{ color: PRIORITY_COLOR[task.priority] ?? "#6b7280", flexShrink: 0 }}
+                      />
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[12px] font-medium truncate" style={{ color: "#e8e4dc" }}>
+                          {task.title}
                         </div>
-                        <span
-                          className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0"
-                          style={{ background: roleStyle.bg, color: roleStyle.color }}
-                        >
-                          {roleLabel}
-                        </span>
-                      </div>
-
-                      {/* Date + city */}
-                      <div className="flex flex-wrap items-center gap-3 mb-3">
-                        {w.date && (
-                          <div className="flex items-center gap-1.5 text-[12px]" style={{ color: "#9ca3af" }}>
-                            <Icon name="calendar" size={12} />
-                            {formatDate(w.date)}
-                          </div>
-                        )}
-                        {w.city && (
-                          <div className="flex items-center gap-1.5 text-[12px]" style={{ color: "#9ca3af" }}>
-                            <Icon name="pin" size={12} />
-                            {w.city}
+                        {task.due_date && (
+                          <div className="text-[10px]" style={{ color: "#6b7280" }}>
+                            {formatDate(task.due_date)}
                           </div>
                         )}
                       </div>
+                      {/* Delete on hover */}
+                      <button
+                        onClick={() => deleteTask(task.id)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
+                        style={{ color: "#ef4444" }}
+                      >
+                        <Icon name="x" size={11} />
+                      </button>
+                    </div>
+                  ))}
 
-                      {/* Footer */}
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px]" style={{ color: "#4b5563" }}>
-                          #{w.id}
-                        </span>
-                        <Link
-                          href={`/dashboard`}
-                          className="flex items-center gap-1 text-[12px] font-medium transition-colors hover:opacity-80"
-                          style={{ color: "#C96E2C" }}
-                        >
-                          Voir
-                          <Icon name="chevronR" size={12} />
-                        </Link>
+                  {/* Completed tasks */}
+                  {completedTasks.length > 0 && (
+                    <div className="mt-2">
+                      <button
+                        onClick={() => setShowCompletedTasks((p) => !p)}
+                        className="flex items-center gap-1.5 text-[11px] mb-1.5 transition-colors hover:opacity-80"
+                        style={{ color: "#4b5563" }}
+                      >
+                        <Icon name={showCompletedTasks ? "chevronU" : "chevronD"} size={10} />
+                        {completedTasks.length} terminée{completedTasks.length > 1 ? "s" : ""}
+                      </button>
+                      <div className="flex flex-col gap-1">
+                        {visibleCompletedTasks.map((task) => (
+                          <div
+                            key={task.id}
+                            className="group flex items-center gap-2.5 px-3 py-2 rounded-lg border opacity-50 transition-opacity hover:opacity-70"
+                            style={{ background: "#0d0d1a", borderColor: "#2a2a3e" }}
+                          >
+                            {/* Checkbox (filled) */}
+                            <button
+                              onClick={() => toggleTask(task)}
+                              className="w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center transition-colors"
+                              style={{ background: "#4b5563", border: "2px solid #4b5563" }}
+                            >
+                              <Icon name="check-circle" size={8} style={{ color: "#0d0d1a" }} />
+                            </button>
+                            <Icon
+                              name={TASK_TYPE_ICON[task.task_type] ?? "check-circle"}
+                              size={12}
+                              style={{ color: "#4b5563", flexShrink: 0 }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="text-[12px] line-through truncate" style={{ color: "#6b7280" }}>
+                                {task.title}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => deleteTask(task.id)}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
+                              style={{ color: "#ef4444" }}
+                            >
+                              <Icon name="x" size={11} />
+                            </button>
+                          </div>
+                        ))}
+                        {!showCompletedTasks && completedTasks.length > 5 && (
+                          <button
+                            onClick={() => setShowCompletedTasks(true)}
+                            className="text-[11px] text-center py-1 transition-colors hover:opacity-80"
+                            style={{ color: "#4b5563" }}
+                          >
+                            Voir {completedTasks.length - 5} de plus…
+                          </button>
+                        )}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* ── Mariages liés ── */}
+            <div>
+              <h2 className="text-[13px] font-semibold uppercase tracking-wider mb-4" style={{ color: "#4b5563" }}>
+                Mariages liés
+                <span
+                  className="ml-2 text-[11px] font-bold px-1.5 py-0.5 rounded-full normal-case tracking-normal"
+                  style={{ background: "#C96E2C22", color: "#e2945a" }}
+                >
+                  {weddings.length}
+                </span>
+              </h2>
+
+              {weddings.length === 0 ? (
+                <div
+                  className="rounded-xl border px-5 py-10 text-center"
+                  style={{ borderColor: "#2a2a3e", borderStyle: "dashed" }}
+                >
+                  <Icon name="rings" size={28} style={{ color: "#2a2a3e", margin: "0 auto 10px" }} />
+                  <p className="text-[13px]" style={{ color: "#4b5563" }}>Aucun mariage associé</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {weddings.map((w) => {
+                    const pNames = [w.partner_a, w.partner_b].filter(Boolean).join(" & ") || w.name || "Sans nom";
+                    const roleStyle = ROLE_COLOR[w.role] ?? { bg: "#33333344", color: "#9ca3af" };
+                    const roleLabel = ROLE_LABEL[w.role] ?? w.role;
+
+                    return (
+                      <div
+                        key={w.id}
+                        className="rounded-xl border p-4 transition-colors"
+                        style={{ background: "#0d0d1a", borderColor: "#2a2a3e" }}
+                      >
+                        {/* Header row */}
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div>
+                            <div className="text-[14px] font-semibold leading-snug" style={{ color: "#f0ead8" }}>
+                              {pNames}
+                            </div>
+                            {w.name && w.name !== pNames && (
+                              <div className="text-[11px] mt-0.5" style={{ color: "#6b7280" }}>{w.name}</div>
+                            )}
+                          </div>
+                          <span
+                            className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0"
+                            style={{ background: roleStyle.bg, color: roleStyle.color }}
+                          >
+                            {roleLabel}
+                          </span>
+                        </div>
+
+                        {/* Date + city */}
+                        <div className="flex flex-wrap items-center gap-3 mb-3">
+                          {w.date && (
+                            <div className="flex items-center gap-1.5 text-[12px]" style={{ color: "#9ca3af" }}>
+                              <Icon name="calendar" size={12} />
+                              {formatDate(w.date)}
+                            </div>
+                          )}
+                          {w.city && (
+                            <div className="flex items-center gap-1.5 text-[12px]" style={{ color: "#9ca3af" }}>
+                              <Icon name="pin" size={12} />
+                              {w.city}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px]" style={{ color: "#4b5563" }}>
+                            #{w.id}
+                          </span>
+                          <Link
+                            href={`/dashboard`}
+                            className="flex items-center gap-1 text-[12px] font-medium transition-colors hover:opacity-80"
+                            style={{ color: "#C96E2C" }}
+                          >
+                            Voir
+                            <Icon name="chevronR" size={12} />
+                          </Link>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
           </div>
         </aside>
 

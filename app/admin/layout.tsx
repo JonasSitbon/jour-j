@@ -13,13 +13,21 @@ interface Profile {
   last_name: string;
 }
 
-const NAV = [
-  { href: "/admin", label: "Dashboard", icon: "grid" },
-  { href: "/admin/users", label: "Utilisateurs", icon: "users" },
-  { href: "/admin/emails", label: "Emails", icon: "mail" },
-  { href: "/admin/roles", label: "Rôles & Accès", icon: "key" },
-  { href: "/admin/features", label: "Fonctionnalités", icon: "flag" },
-  { href: "/admin/logs", label: "Logs & Statut", icon: "activity" },
+interface NavSubItem { href: string; label: string; }
+interface NavItem { href: string; label: string; icon: string; subnav?: NavSubItem[]; }
+
+const NAV: NavItem[] = [
+  { href: "/admin",           label: "Dashboard",        icon: "grid" },
+  { href: "/admin/crm",       label: "CRM Clients",      icon: "users", subnav: [
+    { href: "/admin/crm",                   label: "Liste clients" },
+    { href: "/admin/crm/pipeline",          label: "Pipeline" },
+    { href: "/admin/crm/comptabilite",      label: "Comptabilité" },
+  ]},
+  { href: "/admin/users",     label: "Utilisateurs",     icon: "users" },
+  { href: "/admin/emails",    label: "Emails",            icon: "mail" },
+  { href: "/admin/roles",     label: "Rôles & Accès",    icon: "key" },
+  { href: "/admin/features",  label: "Fonctionnalités",  icon: "flag" },
+  { href: "/admin/logs",      label: "Logs & Statut",    icon: "activity" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -80,23 +88,46 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 py-3 px-2">
+        <nav className="flex-1 py-3 px-2 overflow-y-auto">
           {NAV.map((item) => {
             const active = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href));
+            const hasSubnav = "subnav" in item && item.subnav;
+            const subnavOpen = hasSubnav && pathname.startsWith(item.href);
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium mb-0.5 transition-colors"
-                style={{
-                  background: active ? "#C96E2C22" : "transparent",
-                  color: active ? "#e2945a" : "#9ca3af",
-                  border: active ? "1px solid #C96E2C33" : "1px solid transparent",
-                }}
-              >
-                <Icon name={item.icon} size={16} />
-                {item.label}
-              </Link>
+              <div key={item.href}>
+                <Link
+                  href={item.href}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium mb-0.5 transition-colors"
+                  style={{
+                    background: active ? "#C96E2C22" : "transparent",
+                    color: active ? "#e2945a" : "#9ca3af",
+                    border: active ? "1px solid #C96E2C33" : "1px solid transparent",
+                  }}
+                >
+                  <Icon name={item.icon} size={16} />
+                  {item.label}
+                </Link>
+                {hasSubnav && subnavOpen && (
+                  <div className="ml-6 mb-1 flex flex-col gap-0.5">
+                    {item.subnav!.map((sub) => {
+                      const subActive = pathname === sub.href || (sub.href !== item.href && pathname.startsWith(sub.href));
+                      return (
+                        <Link
+                          key={sub.href}
+                          href={sub.href}
+                          className="flex items-center px-3 py-1.5 rounded-lg text-[12.5px] font-medium transition-colors"
+                          style={{
+                            background: subActive ? "#C96E2C18" : "transparent",
+                            color: subActive ? "#e2945a" : "#6b7280",
+                          }}
+                        >
+                          {sub.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>
