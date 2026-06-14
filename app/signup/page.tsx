@@ -39,7 +39,10 @@ export default function SignupPage() {
     const { data, error } = await createClient().auth.signUp({
       email,
       password: pw,
-      options: { data: { first_name: firstName.trim(), last_name: lastName.trim() } },
+      options: {
+        data: { first_name: firstName.trim(), last_name: lastName.trim() },
+        emailRedirectTo: window.location.origin + "/auth/callback",
+      },
     });
     if (error) { setErr(error.message); setLoading(false); return; }
 

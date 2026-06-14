@@ -26,12 +26,19 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get("type");
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      // Password recovery flow → redirect to set-new-password page
+      // Password recovery → form to set a new password
       if (type === "recovery") {
         return NextResponse.redirect(`${origin}/update-password`);
       }
 
       const { data: { user } } = await supabase.auth.getUser();
+
+      // Email signup confirmation → dedicated confirmation page
+      if (type === "signup") {
+        return NextResponse.redirect(`${origin}/auth/confirmed?type=signup`);
+      }
+
+      // Magic link or invite → check if wedding exists
       if (user) {
         const { data: ownedWedding } = await supabase
           .from("wedding")
@@ -48,13 +55,18 @@ export async function GET(request: NextRequest) {
           .limit(1)
           .maybeSingle();
 
-        if (ownedWedding || sharedWedding) {
-          return NextResponse.redirect(`${origin}/dashboard`);
-        }
+        const dest = type === "magiclink"
+          ? "/auth/confirmed?type=magiclink"
+          : type === "invite"
+            ? "/auth/confirmed?type=invite"
+            : (ownedWedding || sharedWedding) ? "/dashboard" : "/onboarding";
+
+        return NextResponse.redirect(`${origin}${dest}`);
       }
-      return NextResponse.redirect(`${origin}/onboarding`);
+
+      return NextResponse.redirect(`${origin}/auth/confirmed?type=signup`);
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?error=oauth`);
+  return NextResponse.redirect(`${origin}/auth/confirmed?error=invalid`);
 }
