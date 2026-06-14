@@ -48,7 +48,7 @@ export default function TermsPage() {
         <Section id="objet" title="1. Objet">
           <p>
             Les présentes conditions générales d&apos;utilisation (CGU) régissent l&apos;accès et l&apos;utilisation de la
-            plateforme <strong>Jour J</strong>, accessible à l&apos;adresse <strong>jour-j.app</strong>, éditée par
+            plateforme <strong>Jour J</strong>, accessible à l&apos;adresse <strong>the-cockpit.fr</strong>, éditée par
             The Cockpit. En créant un compte ou en utilisant le service, vous acceptez sans réserve les présentes CGU.
           </p>
         </Section>

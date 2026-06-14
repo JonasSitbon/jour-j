@@ -259,7 +259,7 @@ function getEmailTemplates(firstName: string | null) {
       body: `<p>Bonjour ${name},</p>
 <p>Votre période d'essai sur <strong>Jour J</strong> arrive à expiration très prochainement.</p>
 <p>Pour continuer à accéder à toutes les fonctionnalités et ne rien perdre de votre travail, passez à l'abonnement dès maintenant :</p>
-<p><a href="https://jour-j.app/tarifs">Voir les offres</a></p>
+<p><a href="https://the-cockpit.fr/tarifs">Voir les offres</a></p>
 <p>En cas de question, nous sommes là pour vous aider.</p>
 <p>L'équipe Jour J</p>`,
     },
@@ -270,7 +270,7 @@ function getEmailTemplates(firstName: string | null) {
       body: `<p>Bonjour ${name},</p>
 <p>Votre période d'essai sur <strong>Jour J</strong> est terminée. Votre accès aux fonctionnalités premium est maintenant limité.</p>
 <p>Reprenez votre préparation là où vous l'avez laissée en souscrivant à un abonnement :</p>
-<p><a href="https://jour-j.app/tarifs">Voir les offres</a></p>
+<p><a href="https://the-cockpit.fr/tarifs">Voir les offres</a></p>
 <p>Toutes vos données sont conservées et vous retrouverez votre avancement intact.</p>
 <p>L'équipe Jour J</p>`,
     },
