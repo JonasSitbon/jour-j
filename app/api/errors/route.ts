@@ -85,7 +85,7 @@ async function sendAlertEmail(payload: ErrorPayload) {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        from: "Jour J Monitoring <monitoring@jour-j.fr>",
+        from: "Jour J Monitoring <monitoring@the-cockpit.fr>",
         to: [to],
         subject: `${emoji} [Jour J] Erreur ${payload.level.toUpperCase()}${payload.path ? ` sur ${payload.path}` : ""}`,
         html,
