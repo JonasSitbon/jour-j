@@ -36,18 +36,18 @@ interface Metrics {
 }
 
 const STATE_META: Record<CheckState, { label: string; color: string; bg: string }> = {
-  checking: { label: "Vérification…",    color: "#9ca3af", bg: "#9ca3af22" },
-  ok:       { label: "Opérationnel",     color: "#4ade80", bg: "#4ade8022" },
-  warn:     { label: "Non configuré",    color: "#fbbf24", bg: "#fbbf2422" },
-  fail:     { label: "Échec",            color: "#f87171", bg: "#f8717122" },
-  optional: { label: "Non activé",       color: "#6b7280", bg: "#6b728022" },
+  checking: { label: "Vérification…",    color: "#6b7280", bg: "#6b728022" },
+  ok:       { label: "Opérationnel",     color: "#16a34a", bg: "#dcfce7"   },
+  warn:     { label: "Non configuré",    color: "#d97706", bg: "#fef3c7"   },
+  fail:     { label: "Échec",            color: "#ef4444", bg: "#fee2e2"   },
+  optional: { label: "Non activé",       color: "#9ca3af", bg: "#f3f4f6"   },
 };
 
 const LEVEL_META: Record<ErrorLevel, { label: string; color: string; bg: string; icon: string }> = {
-  info:     { label: "Info",     color: "#60a5fa", bg: "#60a5fa18", icon: "info"     },
-  warning:  { label: "Warning",  color: "#fbbf24", bg: "#fbbf2418", icon: "alert"    },
-  error:    { label: "Erreur",   color: "#f87171", bg: "#f8717118", icon: "alert"    },
-  critical: { label: "Critique", color: "#ef4444", bg: "#ef444430", icon: "activity" },
+  info:     { label: "Info",     color: "#2563eb", bg: "#eff6ff",  icon: "info"     },
+  warning:  { label: "Warning",  color: "#d97706", bg: "#fef3c7",  icon: "alert"    },
+  error:    { label: "Erreur",   color: "#ef4444", bg: "#fee2e2",  icon: "alert"    },
+  critical: { label: "Critique", color: "#dc2626", bg: "#fee2e2",  icon: "activity" },
 };
 
 function StatusPill({ state }: { state: CheckState }) {
@@ -256,15 +256,15 @@ export default function AdminLogsPage() {
   }
 
   return (
-    <div className="p-8 max-w-[1100px] mx-auto" style={{ color: "#e8e4dc" }}>
+    <div className="p-8 max-w-[1100px] mx-auto" style={{ color: "#1f2937" }}>
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-7">
         <div>
-          <h1 className="text-[22px] font-bold flex items-center gap-2.5" style={{ color: "#f0ead8" }}>
+          <h1 className="text-[22px] font-bold flex items-center gap-2.5" style={{ color: "#111827" }}>
             <Icon name="activity" size={20} />
             Logs &amp; Monitoring
           </h1>
-          <p className="text-[13px] mt-1" style={{ color: "#9ca3af" }}>
+          <p className="text-[13px] mt-1" style={{ color: "#6b7280" }}>
             État en temps réel des services + suivi des erreurs applicatives.
             {lastRun && <> Dernière vérif : {lastRun.toLocaleTimeString("fr-FR")}.</>}
           </p>
@@ -280,35 +280,35 @@ export default function AdminLogsPage() {
       {/* Résumé santé */}
       <div className="grid grid-cols-3 gap-3 mb-7">
         {[
-          { label: "Services OK", value: okCount, color: "#4ade80" },
-          { label: "Avertissements", value: warnCount, color: "#fbbf24" },
-          { label: "En échec", value: failCount, color: "#f87171" },
+          { label: "Services OK", value: okCount, color: "#16a34a" },
+          { label: "Avertissements", value: warnCount, color: "#d97706" },
+          { label: "En échec", value: failCount, color: "#ef4444" },
         ].map((s) => (
-          <div key={s.label} className="rounded-xl p-4 border" style={{ background: "#1a1a2e", borderColor: "#2a2a3e" }}>
+          <div key={s.label} className="rounded-xl p-4 border" style={{ background: "#ffffff", borderColor: "#e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
             <div className="text-[26px] font-bold leading-none" style={{ color: s.color }}>{s.value}</div>
-            <div className="text-[12.5px] mt-1.5" style={{ color: "#9ca3af" }}>{s.label}</div>
+            <div className="text-[12.5px] mt-1.5" style={{ color: "#6b7280" }}>{s.label}</div>
           </div>
         ))}
       </div>
 
       {/* Checks */}
-      <div className="rounded-xl border overflow-hidden mb-8" style={{ background: "#1a1a2e", borderColor: "#2a2a3e" }}>
-        <div className="px-5 py-3 border-b text-[12px] font-semibold uppercase tracking-wider" style={{ borderColor: "#2a2a3e", color: "#6b7280" }}>
+      <div className="rounded-xl border overflow-hidden mb-8" style={{ background: "#ffffff", borderColor: "#e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+        <div className="px-5 py-3 border-b text-[12px] font-semibold uppercase tracking-wider" style={{ borderColor: "#e5e7eb", color: "#9ca3af" }}>
           Intégrations &amp; services
         </div>
         {checks.length === 0 ? (
-          <div className="px-5 py-8 text-center text-[13px]" style={{ color: "#6b7280" }}>Vérification en cours…</div>
+          <div className="px-5 py-8 text-center text-[13px]" style={{ color: "#9ca3af" }}>Vérification en cours…</div>
         ) : checks.map((c) => (
-          <div key={c.id} className="flex items-center gap-4 px-5 py-4 border-b last:border-0" style={{ borderColor: "#2a2a3e" }}>
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: "#22223a", color: "#9ca3af" }}>
+          <div key={c.id} className="flex items-center gap-4 px-5 py-4 border-b last:border-0" style={{ borderColor: "#e5e7eb" }}>
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: "#f9fafb", color: "#6b7280" }}>
               <Icon name={c.icon} size={17} />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-[14px] font-medium" style={{ color: "#e8e4dc" }}>{c.label}</div>
-              <div className="text-[12px] mt-0.5" style={{ color: "#6b7280" }}>{c.desc} — {c.detail}</div>
+              <div className="text-[14px] font-medium" style={{ color: "#1f2937" }}>{c.label}</div>
+              <div className="text-[12px] mt-0.5" style={{ color: "#9ca3af" }}>{c.desc} — {c.detail}</div>
             </div>
             {c.latencyMs !== undefined && (
-              <span className="text-[11px] font-mono" style={{ color: c.latencyMs < 200 ? "#4ade80" : c.latencyMs < 800 ? "#fbbf24" : "#f87171" }}>
+              <span className="text-[11px] font-mono" style={{ color: c.latencyMs < 200 ? "#16a34a" : c.latencyMs < 800 ? "#d97706" : "#ef4444" }}>
                 {c.latencyMs}ms
               </span>
             )}
@@ -319,10 +319,10 @@ export default function AdminLogsPage() {
 
       {/* ── Erreurs applicatives ── */}
       <div className="mb-2 flex items-center justify-between gap-3">
-        <h2 className="text-[15px] font-semibold" style={{ color: "#f0ead8" }}>
+        <h2 className="text-[15px] font-semibold" style={{ color: "#111827" }}>
           Erreurs applicatives
           {errorStats.critical > 0 && (
-            <span className="ml-2 text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: "#ef444430", color: "#ef4444" }}>
+            <span className="ml-2 text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: "#fee2e2", color: "#dc2626" }}>
               {errorStats.critical} critique{errorStats.critical > 1 ? "s" : ""}
             </span>
           )}
@@ -332,9 +332,9 @@ export default function AdminLogsPage() {
             <button key={f} onClick={() => setErrorFilter(f)}
               className="px-3 py-1 rounded-lg text-[12px] font-medium transition-colors"
               style={{
-                background: errorFilter === f ? "#C96E2C22" : "#1a1a2e",
-                color: errorFilter === f ? "#e2945a" : "#6b7280",
-                border: errorFilter === f ? "1px solid #C96E2C44" : "1px solid #2a2a3e",
+                background: errorFilter === f ? "#fff7ed" : "#ffffff",
+                color: errorFilter === f ? "#C96E2C" : "#6b7280",
+                border: errorFilter === f ? "1px solid rgba(201,110,44,0.2)" : "1px solid #e5e7eb",
               }}>
               {f === "all" ? `Tous (${errorLogs.length})` : `${LEVEL_META[f].label} (${errorStats[f]})`}
             </button>
@@ -348,31 +348,31 @@ export default function AdminLogsPage() {
           const m = LEVEL_META[l];
           return (
             <div key={l} className="rounded-xl p-3.5 border flex items-center gap-3"
-              style={{ background: "#1a1a2e", borderColor: errorStats[l] > 0 && l !== "info" ? m.color + "40" : "#2a2a3e" }}>
+              style={{ background: "#ffffff", borderColor: errorStats[l] > 0 && l !== "info" ? m.color + "40" : "#e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
               <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: m.bg, color: m.color }}>
                 <Icon name={m.icon} size={15} />
               </div>
               <div>
-                <div className="text-xl font-bold leading-none" style={{ color: errorStats[l] > 0 ? m.color : "#4b5563" }}>{errorStats[l]}</div>
-                <div className="text-[11px] mt-0.5" style={{ color: "#6b7280" }}>{m.label}</div>
+                <div className="text-xl font-bold leading-none" style={{ color: errorStats[l] > 0 ? m.color : "#c4c8d0" }}>{errorStats[l]}</div>
+                <div className="text-[11px] mt-0.5" style={{ color: "#9ca3af" }}>{m.label}</div>
               </div>
             </div>
           );
         })}
       </div>
 
-      <div className="rounded-xl border overflow-hidden mb-8" style={{ background: "#1a1a2e", borderColor: "#2a2a3e" }}>
+      <div className="rounded-xl border overflow-hidden mb-8" style={{ background: "#ffffff", borderColor: "#e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
         {filteredLogs.length === 0 ? (
-          <div className="px-5 py-12 text-center text-[13px]" style={{ color: "#4b5563" }}>
+          <div className="px-5 py-12 text-center text-[13px]" style={{ color: "#c4c8d0" }}>
             {errorFilter === "all" ? "Aucune erreur enregistrée" : `Aucune erreur de niveau « ${errorFilter} »`}
           </div>
         ) : filteredLogs.map((log, i) => {
           const m = LEVEL_META[log.level];
           const isExpanded = showStack === log.id;
           return (
-            <div key={log.id} className="border-b last:border-0" style={{ borderColor: "#2a2a3e", opacity: log.resolved ? 0.45 : 1 }}>
+            <div key={log.id} className="border-b last:border-0" style={{ borderColor: "#e5e7eb", opacity: log.resolved ? 0.45 : 1 }}>
               <div className="flex items-start gap-3 px-5 py-3.5"
-                style={{ background: i % 2 === 0 ? "transparent" : "#0f1117" }}>
+                style={{ background: i % 2 === 0 ? "transparent" : "#f9fafb" }}>
                 <div className="w-7 h-7 rounded flex items-center justify-center shrink-0 mt-0.5"
                   style={{ background: m.bg, color: m.color }}>
                   <Icon name={m.icon} size={13} />
@@ -381,47 +381,47 @@ export default function AdminLogsPage() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <LevelBadge level={log.level} />
                     {log.path && (
-                      <span className="text-[11px] font-mono" style={{ color: "#4b5563" }}>{log.path}</span>
+                      <span className="text-[11px] font-mono" style={{ color: "#c4c8d0" }}>{log.path}</span>
                     )}
                     {log.notified && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "#fbbf2418", color: "#fbbf24" }}>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "#fef3c7", color: "#d97706" }}>
                         webhook envoyé
                       </span>
                     )}
                     {log.resolved && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "#4ade8018", color: "#4ade80" }}>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "#dcfce7", color: "#16a34a" }}>
                         résolu
                       </span>
                     )}
                   </div>
-                  <div className="text-[13px] mt-1 font-mono leading-snug" style={{ color: "#d1cec8" }}>
+                  <div className="text-[13px] mt-1 font-mono leading-snug" style={{ color: "#374151" }}>
                     {log.message}
                   </div>
                   <div className="flex items-center gap-3 mt-1.5">
-                    <span className="text-[11px]" style={{ color: "#4b5563" }}>{fmtDate(log.created_at)}</span>
+                    <span className="text-[11px]" style={{ color: "#c4c8d0" }}>{fmtDate(log.created_at)}</span>
                     {log.stack && (
                       <button onClick={() => setShowStack(isExpanded ? null : log.id)}
                         className="text-[11px] underline transition-colors hover:opacity-80"
-                        style={{ color: "#6b7280" }}>
+                        style={{ color: "#9ca3af" }}>
                         {isExpanded ? "Masquer" : "Stack trace"}
                       </button>
                     )}
                     {!log.resolved && (
                       <button onClick={() => markResolved(log.id)}
                         className="text-[11px] underline transition-colors hover:opacity-80"
-                        style={{ color: "#4ade80" }}>
+                        style={{ color: "#16a34a" }}>
                         Marquer résolu
                       </button>
                     )}
                   </div>
                   {isExpanded && log.stack && (
                     <pre className="mt-2 p-3 rounded-lg text-[11px] font-mono overflow-x-auto leading-relaxed max-h-48"
-                      style={{ background: "#0a0a14", color: "#9ca3af" }}>
+                      style={{ background: "#fafafa", color: "#6b7280" }}>
                       {log.stack}
                     </pre>
                   )}
                 </div>
-                <span className="text-[10px] shrink-0" style={{ color: "#2a2a3e" }}>#{log.id.slice(0, 6)}</span>
+                <span className="text-[10px] shrink-0" style={{ color: "#e5e7eb" }}>#{log.id.slice(0, 6)}</span>
               </div>
             </div>
           );
@@ -429,22 +429,22 @@ export default function AdminLogsPage() {
       </div>
 
       {/* Métriques plateforme */}
-      <div className="rounded-xl border overflow-hidden" style={{ background: "#1a1a2e", borderColor: "#2a2a3e" }}>
-        <div className="px-5 py-3 border-b text-[12px] font-semibold uppercase tracking-wider" style={{ borderColor: "#2a2a3e", color: "#6b7280" }}>
+      <div className="rounded-xl border overflow-hidden" style={{ background: "#ffffff", borderColor: "#e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+        <div className="px-5 py-3 border-b text-[12px] font-semibold uppercase tracking-wider" style={{ borderColor: "#e5e7eb", color: "#9ca3af" }}>
           Métriques plateforme
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-px" style={{ background: "#2a2a3e" }}>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-px" style={{ background: "#e5e7eb" }}>
           {[
             { label: "Utilisateurs",      value: metrics.profiles,            icon: "users" },
             { label: "Mariages",          value: metrics.weddings,            icon: "rings" },
             { label: "Couples",           value: metrics.byType["couple"]  ?? 0, icon: "heart" },
             { label: "Wedding planners",  value: metrics.byType["planner"] ?? 0, icon: "star"  },
           ].map((m) => (
-            <div key={m.label} className="px-5 py-4 flex flex-col gap-1" style={{ background: "#1a1a2e" }}>
-              <div className="flex items-center gap-1.5 text-[11.5px]" style={{ color: "#6b7280" }}>
+            <div key={m.label} className="px-5 py-4 flex flex-col gap-1" style={{ background: "#ffffff" }}>
+              <div className="flex items-center gap-1.5 text-[11.5px]" style={{ color: "#9ca3af" }}>
                 <Icon name={m.icon} size={13} />{m.label}
               </div>
-              <div className="text-[22px] font-bold" style={{ color: "#f0ead8" }}>
+              <div className="text-[22px] font-bold" style={{ color: "#111827" }}>
                 {m.value === null ? "—" : m.value}
               </div>
             </div>

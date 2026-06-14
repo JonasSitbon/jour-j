@@ -1,7 +1,7 @@
 "use client";
 
-// dark theme: background "#0d0d1a", cards "#1a1a2e", borders "#2a2a3e"
-// text "#f0ead8", secondary "#9ca3af", accent orange "#C96E2C"
+// light theme: background "#f6f8fa", cards "#ffffff", borders "#e5e7eb"
+// text "#111827", secondary "#6b7280", accent orange "#C96E2C"
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
@@ -12,13 +12,13 @@ import { Icon } from "@/components/icon";
 
 const STAGES = [
   { id: "prospect",    label: "Prospect",       color: "#6b7280", icon: "users"        },
-  { id: "trial",       label: "Essai",           color: "#60a5fa", icon: "play"         },
-  { id: "qualified",   label: "Qualifié",        color: "#fbbf24", icon: "check-circle" },
-  { id: "offer_sent",  label: "Offre envoyée",   color: "#f97316", icon: "mail"         },
-  { id: "negotiation", label: "Négociation",     color: "#a78bfa", icon: "refresh"      },
-  { id: "won",         label: "Client actif",    color: "#4ade80", icon: "sparkle"      },
-  { id: "churned",     label: "Churné",          color: "#ef4444", icon: "alert"        },
-  { id: "lost",        label: "Perdu",           color: "#4b5563", icon: "x"            },
+  { id: "trial",       label: "Essai",           color: "#2563eb", icon: "play"         },
+  { id: "qualified",   label: "Qualifié",        color: "#d97706", icon: "check-circle" },
+  { id: "offer_sent",  label: "Offre envoyée",   color: "#ea580c", icon: "mail"         },
+  { id: "negotiation", label: "Négociation",     color: "#7c3aed", icon: "refresh"      },
+  { id: "won",         label: "Client actif",    color: "#16a34a", icon: "sparkle"      },
+  { id: "churned",     label: "Churné",          color: "#dc2626", icon: "alert"        },
+  { id: "lost",        label: "Perdu",           color: "#c4c8d0", icon: "x"            },
 ] as const;
 
 type StageId = typeof STAGES[number]["id"];
@@ -49,9 +49,9 @@ function getInitials(firstName: string | null, lastName: string | null): string 
 }
 
 function getAvatarColor(accountType: string): string {
-  if (accountType === "couple") return "#60a5fa";
-  if (accountType === "planner") return "#4ade80";
-  if (accountType === "super_admin") return "#f97316";
+  if (accountType === "couple") return "#2563eb";
+  if (accountType === "planner") return "#16a34a";
+  if (accountType === "super_admin") return "#ea580c";
   return "#9ca3af";
 }
 
@@ -61,9 +61,9 @@ function getTrialBadge(profile: PipelineProfile): { label: string; color: string
     (new Date(profile.trial_ends_at).getTime() - Date.now()) / 86_400_000
   );
   if (daysLeft > 0) {
-    return { label: `Essai J-${daysLeft}`, color: "#60a5fa", bg: "#60a5fa18" };
+    return { label: `Essai J-${daysLeft}`, color: "#2563eb", bg: "#eff6ff" };
   }
-  return { label: "Expiré", color: "#ef4444", bg: "#ef444418" };
+  return { label: "Expiré", color: "#dc2626", bg: "#fee2e2" };
 }
 
 function getEffectiveStage(profile: PipelineProfile): StageId {
@@ -83,19 +83,19 @@ function SkeletonCard() {
   return (
     <div
       className="rounded-xl p-3 border space-y-2 animate-pulse"
-      style={{ background: "#1a1a2e", borderColor: "#2a2a3e" }}
+      style={{ background: "#ffffff", borderColor: "#e5e7eb" }}
     >
       <div className="flex items-center gap-2">
-        <div className="w-8 h-8 rounded-full flex-shrink-0" style={{ background: "#2a2a3e" }} />
+        <div className="w-8 h-8 rounded-full flex-shrink-0" style={{ background: "#e5e7eb" }} />
         <div className="flex-1 space-y-1.5">
-          <div className="h-3 rounded" style={{ background: "#2a2a3e", width: "70%" }} />
-          <div className="h-2.5 rounded" style={{ background: "#232336", width: "90%" }} />
+          <div className="h-3 rounded" style={{ background: "#e5e7eb", width: "70%" }} />
+          <div className="h-2.5 rounded" style={{ background: "#f3f4f6", width: "90%" }} />
         </div>
       </div>
-      <div className="h-2.5 rounded" style={{ background: "#232336", width: "50%" }} />
+      <div className="h-2.5 rounded" style={{ background: "#f3f4f6", width: "50%" }} />
       <div className="flex gap-1.5">
-        <div className="h-5 w-14 rounded-full" style={{ background: "#2a2a3e" }} />
-        <div className="h-5 w-16 rounded-full" style={{ background: "#2a2a3e" }} />
+        <div className="h-5 w-14 rounded-full" style={{ background: "#e5e7eb" }} />
+        <div className="h-5 w-16 rounded-full" style={{ background: "#e5e7eb" }} />
       </div>
     </div>
   );
@@ -108,26 +108,26 @@ function SkeletonColumn({ stageId, label, color }: { stageId: string; label: str
       style={{
         minWidth: 260,
         maxWidth: 300,
-        background: "#111120",
-        borderColor: "#2a2a3e",
+        background: "#f9fafb",
+        borderColor: "#e5e7eb",
         flexShrink: 0,
       }}
     >
       {/* Column header */}
       <div
         className="flex items-center gap-2 px-3 py-2.5 border-b"
-        style={{ borderColor: "#2a2a3e" }}
+        style={{ borderColor: "#e5e7eb" }}
       >
         <span
           className="w-2.5 h-2.5 rounded-full flex-shrink-0"
           style={{ background: color }}
         />
-        <span className="text-[12.5px] font-semibold flex-1" style={{ color: "#9ca3af" }}>
+        <span className="text-[12.5px] font-semibold flex-1" style={{ color: "#6b7280" }}>
           {label}
         </span>
         <span
           className="text-[11px] font-bold px-1.5 py-0.5 rounded-full"
-          style={{ background: "#2a2a3e", color: "#4b5563" }}
+          style={{ background: "#e5e7eb", color: "#c4c8d0" }}
         >
           —
         </span>
@@ -160,11 +160,12 @@ function ClientCard({ profile, currentStage, onMove, moving }: ClientCardProps) 
 
   return (
     <div
-      className="rounded-xl border p-3 space-y-2.5 transition-all hover:border-[#3a3a50]"
+      className="rounded-xl border p-3 space-y-2.5 transition-all hover:border-[#C96E2C55]"
       style={{
-        background: "#1a1a2e",
-        borderColor: "#2a2a3e",
+        background: "#ffffff",
+        borderColor: "#e5e7eb",
         opacity: moving ? 0.6 : 1,
+        boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
       }}
     >
       {/* Avatar + name */}
@@ -178,14 +179,14 @@ function ClientCard({ profile, currentStage, onMove, moving }: ClientCardProps) 
         <div className="min-w-0 flex-1">
           <div
             className="font-semibold text-[12.5px] leading-tight truncate"
-            style={{ color: "#f0ead8" }}
+            style={{ color: "#111827" }}
           >
             {fullName}
           </div>
           {profile.email && (
             <div
               className="text-[11px] truncate mt-0.5"
-              style={{ color: "#4b5563" }}
+              style={{ color: "#c4c8d0" }}
             >
               {profile.email}
             </div>
@@ -195,7 +196,7 @@ function ClientCard({ profile, currentStage, onMove, moving }: ClientCardProps) 
 
       {/* Company */}
       {profile.company && (
-        <div className="text-[11px] flex items-center gap-1" style={{ color: "#6b7280" }}>
+        <div className="text-[11px] flex items-center gap-1" style={{ color: "#9ca3af" }}>
           <Icon name="home" size={10} />
           <span className="truncate">{profile.company}</span>
         </div>
@@ -207,10 +208,10 @@ function ClientCard({ profile, currentStage, onMove, moving }: ClientCardProps) 
         <span
           className="text-[10.5px] font-semibold px-2 py-0.5 rounded-full"
           style={{
-            background: profile.account_type === "planner" ? "#4ade8018" :
-                        profile.account_type === "couple"  ? "#60a5fa18" : "#f9731618",
-            color:      profile.account_type === "planner" ? "#4ade80" :
-                        profile.account_type === "couple"  ? "#60a5fa" : "#f97316",
+            background: profile.account_type === "planner" ? "#dcfce7" :
+                        profile.account_type === "couple"  ? "#dbeafe" : "#fff7ed",
+            color:      profile.account_type === "planner" ? "#15803d" :
+                        profile.account_type === "couple"  ? "#1d4ed8" : "#C96E2C",
           }}
         >
           {typeLabel}
@@ -220,7 +221,7 @@ function ClientCard({ profile, currentStage, onMove, moving }: ClientCardProps) 
         {profile.is_subscribed && (
           <span
             className="text-[10.5px] font-semibold px-2 py-0.5 rounded-full"
-            style={{ background: "#4ade8018", color: "#4ade80" }}
+            style={{ background: "#dcfce7", color: "#16a34a" }}
           >
             Abonné{profile.plan ? ` · ${profile.plan}` : ""}
           </span>
@@ -259,9 +260,9 @@ function ClientCard({ profile, currentStage, onMove, moving }: ClientCardProps) 
           defaultValue=""
           className="text-[10.5px] rounded-lg px-2 py-1 border outline-none cursor-pointer transition-colors hover:border-[#C96E2C55] disabled:opacity-40"
           style={{
-            background: "#0d0d1a",
-            borderColor: "#2a2a3e",
-            color: "#9ca3af",
+            background: "#ffffff",
+            borderColor: "#d1d5db",
+            color: "#6b7280",
             maxWidth: 110,
           }}
           title="Déplacer vers..."
@@ -298,31 +299,32 @@ function KanbanColumn({ stage, profiles, onMove, movingId }: ColumnProps) {
         minWidth: 260,
         maxWidth: 300,
         width: 280,
-        background: "#0e0e1c",
-        borderColor: "#2a2a3e",
+        background: "#ffffff",
+        borderColor: "#e5e7eb",
         flexShrink: 0,
         maxHeight: "calc(100vh - 320px)",
         minHeight: 200,
+        boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
       }}
     >
       {/* Column header */}
       <div
         className="flex items-center gap-2 px-3 py-2.5 border-b sticky top-0 rounded-t-xl"
-        style={{ borderColor: "#2a2a3e", background: "#0e0e1c", zIndex: 1 }}
+        style={{ borderColor: "#e5e7eb", background: "#ffffff", zIndex: 1 }}
       >
         <span
           className="w-2.5 h-2.5 rounded-full flex-shrink-0"
           style={{ background: stage.color }}
         />
         <Icon name={stage.icon} size={13} style={{ color: stage.color }} />
-        <span className="text-[12.5px] font-semibold flex-1" style={{ color: "#d1cec8" }}>
+        <span className="text-[12.5px] font-semibold flex-1" style={{ color: "#374151" }}>
           {stage.label}
         </span>
         <span
           className="text-[11px] font-bold px-2 py-0.5 rounded-full"
           style={{
-            background: isEmpty ? "#1a1a2e" : `${stage.color}20`,
-            color: isEmpty ? "#3a3a50" : stage.color,
+            background: isEmpty ? "#f3f4f6" : `${stage.color}20`,
+            color: isEmpty ? "#e5e7eb" : stage.color,
           }}
         >
           {count}
@@ -334,9 +336,9 @@ function KanbanColumn({ stage, profiles, onMove, movingId }: ColumnProps) {
         {isEmpty ? (
           <div
             className="flex flex-col items-center justify-center gap-2 py-8 rounded-lg border-dashed border"
-            style={{ borderColor: "#2a2a3e", color: "#2a2a3e" }}
+            style={{ borderColor: "#e5e7eb", color: "#e5e7eb" }}
           >
-            <Icon name={stage.icon} size={20} style={{ color: "#2a2a3e" }} />
+            <Icon name={stage.icon} size={20} style={{ color: "#e5e7eb" }} />
             <span className="text-[11px]">Aucun client</span>
           </div>
         ) : (
@@ -464,27 +466,27 @@ export default function PipelinePage() {
   return (
     <div
       className="flex flex-col h-screen overflow-hidden"
-      style={{ background: "#0d0d1a", color: "#f0ead8" }}
+      style={{ background: "#f6f8fa", color: "#111827" }}
     >
       {/* ── Header ── */}
       <div
         className="flex items-center justify-between gap-4 px-6 pt-6 pb-4 border-b flex-shrink-0"
-        style={{ borderColor: "#2a2a3e" }}
+        style={{ borderColor: "#e5e7eb" }}
       >
         <div className="flex items-center gap-3">
           <Link
             href="/admin/crm"
             className="flex items-center gap-1.5 text-[12px] transition-colors hover:opacity-70"
-            style={{ color: "#9ca3af" }}
+            style={{ color: "#6b7280" }}
           >
             <Icon name="chevronL" size={14} />
             CRM
           </Link>
-          <span style={{ color: "#2a2a3e" }}>/</span>
+          <span style={{ color: "#e5e7eb" }}>/</span>
           <div>
             <h1
               className="text-[20px] font-bold flex items-center gap-2"
-              style={{ color: "#f0ead8" }}
+              style={{ color: "#111827" }}
             >
               <Icon name="grid" size={18} />
               Pipeline CRM
@@ -493,7 +495,7 @@ export default function PipelinePage() {
         </div>
         <div
           className="text-[12px] px-3 py-1.5 rounded-lg border"
-          style={{ background: "#1a1a2e", borderColor: "#2a2a3e", color: "#6b7280" }}
+          style={{ background: "#ffffff", borderColor: "#e5e7eb", color: "#9ca3af" }}
         >
           {loading ? "…" : profiles.length} client{profiles.length !== 1 ? "s" : ""} au total
         </div>
@@ -502,21 +504,21 @@ export default function PipelinePage() {
       {/* ── Summary metrics bar ── */}
       <div
         className="flex items-center gap-4 px-6 py-3 border-b flex-shrink-0 overflow-x-auto"
-        style={{ borderColor: "#1e1e30", background: "#0a0a16" }}
+        style={{ borderColor: "#f0f0f0", background: "#fafafa" }}
       >
         {[
-          { label: "Prospects",    value: metrics.prospectCount,  color: "#6b7280", icon: "users"        },
-          { label: "En essai",     value: metrics.trialCount,     color: "#60a5fa", icon: "play"         },
-          { label: "Qualifiés+",   value: metrics.qualifiedCount, color: "#fbbf24", icon: "check-circle" },
-          { label: "Actifs",       value: metrics.wonCount,       color: "#4ade80", icon: "sparkle"      },
-          { label: "Perdus/Churné",value: metrics.lostCount,      color: "#ef4444", icon: "alert"        },
+          { label: "Prospects",    value: metrics.prospectCount,  color: "#9ca3af", icon: "users"        },
+          { label: "En essai",     value: metrics.trialCount,     color: "#2563eb", icon: "play"         },
+          { label: "Qualifiés+",   value: metrics.qualifiedCount, color: "#d97706", icon: "check-circle" },
+          { label: "Actifs",       value: metrics.wonCount,       color: "#16a34a", icon: "sparkle"      },
+          { label: "Perdus/Churné",value: metrics.lostCount,      color: "#dc2626", icon: "alert"        },
         ].map((m, i) => (
           <div
             key={m.label}
             className="flex items-center gap-2 flex-shrink-0"
             style={
               i < 4
-                ? { paddingRight: "1rem", borderRight: "1px solid #1e1e30" }
+                ? { paddingRight: "1rem", borderRight: "1px solid #f0f0f0" }
                 : undefined
             }
           >
@@ -524,7 +526,7 @@ export default function PipelinePage() {
             <span className="text-[13px] font-bold" style={{ color: m.color }}>
               {loading ? "—" : m.value}
             </span>
-            <span className="text-[11px]" style={{ color: "#4b5563" }}>
+            <span className="text-[11px]" style={{ color: "#c4c8d0" }}>
               {m.label}
             </span>
           </div>
@@ -534,7 +536,7 @@ export default function PipelinePage() {
       {/* ── Filter bar ── */}
       <div
         className="flex items-center gap-3 px-6 py-3 border-b flex-shrink-0"
-        style={{ borderColor: "#1e1e30" }}
+        style={{ borderColor: "#f0f0f0" }}
       >
         {/* Account type pills */}
         <div className="flex items-center gap-2">
@@ -551,9 +553,9 @@ export default function PipelinePage() {
                 onClick={() => setAccountFilter(key)}
                 className="px-3 py-1 rounded-full text-[12px] font-medium transition-all"
                 style={{
-                  background: active ? "#C96E2C22" : "#1a1a2e",
-                  color: active ? "#e2945a" : "#6b7280",
-                  border: active ? "1px solid #C96E2C55" : "1px solid #2a2a3e",
+                  background: active ? "#fff7ed" : "#ffffff",
+                  color: active ? "#C96E2C" : "#9ca3af",
+                  border: active ? "1px solid rgba(201,110,44,0.3)" : "1px solid #e5e7eb",
                 }}
               >
                 {labels[key]}
@@ -562,13 +564,13 @@ export default function PipelinePage() {
           })}
         </div>
 
-        <div className="w-px h-5" style={{ background: "#2a2a3e" }} />
+        <div className="w-px h-5" style={{ background: "#e5e7eb" }} />
 
         {/* Search */}
         <div className="relative">
           <span
             className="absolute left-3 top-1/2 -translate-y-1/2"
-            style={{ color: "#4b5563" }}
+            style={{ color: "#c4c8d0" }}
           >
             <Icon name="search" size={13} />
           </span>
@@ -579,9 +581,9 @@ export default function PipelinePage() {
             placeholder="Nom ou email…"
             className="pl-8 pr-8 py-1.5 rounded-lg text-[12px] border outline-none transition-colors"
             style={{
-              background: "#1a1a2e",
-              borderColor: "#2a2a3e",
-              color: "#d1cec8",
+              background: "#ffffff",
+              borderColor: "#d1d5db",
+              color: "#374151",
               width: 200,
             }}
           />
@@ -589,7 +591,7 @@ export default function PipelinePage() {
             <button
               onClick={() => setSearch("")}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 transition-opacity hover:opacity-70"
-              style={{ color: "#4b5563" }}
+              style={{ color: "#c4c8d0" }}
             >
               <Icon name="x" size={13} />
             </button>
@@ -597,7 +599,7 @@ export default function PipelinePage() {
         </div>
 
         {(search || accountFilter !== "all") && (
-          <span className="text-[11px] px-2 py-1 rounded-lg" style={{ background: "#1a1a2e", color: "#6b7280", border: "1px solid #2a2a3e" }}>
+          <span className="text-[11px] px-2 py-1 rounded-lg" style={{ background: "#ffffff", color: "#9ca3af", border: "1px solid #e5e7eb" }}>
             {filtered.length} affiché{filtered.length !== 1 ? "s" : ""}
           </span>
         )}

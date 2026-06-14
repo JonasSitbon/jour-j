@@ -49,20 +49,20 @@ interface RecentEvent {
 }
 
 const QUICK_ACTIONS = [
-  { href: "/admin/users",    label: "Gérer les utilisateurs", icon: "users",   color: "#60a5fa" },
-  { href: "/admin/roles",    label: "Gérer les rôles",        icon: "key",     color: "#c084fc" },
-  { href: "/admin/features", label: "Feature flags",          icon: "flag",    color: "#4ade80" },
-  { href: "/admin/emails",   label: "Envoyer un email",       icon: "mail",    color: "#fb923c" },
+  { href: "/admin/users",    label: "Gérer les utilisateurs", icon: "users",   color: "#2563eb" },
+  { href: "/admin/roles",    label: "Gérer les rôles",        icon: "key",     color: "#7c3aed" },
+  { href: "/admin/features", label: "Feature flags",          icon: "flag",    color: "#16a34a" },
+  { href: "/admin/emails",   label: "Envoyer un email",       icon: "mail",    color: "#ea580c" },
 ];
 
 const EVENT_LABELS: Record<string, { label: string; color: string; icon: string }> = {
-  signup_complete:        { label: "Inscriptions",          color: "#4ade80", icon: "users"   },
-  login:                  { label: "Connexions",            color: "#60a5fa", icon: "key"     },
-  password_reset_request: { label: "Réinitial. mdp",        color: "#fb923c", icon: "mail"    },
-  logout:                 { label: "Déconnexions",          color: "#9ca3af", icon: "arrow"   },
-  cta_click:              { label: "Clics CTA",             color: "#c084fc", icon: "sparkle" },
-  pricing_view:           { label: "Vues tarifs",           color: "#fbbf24", icon: "wallet"  },
-  trial_banner_click:     { label: "Clics bandeau essai",   color: "#f472b6", icon: "clock"   },
+  signup_complete:        { label: "Inscriptions",          color: "#16a34a", icon: "users"   },
+  login:                  { label: "Connexions",            color: "#2563eb", icon: "key"     },
+  password_reset_request: { label: "Réinitial. mdp",        color: "#ea580c", icon: "mail"    },
+  logout:                 { label: "Déconnexions",          color: "#6b7280", icon: "arrow"   },
+  cta_click:              { label: "Clics CTA",             color: "#7c3aed", icon: "sparkle" },
+  pricing_view:           { label: "Vues tarifs",           color: "#d97706", icon: "wallet"  },
+  trial_banner_click:     { label: "Clics bandeau essai",   color: "#db2777", icon: "clock"   },
 };
 
 function StatCard({ label, value, icon, color, sub, href }: {
@@ -70,13 +70,13 @@ function StatCard({ label, value, icon, color, sub, href }: {
 }) {
   const inner = (
     <div className="rounded-xl p-5 flex items-start gap-4 border transition-colors"
-      style={{ background: "#1a1a2e", borderColor: "#2a2a3e" }}>
+      style={{ background: "#ffffff", borderColor: "#e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
       <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
         style={{ background: `${color}22` }}>
         <span style={{ color }}><Icon name={icon} size={18} /></span>
       </div>
       <div className="min-w-0">
-        <div className="text-2xl font-bold" style={{ color: "#f0ead8" }}>{value}</div>
+        <div className="text-2xl font-bold" style={{ color: "#111827" }}>{value}</div>
         <div className="text-xs mt-0.5" style={{ color: "#6b7280" }}>{label}</div>
         {sub && <div className="text-[11px] mt-0.5" style={{ color: color + "cc" }}>{sub}</div>}
       </div>
@@ -158,9 +158,9 @@ export default function AdminDashboard() {
   const maxCount = Math.max(...chart.map((d) => d.count), 1);
 
   const accountTypeBadge: Record<string, { bg: string; color: string; label: string }> = {
-    couple:      { bg: "#1e3a5f33", color: "#60a5fa", label: "Couple"         },
-    planner:     { bg: "#16562233", color: "#4ade80", label: "Wedding Planner" },
-    super_admin: { bg: "#c96e2c33", color: "#fb923c", label: "Super Admin"     },
+    couple:      { bg: "#dbeafe", color: "#1d4ed8", label: "Couple"         },
+    planner:     { bg: "#dcfce7", color: "#15803d", label: "Wedding Planner" },
+    super_admin: { bg: "#fff7ed", color: "#C96E2C", label: "Super Admin"     },
   };
 
   function fmtDate(iso: string, opts?: Intl.DateTimeFormatOptions) {
@@ -172,16 +172,16 @@ export default function AdminDashboard() {
     const now = Date.now();
     const end = new Date(trialEndsAt).getTime();
     const daysLeft = Math.ceil((end - now) / 86_400_000);
-    if (daysLeft <= 0)  return { label: "Expiré",         color: "#ef4444" };
-    if (daysLeft <= 3)  return { label: `J-${daysLeft}`,  color: "#fb923c" };
-    return { label: `J-${daysLeft}`, color: "#4ade80" };
+    if (daysLeft <= 0)  return { label: "Expiré",         color: "#dc2626" };
+    if (daysLeft <= 3)  return { label: `J-${daysLeft}`,  color: "#ea580c" };
+    return { label: `J-${daysLeft}`, color: "#16a34a" };
   }
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-1" style={{ color: "#f0ead8" }}>Dashboard Super Admin</h1>
+        <h1 className="text-2xl font-bold mb-1" style={{ color: "#111827" }}>Dashboard Super Admin</h1>
         <p className="text-sm" style={{ color: "#6b7280" }}>Vue d&apos;ensemble de la plateforme Jour J</p>
       </div>
 
@@ -192,35 +192,35 @@ export default function AdminDashboard() {
       ) : stats ? (
         <>
           {/* ── Utilisateurs ── */}
-          <h2 className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: "#4b5563" }}>Utilisateurs</h2>
+          <h2 className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: "#c4c8d0" }}>Utilisateurs</h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <StatCard label="Total" value={stats.totalUsers} icon="users" color="#60a5fa" href="/admin/users" />
-            <StatCard label="Mariages créés" value={stats.totalWeddings} icon="rings" color="#c084fc" />
-            <StatCard label="Nouveaux cette semaine" value={stats.newThisWeek} icon="sparkle" color="#4ade80" />
-            <StatCard label="Nouveaux ce mois" value={stats.newThisMonth} icon="calendar" color="#fbbf24" />
+            <StatCard label="Total" value={stats.totalUsers} icon="users" color="#2563eb" href="/admin/users" />
+            <StatCard label="Mariages créés" value={stats.totalWeddings} icon="rings" color="#7c3aed" />
+            <StatCard label="Nouveaux cette semaine" value={stats.newThisWeek} icon="sparkle" color="#16a34a" />
+            <StatCard label="Nouveaux ce mois" value={stats.newThisMonth} icon="calendar" color="#d97706" />
           </div>
 
           {/* ── Abonnements ── */}
-          <h2 className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: "#4b5563" }}>Abonnements</h2>
+          <h2 className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: "#c4c8d0" }}>Abonnements</h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <StatCard label="Abonnés payants" value={stats.subscribed} icon="check-circle" color="#4ade80"
+            <StatCard label="Abonnés payants" value={stats.subscribed} icon="check-circle" color="#16a34a"
               sub={stats.subscribed > 0 ? `${Math.round((stats.subscribed / stats.totalUsers) * 100)}% des comptes` : "Aucun abonné"} />
-            <StatCard label="En essai" value={stats.trialsActive} icon="clock" color="#fbbf24"
+            <StatCard label="En essai" value={stats.trialsActive} icon="clock" color="#d97706"
               sub={stats.trialsExpiringSoon > 0 ? `dont ${stats.trialsExpiringSoon} expirent dans 3j` : undefined} />
-            <StatCard label="Essai expiré (non payé)" value={stats.trialsExpired} icon="alert" color="#ef4444" />
-            <StatCard label="Taux conversion" value={stats.totalUsers > 0 ? `${Math.round((stats.subscribed / stats.totalUsers) * 100)}%` : "—"} icon="bars" color="#c084fc" />
+            <StatCard label="Essai expiré (non payé)" value={stats.trialsExpired} icon="alert" color="#dc2626" />
+            <StatCard label="Taux conversion" value={stats.totalUsers > 0 ? `${Math.round((stats.subscribed / stats.totalUsers) * 100)}%` : "—"} icon="bars" color="#7c3aed" />
           </div>
 
           {/* ── Liste comptes avec statut ── */}
-          <div className="rounded-xl border overflow-hidden mb-8" style={{ background: "#1a1a2e", borderColor: "#2a2a3e" }}>
-            <div className="px-5 py-3 border-b flex items-center justify-between" style={{ borderColor: "#2a2a3e" }}>
-              <h2 className="text-sm font-semibold" style={{ color: "#9ca3af" }}>Comptes — Abonnement &amp; Essai</h2>
+          <div className="rounded-xl border overflow-hidden mb-8" style={{ background: "#ffffff", borderColor: "#e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+            <div className="px-5 py-3 border-b flex items-center justify-between" style={{ borderColor: "#e5e7eb" }}>
+              <h2 className="text-sm font-semibold" style={{ color: "#6b7280" }}>Comptes — Abonnement &amp; Essai</h2>
               <Link href="/admin/users" className="text-[11px] transition-colors hover:opacity-70" style={{ color: "#C96E2C" }}>Voir tous →</Link>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-[12.5px]">
                 <thead>
-                  <tr style={{ background: "#0f1117", color: "#4b5563" }}>
+                  <tr style={{ background: "#f9fafb", color: "#c4c8d0" }}>
                     {["Compte", "Type", "Statut", "Essai / Plan", "Inscrit le"].map((h) => (
                       <th key={h} className="px-4 py-2.5 text-left font-semibold text-[11px] uppercase tracking-wider">{h}</th>
                     ))}
@@ -229,18 +229,18 @@ export default function AdminDashboard() {
                 <tbody>
                   {recent.map((u, i) => {
                     const name = [u.first_name, u.last_name].filter(Boolean).join(" ") || "—";
-                    const badge = accountTypeBadge[u.account_type] ?? { bg: "#33333344", color: "#9ca3af", label: u.account_type };
+                    const badge = accountTypeBadge[u.account_type] ?? { bg: "#f3f4f6", color: "#6b7280", label: u.account_type };
                     const trial = trialStatus(u.trial_ends_at);
                     const isExpired = u.trial_ends_at && new Date(u.trial_ends_at) <= new Date() && !u.is_subscribed;
                     return (
-                      <tr key={u.id} style={{ background: i % 2 === 0 ? "transparent" : "#0f1117" }}>
+                      <tr key={u.id} style={{ background: i % 2 === 0 ? "transparent" : "#f9fafb" }}>
                         <td className="px-4 py-2.5">
                           <div className="flex items-center gap-2">
                             <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
-                              style={{ background: "#C96E2C22", color: "#e2945a" }}>
+                              style={{ background: "#fff7ed", color: "#C96E2C" }}>
                               {(name[0] || "?").toUpperCase()}
                             </div>
-                            <span style={{ color: "#d1cec8" }}>{name}</span>
+                            <span style={{ color: "#374151" }}>{name}</span>
                           </div>
                         </td>
                         <td className="px-4 py-2.5">
@@ -249,11 +249,11 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-4 py-2.5">
                           {u.is_subscribed ? (
-                            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: "#4ade8022", color: "#4ade80" }}>✓ Abonné</span>
+                            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: "#dcfce7", color: "#16a34a" }}>✓ Abonné</span>
                           ) : isExpired ? (
-                            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: "#ef444422", color: "#ef4444" }}>Expiré</span>
+                            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: "#fee2e2", color: "#dc2626" }}>Expiré</span>
                           ) : (
-                            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: "#fbbf2422", color: "#fbbf24" }}>Essai</span>
+                            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: "#fef3c7", color: "#d97706" }}>Essai</span>
                           )}
                         </td>
                         <td className="px-4 py-2.5" style={{ color: "#6b7280" }}>
@@ -263,7 +263,7 @@ export default function AdminDashboard() {
                               ? <span style={{ color: trial.color }}>{trial.label}</span>
                               : "—"}
                         </td>
-                        <td className="px-4 py-2.5" style={{ color: "#4b5563" }}>{fmtDate(u.created_at)}</td>
+                        <td className="px-4 py-2.5" style={{ color: "#c4c8d0" }}>{fmtDate(u.created_at)}</td>
                       </tr>
                     );
                   })}
@@ -273,36 +273,36 @@ export default function AdminDashboard() {
           </div>
 
           {/* ── Essai ── */}
-          <h2 className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: "#4b5563" }}>Prospects (essai en cours)</h2>
+          <h2 className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: "#c4c8d0" }}>Prospects (essai en cours)</h2>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-            <StatCard label="Essais actifs" value={stats.trialsActive} icon="clock" color="#4ade80"
+            <StatCard label="Essais actifs" value={stats.trialsActive} icon="clock" color="#16a34a"
               sub={stats.trialsExpiringSoon > 0 ? `dont ${stats.trialsExpiringSoon} expirent dans 3j` : undefined} />
-            <StatCard label="Essais expirés (non convertis)" value={stats.trialsExpired} icon="alert" color="#ef4444" />
-            <StatCard label="Prospects à relancer" value={stats.trialsExpiringSoon} icon="flag" color="#60a5fa" />
+            <StatCard label="Essais expirés (non convertis)" value={stats.trialsExpired} icon="alert" color="#dc2626" />
+            <StatCard label="Prospects à relancer" value={stats.trialsExpiringSoon} icon="flag" color="#2563eb" />
           </div>
 
           {/* ── Répartition comptes + actions ── */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             {/* Répartition */}
-            <div className="rounded-xl p-5 border" style={{ background: "#1a1a2e", borderColor: "#2a2a3e" }}>
+            <div className="rounded-xl p-5 border" style={{ background: "#ffffff", borderColor: "#e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
               <div className="flex items-center gap-2 mb-4">
-                <span style={{ color: "#6b7280" }}><Icon name="pie" size={16} /></span>
-                <h2 className="text-sm font-semibold" style={{ color: "#9ca3af" }}>Répartition des comptes</h2>
+                <span style={{ color: "#9ca3af" }}><Icon name="pie" size={16} /></span>
+                <h2 className="text-sm font-semibold" style={{ color: "#6b7280" }}>Répartition des comptes</h2>
               </div>
               <div className="flex flex-col gap-3">
                 {[
-                  { label: "Couples",       count: stats.couples,      color: "#60a5fa" },
-                  { label: "Planners",      count: stats.planners,     color: "#4ade80" },
-                  { label: "Super Admins",  count: stats.super_admins, color: "#fb923c" },
+                  { label: "Couples",       count: stats.couples,      color: "#2563eb" },
+                  { label: "Planners",      count: stats.planners,     color: "#16a34a" },
+                  { label: "Super Admins",  count: stats.super_admins, color: "#ea580c" },
                 ].map((item) => {
                   const pct = stats.totalUsers > 0 ? Math.round((item.count / stats.totalUsers) * 100) : 0;
                   return (
                     <div key={item.label}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs" style={{ color: "#9ca3af" }}>{item.label}</span>
+                        <span className="text-xs" style={{ color: "#6b7280" }}>{item.label}</span>
                         <span className="text-xs font-semibold" style={{ color: item.color }}>{pct}% · {item.count}</span>
                       </div>
-                      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "#2a2a3e" }}>
+                      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "#e5e7eb" }}>
                         <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: item.color }} />
                       </div>
                     </div>
@@ -312,20 +312,20 @@ export default function AdminDashboard() {
             </div>
 
             {/* Quick actions */}
-            <div className="rounded-xl p-5 border" style={{ background: "#1a1a2e", borderColor: "#2a2a3e" }}>
+            <div className="rounded-xl p-5 border" style={{ background: "#ffffff", borderColor: "#e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
               <div className="flex items-center gap-2 mb-4">
-                <span style={{ color: "#6b7280" }}><Icon name="grid" size={16} /></span>
-                <h2 className="text-sm font-semibold" style={{ color: "#9ca3af" }}>Actions rapides</h2>
+                <span style={{ color: "#9ca3af" }}><Icon name="grid" size={16} /></span>
+                <h2 className="text-sm font-semibold" style={{ color: "#6b7280" }}>Actions rapides</h2>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {QUICK_ACTIONS.map((a) => (
                   <Link key={a.href} href={a.href}
                     className="flex flex-col items-center gap-2 p-4 rounded-lg border transition-colors hover:opacity-80"
-                    style={{ background: "#0f1117", borderColor: "#2a2a3e" }}>
+                    style={{ background: "#f9fafb", borderColor: "#e5e7eb" }}>
                     <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: `${a.color}22` }}>
                       <span style={{ color: a.color }}><Icon name={a.icon} size={18} /></span>
                     </div>
-                    <span className="text-xs font-medium text-center leading-tight" style={{ color: "#9ca3af" }}>{a.label}</span>
+                    <span className="text-xs font-medium text-center leading-tight" style={{ color: "#6b7280" }}>{a.label}</span>
                   </Link>
                 ))}
               </div>
@@ -333,10 +333,10 @@ export default function AdminDashboard() {
           </div>
 
           {/* ── Graphique inscriptions 30j ── */}
-          <div className="rounded-xl p-5 border mb-6" style={{ background: "#1a1a2e", borderColor: "#2a2a3e" }}>
+          <div className="rounded-xl p-5 border mb-6" style={{ background: "#ffffff", borderColor: "#e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
             <div className="flex items-center gap-2 mb-5">
-              <span style={{ color: "#6b7280" }}><Icon name="bars" size={16} /></span>
-              <h2 className="text-sm font-semibold" style={{ color: "#9ca3af" }}>Inscriptions — 30 derniers jours</h2>
+              <span style={{ color: "#9ca3af" }}><Icon name="bars" size={16} /></span>
+              <h2 className="text-sm font-semibold" style={{ color: "#6b7280" }}>Inscriptions — 30 derniers jours</h2>
             </div>
             <div className="flex items-end gap-1 h-28">
               {chart.map((d) => {
@@ -352,7 +352,7 @@ export default function AdminDashboard() {
                     <div className="w-full rounded-t transition-all"
                       style={{
                         height: `${Math.max(pct, d.count > 0 ? 8 : 3)}%`,
-                        background: d.count > 0 ? "#C96E2C" : "#2a2a3e",
+                        background: d.count > 0 ? "#C96E2C" : "#e5e7eb",
                         opacity: isWeekend ? 0.6 : 1,
                         minHeight: "3px",
                       }} />
@@ -361,26 +361,26 @@ export default function AdminDashboard() {
               })}
             </div>
             <div className="flex justify-between mt-1">
-              <span className="text-[10px]" style={{ color: "#4b5563" }}>J-30</span>
-              <span className="text-[10px]" style={{ color: "#4b5563" }}>Aujourd'hui</span>
+              <span className="text-[10px]" style={{ color: "#c4c8d0" }}>J-30</span>
+              <span className="text-[10px]" style={{ color: "#c4c8d0" }}>Aujourd'hui</span>
             </div>
           </div>
 
           {/* ── Analytics événements ── */}
-          <h2 className="text-[11px] font-semibold uppercase tracking-widest mb-3 mt-6" style={{ color: "#4b5563" }}>Analytics (30 derniers jours)</h2>
+          <h2 className="text-[11px] font-semibold uppercase tracking-widest mb-3 mt-6" style={{ color: "#c4c8d0" }}>Analytics (30 derniers jours)</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             {/* Comptage par événement */}
-            <div className="rounded-xl p-5 border" style={{ background: "#1a1a2e", borderColor: "#2a2a3e" }}>
+            <div className="rounded-xl p-5 border" style={{ background: "#ffffff", borderColor: "#e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
               <div className="flex items-center gap-2 mb-4">
-                <span style={{ color: "#6b7280" }}><Icon name="sparkle" size={16} /></span>
-                <h2 className="text-sm font-semibold" style={{ color: "#9ca3af" }}>Événements par type</h2>
+                <span style={{ color: "#9ca3af" }}><Icon name="sparkle" size={16} /></span>
+                <h2 className="text-sm font-semibold" style={{ color: "#6b7280" }}>Événements par type</h2>
               </div>
               {eventCounts.length === 0 ? (
-                <p className="text-sm text-center py-6" style={{ color: "#4b5563" }}>Aucun événement enregistré</p>
+                <p className="text-sm text-center py-6" style={{ color: "#c4c8d0" }}>Aucun événement enregistré</p>
               ) : (
                 <div className="flex flex-col gap-2">
                   {eventCounts.map((e) => {
-                    const info = EVENT_LABELS[e.event_name] ?? { label: e.event_name, color: "#9ca3af", icon: "sparkle" };
+                    const info = EVENT_LABELS[e.event_name] ?? { label: e.event_name, color: "#6b7280", icon: "sparkle" };
                     const maxEvt = Math.max(...eventCounts.map((x) => x.count), 1);
                     return (
                       <div key={e.event_name} className="flex items-center gap-3">
@@ -390,10 +390,10 @@ export default function AdminDashboard() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-[12px]" style={{ color: "#d1cec8" }}>{info.label}</span>
+                            <span className="text-[12px]" style={{ color: "#374151" }}>{info.label}</span>
                             <span className="text-[12px] font-bold" style={{ color: info.color }}>{e.count}</span>
                           </div>
-                          <div className="h-1 rounded-full" style={{ background: "#2a2a3e" }}>
+                          <div className="h-1 rounded-full" style={{ background: "#e5e7eb" }}>
                             <div className="h-full rounded-full" style={{ width: `${(e.count / maxEvt) * 100}%`, background: info.color }} />
                           </div>
                         </div>
@@ -405,30 +405,30 @@ export default function AdminDashboard() {
             </div>
 
             {/* Flux récent */}
-            <div className="rounded-xl p-5 border" style={{ background: "#1a1a2e", borderColor: "#2a2a3e" }}>
+            <div className="rounded-xl p-5 border" style={{ background: "#ffffff", borderColor: "#e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
               <div className="flex items-center gap-2 mb-4">
-                <span style={{ color: "#6b7280" }}><Icon name="clock" size={16} /></span>
-                <h2 className="text-sm font-semibold" style={{ color: "#9ca3af" }}>Activité récente</h2>
+                <span style={{ color: "#9ca3af" }}><Icon name="clock" size={16} /></span>
+                <h2 className="text-sm font-semibold" style={{ color: "#6b7280" }}>Activité récente</h2>
               </div>
               {recentEvents.length === 0 ? (
-                <p className="text-sm text-center py-6" style={{ color: "#4b5563" }}>Aucun événement</p>
+                <p className="text-sm text-center py-6" style={{ color: "#c4c8d0" }}>Aucun événement</p>
               ) : (
                 <div className="flex flex-col gap-1 overflow-y-auto max-h-[260px]">
                   {recentEvents.map((e, i) => {
-                    const info = EVENT_LABELS[e.event_name] ?? { label: e.event_name, color: "#9ca3af", icon: "sparkle" };
+                    const info = EVENT_LABELS[e.event_name] ?? { label: e.event_name, color: "#6b7280", icon: "sparkle" };
                     return (
                       <div key={e.id}
                         className="flex items-center gap-2.5 py-2 px-3 rounded-lg"
-                        style={{ background: i % 2 === 0 ? "#0f1117" : "transparent" }}>
+                        style={{ background: i % 2 === 0 ? "#f9fafb" : "transparent" }}>
                         <div className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0"
                           style={{ background: `${info.color}18`, color: info.color }}>
                           <Icon name={info.icon} size={11} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <span className="text-[12px]" style={{ color: "#d1cec8" }}>{info.label}</span>
-                          {e.path && <span className="text-[11px] ml-1.5" style={{ color: "#4b5563" }}>{e.path}</span>}
+                          <span className="text-[12px]" style={{ color: "#374151" }}>{info.label}</span>
+                          {e.path && <span className="text-[11px] ml-1.5" style={{ color: "#c4c8d0" }}>{e.path}</span>}
                         </div>
-                        <span className="text-[10px] flex-shrink-0" style={{ color: "#4b5563" }}>
+                        <span className="text-[10px] flex-shrink-0" style={{ color: "#c4c8d0" }}>
                           {fmtDate(e.created_at, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                         </span>
                       </div>
@@ -440,28 +440,28 @@ export default function AdminDashboard() {
           </div>
 
           {/* ── Derniers inscrits ── */}
-          <div className="rounded-xl p-5 border" style={{ background: "#1a1a2e", borderColor: "#2a2a3e" }}>
+          <div className="rounded-xl p-5 border" style={{ background: "#ffffff", borderColor: "#e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
             <div className="flex items-center gap-2 mb-4">
-              <span style={{ color: "#6b7280" }}><Icon name="users" size={16} /></span>
-              <h2 className="text-sm font-semibold" style={{ color: "#9ca3af" }}>Derniers inscrits</h2>
+              <span style={{ color: "#9ca3af" }}><Icon name="users" size={16} /></span>
+              <h2 className="text-sm font-semibold" style={{ color: "#6b7280" }}>Derniers inscrits</h2>
               <Link href="/admin/users" className="ml-auto text-[11px] transition-colors hover:opacity-70" style={{ color: "#C96E2C" }}>
                 Voir tous
               </Link>
             </div>
             <div className="flex flex-col gap-1.5">
               {recent.map((u) => {
-                const badge = accountTypeBadge[u.account_type] ?? { bg: "#33333344", color: "#9ca3af", label: u.account_type };
+                const badge = accountTypeBadge[u.account_type] ?? { bg: "#f3f4f6", color: "#6b7280", label: u.account_type };
                 const name = [u.first_name, u.last_name].filter(Boolean).join(" ") || "—";
                 const trial = trialStatus(u.trial_ends_at);
                 return (
-                  <div key={u.id} className="flex items-center gap-3 py-2 px-3 rounded-lg" style={{ background: "#0f1117" }}>
+                  <div key={u.id} className="flex items-center gap-3 py-2 px-3 rounded-lg" style={{ background: "#f9fafb" }}>
                     <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
-                      style={{ background: "#C96E2C22", color: "#e2945a" }}>
+                      style={{ background: "#fff7ed", color: "#C96E2C" }}>
                       {(name[0] || "?").toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[13px] font-medium truncate" style={{ color: "#d1cec8" }}>{name}</div>
-                      <div className="text-[11px]" style={{ color: "#4b5563" }}>{fmtDate(u.created_at)}</div>
+                      <div className="text-[13px] font-medium truncate" style={{ color: "#374151" }}>{name}</div>
+                      <div className="text-[11px]" style={{ color: "#c4c8d0" }}>{fmtDate(u.created_at)}</div>
                     </div>
                     {trial && (
                       <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0"

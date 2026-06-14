@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import {
   COLLABORATOR_ROLES,
   DEFAULT_ROLE_PERMISSIONS,
-  ALL_PAGE_IDS,
   type CollaboratorRoleName,
 } from "@/lib/roles";
 
@@ -42,8 +41,6 @@ const PAGE_LABELS: Record<string, string> = {
   settings:   "Paramètres",
 };
 
-// ─── Page groups for the column headers ───────────────────────────────────────
-
 const PAGE_GROUPS = [
   { label: "Vue d'ensemble", pages: ["dashboard", "dates"] },
   { label: "Planification",  pages: ["checklist", "timeline", "dayj", "ceremony", "music"] },
@@ -55,8 +52,6 @@ const PAGE_GROUPS = [
 
 const PAGES_IN_ORDER = PAGE_GROUPS.flatMap((g) => g.pages);
 
-// ─── Roles to display (owner and admin are fixed — we skip them) ──────────────
-
 const EDITABLE_ROLES: CollaboratorRoleName[] = [
   "coordinateur",
   "dj",
@@ -67,13 +62,7 @@ const EDITABLE_ROLES: CollaboratorRoleName[] = [
 
 // ─── Checkbox cell ────────────────────────────────────────────────────────────
 
-function Checkbox({
-  checked,
-  onChange,
-}: {
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
+function Checkbox({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
       type="button"
@@ -82,8 +71,8 @@ function Checkbox({
       onClick={() => onChange(!checked)}
       className="w-5 h-5 rounded flex items-center justify-center border transition-colors"
       style={{
-        background: checked ? "#C96E2C" : "transparent",
-        borderColor: checked ? "#C96E2C" : "#2a2a3e",
+        background: checked ? "#C96E2C" : "#ffffff",
+        borderColor: checked ? "#C96E2C" : "#d1d5db",
       }}
     >
       {checked && (
@@ -103,7 +92,6 @@ export default function AdminRolesPage() {
   );
   const [saved, setSaved] = useState(false);
 
-  // Load from localStorage on mount
   useEffect(() => {
     setPermissions(loadPermissions());
   }, []);
@@ -133,15 +121,15 @@ export default function AdminRolesPage() {
   };
 
   return (
-    <div style={{ background: "#0f1117", minHeight: "100vh", padding: "32px 24px", fontFamily: "inherit" }}>
-      {/* Header */}
+    <div style={{ background: "#f6f8fa", minHeight: "100vh", padding: "32px 24px", fontFamily: "inherit", color: "#111827" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+        {/* Header */}
         <div style={{ marginBottom: 32 }}>
-          <h1 style={{ color: "#f0ead8", fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
+          <h1 style={{ color: "#111827", fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
             Gestion des permissions par rôle
           </h1>
-          <p style={{ color: "#9ca3af", fontSize: 13.5, lineHeight: 1.6, maxWidth: 580 }}>
-            Ces permissions sont les <strong style={{ color: "#f0ead8" }}>défauts appliqués lors d'une invitation</strong>.
+          <p style={{ color: "#6b7280", fontSize: 13.5, lineHeight: 1.6, maxWidth: 580 }}>
+            Ces permissions sont les <strong style={{ color: "#374151" }}>défauts appliqués lors d&apos;une invitation</strong>.
             Le couple peut les personnaliser individuellement pour chaque collaborateur.
           </p>
         </div>
@@ -149,13 +137,14 @@ export default function AdminRolesPage() {
         {/* Fixed roles info */}
         <div
           style={{
-            background: "#1a1a2e",
-            border: "1px solid #2a2a3e",
+            background: "#ffffff",
+            border: "1px solid #e5e7eb",
             borderRadius: 10,
             padding: "14px 18px",
             marginBottom: 24,
             display: "flex",
             gap: 24,
+            boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
           }}
         >
           {(["owner", "admin"] as CollaboratorRoleName[]).map((role) => {
@@ -164,15 +153,15 @@ export default function AdminRolesPage() {
               <div key={role} style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ fontSize: 18 }}>{meta.emoji}</span>
                 <div>
-                  <div style={{ color: "#f0ead8", fontSize: 13, fontWeight: 600 }}>{meta.label}</div>
-                  <div style={{ color: "#9ca3af", fontSize: 12 }}>Accès complet — non configurable</div>
+                  <div style={{ color: "#111827", fontSize: 13, fontWeight: 600 }}>{meta.label}</div>
+                  <div style={{ color: "#6b7280", fontSize: 12 }}>Accès complet — non configurable</div>
                 </div>
                 <div
                   style={{
                     marginLeft: 8,
                     padding: "2px 8px",
-                    background: "#C96E2C22",
-                    border: "1px solid #C96E2C55",
+                    background: "#fff7ed",
+                    border: "1px solid rgba(201,110,44,0.2)",
                     borderRadius: 4,
                     color: "#C96E2C",
                     fontSize: 11,
@@ -189,27 +178,27 @@ export default function AdminRolesPage() {
         {/* Main table */}
         <div
           style={{
-            background: "#1a1a2e",
-            border: "1px solid #2a2a3e",
+            background: "#ffffff",
+            border: "1px solid #e5e7eb",
             borderRadius: 12,
             overflow: "auto",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
           }}
         >
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
             <thead>
-              {/* Group row */}
-              <tr style={{ borderBottom: "1px solid #2a2a3e" }}>
+              <tr style={{ borderBottom: "1px solid #e5e7eb" }}>
                 <th
                   style={{
                     width: 180,
                     padding: "16px 20px",
                     textAlign: "left",
-                    color: "#9ca3af",
+                    color: "#6b7280",
                     fontSize: 11,
                     fontWeight: 600,
                     textTransform: "uppercase",
                     letterSpacing: "0.08em",
-                    background: "#1a1a2e",
+                    background: "#f9fafb",
                   }}
                 >
                   Rôle
@@ -221,12 +210,13 @@ export default function AdminRolesPage() {
                     style={{
                       padding: "10px 8px",
                       textAlign: "center",
-                      color: "#9ca3af",
+                      color: "#6b7280",
                       fontSize: 10.5,
                       fontWeight: 700,
                       textTransform: "uppercase",
                       letterSpacing: "0.07em",
-                      borderLeft: "1px solid #2a2a3e",
+                      borderLeft: "1px solid #e5e7eb",
+                      background: "#f9fafb",
                     }}
                   >
                     {group.label}
@@ -234,10 +224,9 @@ export default function AdminRolesPage() {
                 ))}
               </tr>
 
-              {/* Page name row */}
-              <tr style={{ borderBottom: "2px solid #2a2a3e" }}>
-                <th style={{ padding: "8px 20px", background: "#1a1a2e" }} />
-                {PAGES_IN_ORDER.map((pageId, i) => {
+              <tr style={{ borderBottom: "2px solid #e5e7eb" }}>
+                <th style={{ padding: "8px 20px", background: "#f9fafb" }} />
+                {PAGES_IN_ORDER.map((pageId) => {
                   const isFirstInGroup = PAGE_GROUPS.some((g) => g.pages[0] === pageId);
                   return (
                     <th
@@ -245,12 +234,13 @@ export default function AdminRolesPage() {
                       style={{
                         padding: "6px 4px",
                         textAlign: "center",
-                        color: "#f0ead8",
+                        color: "#374151",
                         fontSize: 11,
                         fontWeight: 500,
-                        borderLeft: isFirstInGroup ? "1px solid #2a2a3e" : undefined,
+                        borderLeft: isFirstInGroup ? "1px solid #e5e7eb" : undefined,
                         minWidth: 54,
                         maxWidth: 68,
+                        background: "#f9fafb",
                       }}
                     >
                       <span
@@ -279,16 +269,15 @@ export default function AdminRolesPage() {
                   <tr
                     key={role}
                     style={{
-                      borderBottom: rowIdx < EDITABLE_ROLES.length - 1 ? "1px solid #2a2a3e" : undefined,
-                      background: rowIdx % 2 === 1 ? "#15152800" : "transparent",
+                      borderBottom: rowIdx < EDITABLE_ROLES.length - 1 ? "1px solid #f0f0f0" : undefined,
+                      background: rowIdx % 2 === 1 ? "#fafafa" : "#ffffff",
                     }}
                   >
-                    {/* Role cell */}
                     <td style={{ padding: "14px 20px", verticalAlign: "middle" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         <span style={{ fontSize: 18 }}>{meta.emoji}</span>
                         <div>
-                          <div style={{ color: "#f0ead8", fontSize: 13.5, fontWeight: 600 }}>
+                          <div style={{ color: "#111827", fontSize: 13.5, fontWeight: 600 }}>
                             {meta.label}
                           </div>
                           <div style={{ color: "#9ca3af", fontSize: 11.5, marginTop: 1 }}>
@@ -298,7 +287,6 @@ export default function AdminRolesPage() {
                       </div>
                     </td>
 
-                    {/* Permission checkboxes */}
                     {PAGES_IN_ORDER.map((pageId) => {
                       const isFirstInGroup = PAGE_GROUPS.some((g) => g.pages[0] === pageId);
                       return (
@@ -308,7 +296,7 @@ export default function AdminRolesPage() {
                             textAlign: "center",
                             verticalAlign: "middle",
                             padding: "14px 4px",
-                            borderLeft: isFirstInGroup ? "1px solid #2a2a3e" : undefined,
+                            borderLeft: isFirstInGroup ? "1px solid #f0f0f0" : undefined,
                           }}
                         >
                           <div style={{ display: "flex", justifyContent: "center" }}>
@@ -342,13 +330,14 @@ export default function AdminRolesPage() {
               display: "flex",
               alignItems: "center",
               gap: 10,
-              background: "#1a1a2e",
-              border: "1px solid #2a2a3e",
+              background: "#ffffff",
+              border: "1px solid #e5e7eb",
               borderRadius: 8,
               padding: "10px 14px",
               fontSize: 12.5,
-              color: "#9ca3af",
+              color: "#6b7280",
               maxWidth: 500,
+              boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
             }}
           >
             <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
@@ -364,22 +353,22 @@ export default function AdminRolesPage() {
               onClick={handleReset}
               style={{
                 padding: "9px 18px",
-                background: "transparent",
-                border: "1px solid #2a2a3e",
+                background: "#ffffff",
+                border: "1px solid #e5e7eb",
                 borderRadius: 7,
-                color: "#9ca3af",
+                color: "#374151",
                 fontSize: 13,
                 fontWeight: 500,
                 cursor: "pointer",
-                transition: "border-color .15s, color .15s",
+                transition: "border-color .15s, background .15s",
               }}
               onMouseOver={(e) => {
                 (e.currentTarget as HTMLButtonElement).style.borderColor = "#9ca3af";
-                (e.currentTarget as HTMLButtonElement).style.color = "#f0ead8";
+                (e.currentTarget as HTMLButtonElement).style.background = "#f9fafb";
               }}
               onMouseOut={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.borderColor = "#2a2a3e";
-                (e.currentTarget as HTMLButtonElement).style.color = "#9ca3af";
+                (e.currentTarget as HTMLButtonElement).style.borderColor = "#e5e7eb";
+                (e.currentTarget as HTMLButtonElement).style.background = "#ffffff";
               }}
             >
               Réinitialiser
@@ -388,7 +377,7 @@ export default function AdminRolesPage() {
               onClick={handleSave}
               style={{
                 padding: "9px 22px",
-                background: saved ? "#3a7a3a" : "#C96E2C",
+                background: saved ? "#16a34a" : "#C96E2C",
                 border: "none",
                 borderRadius: 7,
                 color: "#fff",
@@ -408,9 +397,7 @@ export default function AdminRolesPage() {
                   </svg>
                   Sauvegardé
                 </>
-              ) : (
-                "Sauvegarder"
-              )}
+              ) : "Sauvegarder"}
             </button>
           </div>
         </div>

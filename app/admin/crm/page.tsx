@@ -1,7 +1,7 @@
 "use client";
 
-// dark theme : background "#0d0d1a" pour la page, "#1a1a2e" pour les cards, "#2a2a3e" pour les borders
-// couleur texte principale : "#f0ead8", secondaire : "#9ca3af", tertiaire : "#4b5563"
+// light theme : background "#f6f8fa" pour la page, "#ffffff" pour les cards, "#e5e7eb" pour les borders
+// couleur texte principale : "#111827", secondaire : "#6b7280", tertiaire : "#c4c8d0"
 // accent orange : "#C96E2C"
 
 import { useEffect, useState, useMemo } from "react";
@@ -40,9 +40,9 @@ const ACCOUNT_BADGE: Record<
   string,
   { label: string; bg: string; color: string }
 > = {
-  couple:      { label: "Couple",          bg: "#1e3a5f33", color: "#60a5fa" },
-  planner:     { label: "Wedding Planner", bg: "#16562233", color: "#4ade80" },
-  super_admin: { label: "Super Admin",     bg: "#c96e2c33", color: "#fb923c" },
+  couple:      { label: "Couple",          bg: "#dbeafe", color: "#1d4ed8" },
+  planner:     { label: "Wedding Planner", bg: "#dcfce7", color: "#15803d" },
+  super_admin: { label: "Super Admin",     bg: "#fff7ed", color: "#C96E2C" },
 };
 
 const FILTERS: { key: FilterKey; label: string }[] = [
@@ -85,7 +85,7 @@ function getStatusInfo(profile: CrmProfile): {
   sortWeight: number;
 } {
   if (profile.is_subscribed) {
-    return { label: "✓ Abonné", bg: "#4ade8022", color: "#4ade80", sortWeight: 0 };
+    return { label: "✓ Abonné", bg: "#dcfce7", color: "#16a34a", sortWeight: 0 };
   }
   if (profile.trial_ends_at) {
     const daysLeft = Math.ceil(
@@ -94,14 +94,14 @@ function getStatusInfo(profile: CrmProfile): {
     if (daysLeft > 0) {
       return {
         label: `Essai J-${daysLeft}`,
-        bg: "#fbbf2422",
-        color: "#fbbf24",
+        bg: "#fef3c7",
+        color: "#d97706",
         sortWeight: 1,
       };
     }
-    return { label: "Expiré", bg: "#ef444422", color: "#ef4444", sortWeight: 2 };
+    return { label: "Expiré", bg: "#fee2e2", color: "#dc2626", sortWeight: 2 };
   }
-  return { label: "—", bg: "#2a2a3e", color: "#4b5563", sortWeight: 3 };
+  return { label: "—", bg: "#e5e7eb", color: "#c4c8d0", sortWeight: 3 };
 }
 
 function isExpired(profile: CrmProfile): boolean {
@@ -120,12 +120,12 @@ function isTrial(profile: CrmProfile): boolean {
 
 function SkeletonRow() {
   return (
-    <tr style={{ borderTop: "1px solid #1e1e30" }}>
+    <tr style={{ borderTop: "1px solid #f0f0f0" }}>
       {[40, 80, 60, 60, 80, 70, 40, 50].map((w, i) => (
         <td key={i} className="px-4 py-3">
           <div
             className="h-3 rounded animate-pulse"
-            style={{ width: `${w}%`, background: "#2a2a3e" }}
+            style={{ width: `${w}%`, background: "#e5e7eb" }}
           />
         </td>
       ))}
@@ -136,7 +136,7 @@ function SkeletonRow() {
 // ─── Sort arrow ───────────────────────────────────────────────────────────────
 
 function SortArrow({ active, dir }: { active: boolean; dir: SortDir }) {
-  if (!active) return <span style={{ color: "#2a2a3e", marginLeft: 4 }}>↕</span>;
+  if (!active) return <span style={{ color: "#e5e7eb", marginLeft: 4 }}>↕</span>;
   return (
     <span style={{ color: "#C96E2C", marginLeft: 4 }}>
       {dir === "asc" ? "↑" : "↓"}
@@ -284,16 +284,16 @@ export default function AdminCrmPage() {
   // ── Rendu ────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-8 max-w-[1300px] mx-auto" style={{ color: "#f0ead8" }}>
+    <div className="p-8 max-w-[1300px] mx-auto" style={{ color: "#111827" }}>
 
       {/* ── Header ── */}
       <div className="flex items-start justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-[22px] font-bold flex items-center gap-2.5" style={{ color: "#f0ead8" }}>
+          <h1 className="text-[22px] font-bold flex items-center gap-2.5" style={{ color: "#111827" }}>
             <Icon name="users" size={20} />
             CRM Clients
           </h1>
-          <p className="text-[13px] mt-1" style={{ color: "#9ca3af" }}>
+          <p className="text-[13px] mt-1" style={{ color: "#6b7280" }}>
             Vue complète de tous les clients · {profiles.length} comptes chargés
           </p>
         </div>
@@ -311,15 +311,15 @@ export default function AdminCrmPage() {
       {/* ── Stats rapides ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-7">
         {[
-          { label: "Total clients",  value: stats.total,      color: "#9ca3af", icon: "users"    },
-          { label: "Abonnés",        value: stats.subscribed, color: "#4ade80", icon: "check-circle" },
-          { label: "En essai",       value: stats.trial,      color: "#fbbf24", icon: "clock"    },
-          { label: "Expirés",        value: stats.expired,    color: "#ef4444", icon: "alert"    },
+          { label: "Total clients",  value: stats.total,      color: "#6b7280", icon: "users"    },
+          { label: "Abonnés",        value: stats.subscribed, color: "#16a34a", icon: "check-circle" },
+          { label: "En essai",       value: stats.trial,      color: "#d97706", icon: "clock"    },
+          { label: "Expirés",        value: stats.expired,    color: "#dc2626", icon: "alert"    },
         ].map((s) => (
           <div
             key={s.label}
             className="rounded-xl p-4 border flex items-center gap-3"
-            style={{ background: "#1a1a2e", borderColor: "#2a2a3e" }}
+            style={{ background: "#ffffff", borderColor: "#e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}
           >
             <div
               className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -330,10 +330,10 @@ export default function AdminCrmPage() {
             <div>
               <div className="text-[24px] font-bold leading-none" style={{ color: s.color }}>
                 {loading ? (
-                  <div className="w-8 h-5 rounded animate-pulse" style={{ background: "#2a2a3e" }} />
+                  <div className="w-8 h-5 rounded animate-pulse" style={{ background: "#e5e7eb" }} />
                 ) : s.value}
               </div>
-              <div className="text-[11.5px] mt-1" style={{ color: "#6b7280" }}>{s.label}</div>
+              <div className="text-[11.5px] mt-1" style={{ color: "#9ca3af" }}>{s.label}</div>
             </div>
           </div>
         ))}
@@ -344,7 +344,7 @@ export default function AdminCrmPage() {
         <div className="relative flex-1 min-w-0">
           <span
             className="absolute left-3 top-1/2 -translate-y-1/2"
-            style={{ color: "#4b5563" }}
+            style={{ color: "#c4c8d0" }}
           >
             <Icon name="search" size={15} />
           </span>
@@ -355,22 +355,22 @@ export default function AdminCrmPage() {
             placeholder="Rechercher par nom, email, société…"
             className="w-full pl-9 pr-4 py-2.5 rounded-lg text-sm border outline-none transition-colors"
             style={{
-              background: "#1a1a2e",
-              borderColor: "#2a2a3e",
-              color: "#d1cec8",
+              background: "#ffffff",
+              borderColor: "#d1d5db",
+              color: "#111827",
             }}
           />
           {search && (
             <button
               onClick={() => setSearch("")}
               className="absolute right-3 top-1/2 -translate-y-1/2 transition-opacity hover:opacity-70"
-              style={{ color: "#4b5563" }}
+              style={{ color: "#c4c8d0" }}
             >
               <Icon name="close" size={14} />
             </button>
           )}
         </div>
-        <div className="text-xs px-3 py-2 rounded-lg" style={{ background: "#1a1a2e", color: "#4b5563", border: "1px solid #2a2a3e" }}>
+        <div className="text-xs px-3 py-2 rounded-lg" style={{ background: "#ffffff", color: "#c4c8d0", border: "1px solid #e5e7eb" }}>
           {displayed.length} résultat{displayed.length !== 1 ? "s" : ""}
         </div>
       </div>
@@ -385,9 +385,9 @@ export default function AdminCrmPage() {
               onClick={() => setFilter(key)}
               className="px-3.5 py-1.5 rounded-full text-[12.5px] font-medium transition-all"
               style={{
-                background: active ? "#C96E2C22" : "#1a1a2e",
-                color: active ? "#e2945a" : "#6b7280",
-                border: active ? "1px solid #C96E2C55" : "1px solid #2a2a3e",
+                background: active ? "#fff7ed" : "#ffffff",
+                color: active ? "#C96E2C" : "#9ca3af",
+                border: active ? "1px solid #C96E2C55" : "1px solid #e5e7eb",
               }}
             >
               {label}
@@ -399,25 +399,25 @@ export default function AdminCrmPage() {
       {/* ── Table ── */}
       <div
         className="rounded-xl border overflow-hidden"
-        style={{ background: "#1a1a2e", borderColor: "#2a2a3e" }}
+        style={{ background: "#ffffff", borderColor: "#e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}
       >
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr style={{ borderBottom: "1px solid #2a2a3e", background: "#0f1117" }}>
+              <tr style={{ borderBottom: "1px solid #e5e7eb", background: "#f9fafb" }}>
                 {/* Nom/Email */}
                 <th className="text-left px-4 py-3">
                   <button
                     onClick={() => handleSort("name")}
                     className="flex items-center text-xs font-semibold uppercase tracking-wider transition-colors hover:opacity-70"
-                    style={{ color: sortKey === "name" ? "#C96E2C" : "#4b5563" }}
+                    style={{ color: sortKey === "name" ? "#C96E2C" : "#c4c8d0" }}
                   >
                     Client
                     <SortArrow active={sortKey === "name"} dir={sortDir} />
                   </button>
                 </th>
                 {/* Type */}
-                <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "#4b5563" }}>
+                <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "#c4c8d0" }}>
                   Type
                 </th>
                 {/* Statut */}
@@ -425,26 +425,26 @@ export default function AdminCrmPage() {
                   <button
                     onClick={() => handleSort("status")}
                     className="flex items-center text-xs font-semibold uppercase tracking-wider transition-colors hover:opacity-70"
-                    style={{ color: sortKey === "status" ? "#C96E2C" : "#4b5563" }}
+                    style={{ color: sortKey === "status" ? "#C96E2C" : "#c4c8d0" }}
                   >
                     Statut
                     <SortArrow active={sortKey === "status"} dir={sortDir} />
                   </button>
                 </th>
                 {/* Plan */}
-                <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "#4b5563" }}>
+                <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "#c4c8d0" }}>
                   Plan
                 </th>
                 {/* Société */}
-                <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "#4b5563" }}>
+                <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "#c4c8d0" }}>
                   Société
                 </th>
                 {/* Dernière activité */}
-                <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "#4b5563" }}>
+                <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "#c4c8d0" }}>
                   Dernière activité
                 </th>
                 {/* Mariages */}
-                <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "#4b5563" }}>
+                <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "#c4c8d0" }}>
                   Mariages
                 </th>
                 {/* Inscription */}
@@ -452,7 +452,7 @@ export default function AdminCrmPage() {
                   <button
                     onClick={() => handleSort("created_at")}
                     className="flex items-center text-xs font-semibold uppercase tracking-wider transition-colors hover:opacity-70"
-                    style={{ color: sortKey === "created_at" ? "#C96E2C" : "#4b5563" }}
+                    style={{ color: sortKey === "created_at" ? "#C96E2C" : "#c4c8d0" }}
                   >
                     Inscrit le
                     <SortArrow active={sortKey === "created_at"} dir={sortDir} />
@@ -468,7 +468,7 @@ export default function AdminCrmPage() {
                 Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)
               ) : displayed.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="text-center py-16 text-[13px]" style={{ color: "#4b5563" }}>
+                  <td colSpan={9} className="text-center py-16 text-[13px]" style={{ color: "#c4c8d0" }}>
                     Aucun client ne correspond à votre recherche
                   </td>
                 </tr>
@@ -476,16 +476,16 @@ export default function AdminCrmPage() {
                 displayed.map((profile, i) => {
                   const initials  = getInitials(profile.first_name, profile.last_name);
                   const fullName  = [profile.first_name, profile.last_name].filter(Boolean).join(" ") || "—";
-                  const badge     = ACCOUNT_BADGE[profile.account_type] ?? { label: profile.account_type, bg: "#33333344", color: "#9ca3af" };
+                  const badge     = ACCOUNT_BADGE[profile.account_type] ?? { label: profile.account_type, bg: "#f3f4f6", color: "#6b7280" };
                   const status    = getStatusInfo(profile);
 
                   return (
                     <tr
                       key={profile.id}
-                      className="transition-colors hover:bg-[#ffffff08]"
+                      className="transition-colors hover:bg-[#00000005]"
                       style={{
-                        borderTop: i > 0 ? "1px solid #1e1e30" : undefined,
-                        background: i % 2 === 0 ? "transparent" : "#0a0a14",
+                        borderTop: i > 0 ? "1px solid #f0f0f0" : undefined,
+                        background: i % 2 === 0 ? "transparent" : "#fafafa",
                       }}
                     >
                       {/* Avatar + Nom + Email */}
@@ -493,21 +493,21 @@ export default function AdminCrmPage() {
                         <div className="flex items-center gap-2.5">
                           <div
                             className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
-                            style={{ background: "#C96E2C22", color: "#e2945a" }}
+                            style={{ background: "#fff7ed", color: "#C96E2C" }}
                           >
                             {initials}
                           </div>
                           <div className="min-w-0">
                             <div
                               className="font-medium text-[13px] leading-tight truncate max-w-[180px]"
-                              style={{ color: "#d1cec8" }}
+                              style={{ color: "#374151" }}
                             >
                               {fullName}
                             </div>
                             {profile.email && (
                               <div
                                 className="text-[11px] truncate max-w-[180px] mt-0.5"
-                                style={{ color: "#4b5563" }}
+                                style={{ color: "#c4c8d0" }}
                               >
                                 {profile.email}
                               </div>
@@ -538,21 +538,21 @@ export default function AdminCrmPage() {
 
                       {/* Plan */}
                       <td className="px-4 py-3">
-                        <span className="text-[12px] font-mono" style={{ color: "#6b7280" }}>
+                        <span className="text-[12px] font-mono" style={{ color: "#9ca3af" }}>
                           {profile.plan ?? "—"}
                         </span>
                       </td>
 
                       {/* Société */}
                       <td className="px-4 py-3">
-                        <span className="text-[12px]" style={{ color: "#9ca3af" }}>
+                        <span className="text-[12px]" style={{ color: "#6b7280" }}>
                           {profile.company || "—"}
                         </span>
                       </td>
 
                       {/* Dernière activité */}
                       <td className="px-4 py-3">
-                        <span className="text-[12px]" style={{ color: "#6b7280" }}>
+                        <span className="text-[12px]" style={{ color: "#9ca3af" }}>
                           {fmtShortDate(profile.last_activity)}
                         </span>
                       </td>
@@ -561,7 +561,7 @@ export default function AdminCrmPage() {
                       <td className="px-4 py-3">
                         <span
                           className="text-[12px] font-semibold"
-                          style={{ color: profile.wedding_count > 0 ? "#c084fc" : "#2a2a3e" }}
+                          style={{ color: profile.wedding_count > 0 ? "#9333ea" : "#e5e7eb" }}
                         >
                           {profile.wedding_count > 0 ? profile.wedding_count : "—"}
                         </span>
@@ -569,7 +569,7 @@ export default function AdminCrmPage() {
 
                       {/* Inscrit le */}
                       <td className="px-4 py-3">
-                        <span className="text-[12px]" style={{ color: "#4b5563" }}>
+                        <span className="text-[12px]" style={{ color: "#c4c8d0" }}>
                           {fmtDate(profile.created_at)}
                         </span>
                       </td>
@@ -580,9 +580,9 @@ export default function AdminCrmPage() {
                           href={`/admin/crm/${profile.id}`}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors whitespace-nowrap hover:opacity-80"
                           style={{
-                            background: "#C96E2C18",
+                            background: "#fff7ed",
                             color: "#C96E2C",
-                            border: "1px solid #C96E2C33",
+                            border: "1px solid rgba(201,110,44,0.15)",
                           }}
                         >
                           <Icon name="eye" size={13} />
@@ -601,17 +601,17 @@ export default function AdminCrmPage() {
         {!loading && displayed.length > 0 && (
           <div
             className="flex items-center justify-between px-4 py-3 border-t"
-            style={{ borderColor: "#2a2a3e" }}
+            style={{ borderColor: "#e5e7eb" }}
           >
-            <span className="text-xs" style={{ color: "#4b5563" }}>
+            <span className="text-xs" style={{ color: "#c4c8d0" }}>
               {displayed.length} client{displayed.length !== 1 ? "s" : ""} affiché{displayed.length !== 1 ? "s" : ""}
               {profiles.length !== displayed.length && (
                 <> · {profiles.length} au total</>
               )}
             </span>
-            <span className="text-xs" style={{ color: "#2a2a3e" }}>
+            <span className="text-xs" style={{ color: "#e5e7eb" }}>
               Trié par{" "}
-              <span style={{ color: "#4b5563" }}>
+              <span style={{ color: "#c4c8d0" }}>
                 {sortKey === "name" ? "nom" : sortKey === "status" ? "statut" : "date d'inscription"}
               </span>
               {" "}({sortDir === "desc" ? "décroissant" : "croissant"})

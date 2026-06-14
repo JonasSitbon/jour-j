@@ -145,15 +145,15 @@ function analyticsToTimeline(ev: AnalyticsEvent): TimelineItem {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const ACCOUNT_BADGE: Record<string, { label: string; bg: string; color: string }> = {
-  couple:      { label: "Couple",          bg: "#1e3a5f33", color: "#60a5fa" },
-  planner:     { label: "Wedding Planner", bg: "#16562233", color: "#4ade80" },
-  super_admin: { label: "Super Admin",     bg: "#c96e2c33", color: "#fb923c" },
+  couple:      { label: "Couple",          bg: "#dbeafe", color: "#1d4ed8" },
+  planner:     { label: "Wedding Planner", bg: "#dcfce7", color: "#15803d" },
+  super_admin: { label: "Super Admin",     bg: "#fff7ed", color: "#C96E2C" },
 };
 
 const STATUS_BADGE = {
-  subscribed: { label: "Abonné",   bg: "#16562233", color: "#4ade80" },
-  trial:      { label: "Essai",    bg: "#1e3a5f33", color: "#60a5fa" },
-  free:       { label: "Gratuit",  bg: "#33333344", color: "#9ca3af" },
+  subscribed: { label: "Abonné",   bg: "#dcfce7", color: "#16a34a" },
+  trial:      { label: "Essai",    bg: "#dbeafe", color: "#2563eb" },
+  free:       { label: "Gratuit",  bg: "#f3f4f6", color: "#6b7280" },
 };
 
 const ROLE_LABEL: Record<string, string> = {
@@ -164,27 +164,27 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 const ROLE_COLOR: Record<string, { bg: string; color: string }> = {
-  owner:  { bg: "#C96E2C33", color: "#fb923c" },
-  admin:  { bg: "#1e3a5f33", color: "#60a5fa" },
-  editor: { bg: "#16562233", color: "#4ade80" },
-  viewer: { bg: "#33333344", color: "#9ca3af" },
+  owner:  { bg: "#fff7ed", color: "#C96E2C" },
+  admin:  { bg: "#dbeafe", color: "#2563eb" },
+  editor: { bg: "#dcfce7", color: "#15803d" },
+  viewer: { bg: "#f3f4f6", color: "#6b7280" },
 };
 
 const EVENT_ICON: Record<string, { icon: string; color: string }> = {
-  signup:             { icon: "users",        color: "#4ade80" },
-  trial_start:        { icon: "play",         color: "#60a5fa" },
-  trial_expired:      { icon: "alert",        color: "#f87171" },
-  subscription:       { icon: "check-circle", color: "#4ade80" },
-  plan_change:        { icon: "refresh",      color: "#fbbf24" },
-  email_sent:         { icon: "mail",         color: "#60a5fa" },
+  signup:             { icon: "users",        color: "#16a34a" },
+  trial_start:        { icon: "play",         color: "#2563eb" },
+  trial_expired:      { icon: "alert",        color: "#ef4444" },
+  subscription:       { icon: "check-circle", color: "#16a34a" },
+  plan_change:        { icon: "refresh",      color: "#d97706" },
+  email_sent:         { icon: "mail",         color: "#2563eb" },
   admin_note:         { icon: "edit",         color: "#C96E2C" },
-  wedding_created:    { icon: "rings",        color: "#fbbf24" },
-  profile_updated:    { icon: "user",         color: "#9ca3af" },
-  role_change:        { icon: "key",          color: "#a78bfa" },
-  account_type_change:{ icon: "settings",     color: "#a78bfa" },
-  login:              { icon: "key",          color: "#6b7280" },
-  password_reset:     { icon: "refresh",      color: "#fbbf24" },
-  error:              { icon: "alert",        color: "#f87171" },
+  wedding_created:    { icon: "rings",        color: "#d97706" },
+  profile_updated:    { icon: "user",         color: "#6b7280" },
+  role_change:        { icon: "key",          color: "#7c3aed" },
+  account_type_change:{ icon: "settings",     color: "#7c3aed" },
+  login:              { icon: "key",          color: "#9ca3af" },
+  password_reset:     { icon: "refresh",      color: "#d97706" },
+  error:              { icon: "alert",        color: "#ef4444" },
 };
 
 const TIMELINE_FILTERS = [
@@ -209,13 +209,13 @@ function matchesFilter(item: TimelineItem, filter: TimelineFilter): boolean {
 
 const PIPELINE_STAGES: Array<{ value: string; label: string; color: string }> = [
   { value: "prospect",    label: "Prospect",     color: "#6b7280" },
-  { value: "trial",       label: "Essai",        color: "#60a5fa" },
-  { value: "qualified",   label: "Qualifié",     color: "#fbbf24" },
-  { value: "offer_sent",  label: "Offre envoyée",color: "#f97316" },
-  { value: "negotiation", label: "Négociation",  color: "#a78bfa" },
-  { value: "won",         label: "Gagné",        color: "#4ade80" },
-  { value: "churned",     label: "Churné",       color: "#ef4444" },
-  { value: "lost",        label: "Perdu",        color: "#4b5563" },
+  { value: "trial",       label: "Essai",        color: "#2563eb" },
+  { value: "qualified",   label: "Qualifié",     color: "#d97706" },
+  { value: "offer_sent",  label: "Offre envoyée",color: "#ea580c" },
+  { value: "negotiation", label: "Négociation",  color: "#7c3aed" },
+  { value: "won",         label: "Gagné",        color: "#16a34a" },
+  { value: "churned",     label: "Churné",       color: "#dc2626" },
+  { value: "lost",        label: "Perdu",        color: "#c4c8d0" },
 ];
 
 // ─── Task type icons & priority colors ───────────────────────────────────────
@@ -230,9 +230,9 @@ const TASK_TYPE_ICON: Record<string, string> = {
 
 const PRIORITY_COLOR: Record<string, string> = {
   low:    "#6b7280",
-  medium: "#fbbf24",
-  high:   "#f97316",
-  urgent: "#ef4444",
+  medium: "#d97706",
+  high:   "#ea580c",
+  urgent: "#dc2626",
 };
 
 // ─── Email templates ──────────────────────────────────────────────────────────
@@ -336,7 +336,7 @@ function InlineField({
   if (editing) {
     return (
       <div className="mb-3">
-        <div className="text-[11px] mb-1 font-medium" style={{ color: "#4b5563" }}>{label}</div>
+        <div className="text-[11px] mb-1 font-medium" style={{ color: "#c4c8d0" }}>{label}</div>
         <input
           ref={inputRef}
           type={type}
@@ -346,7 +346,7 @@ function InlineField({
           onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") { setDraft(value); setEditing(false); } }}
           disabled={saving}
           className="w-full px-2.5 py-1.5 rounded-lg border text-[13px] outline-none"
-          style={{ background: "#0d0d1a", borderColor: "#C96E2C66", color: "#f0ead8" }}
+          style={{ background: "#ffffff", borderColor: "rgba(201,110,44,0.5)", color: "#111827" }}
           placeholder={placeholder}
         />
       </div>
@@ -355,17 +355,17 @@ function InlineField({
 
   return (
     <div
-      className="group flex items-center justify-between mb-3 cursor-pointer rounded px-1 -mx-1 py-0.5 hover:bg-white/5 transition-colors"
+      className="group flex items-center justify-between mb-3 cursor-pointer rounded px-1 -mx-1 py-0.5 hover:bg-black/5 transition-colors"
       onClick={() => setEditing(true)}
     >
       <div>
-        <div className="text-[11px] font-medium" style={{ color: "#4b5563" }}>{label}</div>
-        <div className="text-[13px]" style={{ color: value ? "#e8e4dc" : "#4b5563" }}>
+        <div className="text-[11px] font-medium" style={{ color: "#c4c8d0" }}>{label}</div>
+        <div className="text-[13px]" style={{ color: value ? "#1f2937" : "#c4c8d0" }}>
           {value || placeholder || "—"}
         </div>
       </div>
       <span className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-        <Icon name="edit" size={12} style={{ color: "#6b7280" }} />
+        <Icon name="edit" size={12} style={{ color: "#9ca3af" }} />
       </span>
     </div>
   );
@@ -700,7 +700,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
 
   // ── Computed ──────────────────────────────────────────────────────────────
 
-  const accountBadge = ACCOUNT_BADGE[profile?.account_type ?? "couple"] ?? { label: profile?.account_type ?? "", bg: "#33333344", color: "#9ca3af" };
+  const accountBadge = ACCOUNT_BADGE[profile?.account_type ?? "couple"] ?? { label: profile?.account_type ?? "", bg: "#f3f4f6", color: "#6b7280" };
 
   const statusBadge = profile?.is_subscribed
     ? STATUS_BADGE.subscribed
@@ -736,10 +736,10 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#0d0d1a" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "#f6f8fa" }}>
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 rounded-full border-2 border-orange-400 border-t-transparent animate-spin" />
-          <p className="text-sm" style={{ color: "#6b7280" }}>Chargement du profil…</p>
+          <p className="text-sm" style={{ color: "#9ca3af" }}>Chargement du profil…</p>
         </div>
       </div>
     );
@@ -747,9 +747,9 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
 
   if (!profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#0d0d1a" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "#f6f8fa" }}>
         <div className="text-center">
-          <p className="text-lg font-semibold mb-2" style={{ color: "#f0ead8" }}>Utilisateur introuvable</p>
+          <p className="text-lg font-semibold mb-2" style={{ color: "#111827" }}>Utilisateur introuvable</p>
           <Link href="/admin/users" className="text-sm" style={{ color: "#C96E2C" }}>← Retour à la liste</Link>
         </div>
       </div>
@@ -759,36 +759,36 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen" style={{ background: "#0d0d1a", color: "#f0ead8" }}>
+    <div className="min-h-screen" style={{ background: "#f6f8fa", color: "#111827" }}>
 
       {/* ── Email compose modal ──────────────────────────────────────── */}
       {showEmailModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "#0d0d1acc" }}
+          style={{ background: "rgba(0,0,0,0.3)" }}
           onClick={(e) => { if (e.target === e.currentTarget) setShowEmailModal(false); }}
         >
           <div
             className="w-full rounded-2xl border overflow-hidden flex flex-col"
-            style={{ maxWidth: 700, background: "#1a1a2e", borderColor: "#2a2a3e", maxHeight: "90vh" }}
+            style={{ maxWidth: 700, background: "#ffffff", borderColor: "#e5e7eb", maxHeight: "90vh", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}
           >
             {/* Modal header */}
             <div
               className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0"
-              style={{ borderColor: "#2a2a3e" }}
+              style={{ borderColor: "#e5e7eb" }}
             >
               <div>
-                <h2 className="text-[15px] font-bold" style={{ color: "#f0ead8" }}>
+                <h2 className="text-[15px] font-bold" style={{ color: "#111827" }}>
                   Envoyer un email à {fullName}
                 </h2>
-                <p className="text-[12px] mt-0.5" style={{ color: "#6b7280" }}>
+                <p className="text-[12px] mt-0.5" style={{ color: "#9ca3af" }}>
                   {profile.email ?? "Aucun email"}
                 </p>
               </div>
               <button
                 onClick={() => setShowEmailModal(false)}
                 className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:opacity-70"
-                style={{ background: "#2a2a3e", color: "#9ca3af" }}
+                style={{ background: "#f3f4f6", color: "#6b7280" }}
               >
                 <Icon name="x" size={14} />
               </button>
@@ -800,24 +800,24 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                 <div className="flex flex-col items-center justify-center py-12 gap-3">
                   <div
                     className="w-14 h-14 rounded-full flex items-center justify-center"
-                    style={{ background: "#16562233" }}
+                    style={{ background: "#dcfce7" }}
                   >
-                    <Icon name="check-circle" size={28} style={{ color: "#4ade80" }} />
+                    <Icon name="check-circle" size={28} style={{ color: "#16a34a" }} />
                   </div>
-                  <p className="text-[15px] font-semibold" style={{ color: "#4ade80" }}>Email envoyé !</p>
+                  <p className="text-[15px] font-semibold" style={{ color: "#16a34a" }}>Email envoyé !</p>
                 </div>
               ) : (
                 <div className="flex flex-col gap-4">
                   {/* Template picker */}
                   <div>
-                    <label className="text-[11px] font-semibold uppercase tracking-wider mb-1.5 block" style={{ color: "#4b5563" }}>
+                    <label className="text-[11px] font-semibold uppercase tracking-wider mb-1.5 block" style={{ color: "#c4c8d0" }}>
                       Modèle
                     </label>
                     <select
                       value={emailTemplate}
                       onChange={(e) => handleTemplateChange(e.target.value)}
                       className="w-full px-3 py-2 rounded-lg border text-[13px] outline-none appearance-none"
-                      style={{ background: "#0d0d1a", borderColor: "#2a2a3e", color: "#e8e4dc" }}
+                      style={{ background: "#ffffff", borderColor: "#d1d5db", color: "#1f2937" }}
                     >
                       {getEmailTemplates(profile.first_name).map((t) => (
                         <option key={t.value} value={t.value}>{t.label}</option>
@@ -827,7 +827,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
 
                   {/* Subject */}
                   <div>
-                    <label className="text-[11px] font-semibold uppercase tracking-wider mb-1.5 block" style={{ color: "#4b5563" }}>
+                    <label className="text-[11px] font-semibold uppercase tracking-wider mb-1.5 block" style={{ color: "#c4c8d0" }}>
                       Objet
                     </label>
                     <input
@@ -836,13 +836,13 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                       onChange={(e) => setEmailSubject(e.target.value)}
                       placeholder="Objet de l'email…"
                       className="w-full px-3 py-2 rounded-lg border text-[13px] outline-none"
-                      style={{ background: "#0d0d1a", borderColor: "#2a2a3e", color: "#e8e4dc" }}
+                      style={{ background: "#ffffff", borderColor: "#d1d5db", color: "#1f2937" }}
                     />
                   </div>
 
                   {/* Body */}
                   <div>
-                    <label className="text-[11px] font-semibold uppercase tracking-wider mb-1.5 block" style={{ color: "#4b5563" }}>
+                    <label className="text-[11px] font-semibold uppercase tracking-wider mb-1.5 block" style={{ color: "#c4c8d0" }}>
                       Corps du message (HTML autorisé)
                     </label>
                     <textarea
@@ -851,7 +851,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                       rows={10}
                       placeholder="<p>Bonjour,</p><p>…</p>"
                       className="w-full px-3 py-2.5 rounded-lg border text-[13px] outline-none resize-none leading-relaxed font-mono"
-                      style={{ background: "#0d0d1a", borderColor: "#2a2a3e", color: "#e8e4dc" }}
+                      style={{ background: "#ffffff", borderColor: "#d1d5db", color: "#1f2937" }}
                     />
                   </div>
                 </div>
@@ -862,12 +862,12 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
             {!emailSent && (
               <div
                 className="flex items-center justify-end gap-3 px-6 py-4 border-t flex-shrink-0"
-                style={{ borderColor: "#2a2a3e" }}
+                style={{ borderColor: "#e5e7eb" }}
               >
                 <button
                   onClick={() => setShowEmailModal(false)}
                   className="px-4 py-2 rounded-lg text-[13px] font-medium border transition-colors hover:opacity-80"
-                  style={{ background: "transparent", borderColor: "#2a2a3e", color: "#9ca3af" }}
+                  style={{ background: "transparent", borderColor: "#e5e7eb", color: "#6b7280" }}
                 >
                   Annuler
                 </button>
@@ -898,7 +898,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
       {/* ── Top header bar ────────────────────────────────────────────── */}
       <div
         className="flex items-center gap-4 px-6 py-4 border-b sticky top-0 z-20"
-        style={{ background: "#0d0d1a", borderColor: "#2a2a3e" }}
+        style={{ background: "#ffffff", borderColor: "#e5e7eb" }}
       >
         <Link
           href="/admin/users"
@@ -908,8 +908,8 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
           <Icon name="chevronL" size={15} />
           CRM
         </Link>
-        <span style={{ color: "#2a2a3e" }}>/</span>
-        <span className="font-semibold text-[15px]" style={{ color: "#f0ead8" }}>{fullName}</span>
+        <span style={{ color: "#e5e7eb" }}>/</span>
+        <span className="font-semibold text-[15px]" style={{ color: "#111827" }}>{fullName}</span>
         <span
           className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold"
           style={{ background: accountBadge.bg, color: accountBadge.color }}
@@ -930,7 +930,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
           <button
             onClick={openEmailModal}
             className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors hover:opacity-80"
-            style={{ background: "#C96E2C22", border: "1px solid #C96E2C44", color: "#e2945a" }}
+            style={{ background: "#fff7ed", border: "1px solid rgba(201,110,44,0.2)", color: "#C96E2C" }}
           >
             <Icon name="mail" size={14} />
             Envoyer un email
@@ -943,7 +943,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors hover:opacity-80"
-              style={{ background: "#16562222", border: "1px solid #4ade8033", color: "#4ade80" }}
+              style={{ background: "#dcfce7", border: "1px solid #bbf7d0", color: "#16a34a" }}
             >
               <Icon name="message" size={14} />
               WhatsApp
@@ -953,7 +953,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
               disabled
               title="Aucun téléphone"
               className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-[13px] font-medium opacity-40 cursor-not-allowed"
-              style={{ background: "#16562222", border: "1px solid #4ade8033", color: "#4ade80" }}
+              style={{ background: "#dcfce7", border: "1px solid #bbf7d0", color: "#16a34a" }}
             >
               <Icon name="message" size={14} />
               WhatsApp
@@ -965,7 +965,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
             <a
               href={`sms:${phone}`}
               className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors hover:opacity-80"
-              style={{ background: "#1e3a5f33", border: "1px solid #60a5fa33", color: "#60a5fa" }}
+              style={{ background: "#dbeafe", border: "1px solid #bfdbfe", color: "#2563eb" }}
             >
               <Icon name="phone" size={14} />
               SMS
@@ -974,7 +974,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
             <button
               disabled
               className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-[13px] font-medium opacity-40 cursor-not-allowed"
-              style={{ background: "#1e3a5f33", border: "1px solid #60a5fa33", color: "#60a5fa" }}
+              style={{ background: "#dbeafe", border: "1px solid #bfdbfe", color: "#2563eb" }}
             >
               <Icon name="phone" size={14} />
               SMS
@@ -989,7 +989,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
         {/* ══ LEFT — Fiche client (24%) ══════════════════════════════════ */}
         <aside
           className="w-[24%] flex-shrink-0 border-r overflow-y-auto"
-          style={{ background: "#1a1a2e", borderColor: "#2a2a3e" }}
+          style={{ background: "#ffffff", borderColor: "#e5e7eb" }}
         >
           <div className="p-5">
 
@@ -997,12 +997,12 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
             <div className="flex flex-col items-center mb-5 pt-2">
               <div
                 className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold mb-3"
-                style={{ background: avatarColor(profile.id) + "33", color: avatarColor(profile.id), border: `2px solid ${avatarColor(profile.id)}66` }}
+                style={{ background: avatarColor(profile.id) + "22", color: avatarColor(profile.id), border: `2px solid ${avatarColor(profile.id)}44` }}
               >
                 {getInitials(profile.first_name, profile.last_name)}
               </div>
-              <div className="text-base font-bold text-center" style={{ color: "#f0ead8" }}>{fullName}</div>
-              <div className="text-[12px] mt-0.5" style={{ color: "#6b7280" }}>{profile.email ?? "—"}</div>
+              <div className="text-base font-bold text-center" style={{ color: "#111827" }}>{fullName}</div>
+              <div className="text-[12px] mt-0.5" style={{ color: "#9ca3af" }}>{profile.email ?? "—"}</div>
             </div>
 
             {/* Editable fields */}
@@ -1016,7 +1016,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
 
             {/* ── Pipeline ── */}
             <div className="mb-4">
-              <div className="text-[11px] font-semibold uppercase tracking-wider mb-2.5" style={{ color: "#4b5563" }}>
+              <div className="text-[11px] font-semibold uppercase tracking-wider mb-2.5" style={{ color: "#c4c8d0" }}>
                 Pipeline
               </div>
               <div className="relative">
@@ -1025,12 +1025,12 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                   onChange={(e) => updatePipelineStage(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border text-[13px] outline-none appearance-none font-semibold pr-8"
                   style={{
-                    background: "#0d0d1a",
-                    borderColor: currentPipelineStage ? currentPipelineStage.color + "55" : "#2a2a3e",
-                    color: currentPipelineStage ? currentPipelineStage.color : "#6b7280",
+                    background: "#ffffff",
+                    borderColor: currentPipelineStage ? currentPipelineStage.color + "55" : "#d1d5db",
+                    color: currentPipelineStage ? currentPipelineStage.color : "#9ca3af",
                   }}
                 >
-                  <option value="" style={{ color: "#6b7280" }}>— Choisir un stade —</option>
+                  <option value="" style={{ color: "#9ca3af" }}>— Choisir un stade —</option>
                   {PIPELINE_STAGES.map((s) => (
                     <option key={s.value} value={s.value} style={{ color: s.color }}>
                       {s.label}
@@ -1038,12 +1038,12 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                   ))}
                 </select>
                 <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <Icon name="chevronD" size={12} style={{ color: currentPipelineStage?.color ?? "#6b7280" }} />
+                  <Icon name="chevronD" size={12} style={{ color: currentPipelineStage?.color ?? "#9ca3af" }} />
                 </div>
                 {currentPipelineStage && (
                   <div
                     className="mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold inline-block"
-                    style={{ background: currentPipelineStage.color + "22", color: currentPipelineStage.color }}
+                    style={{ background: currentPipelineStage.color + "18", color: currentPipelineStage.color }}
                   >
                     {currentPipelineStage.label}
                   </div>
@@ -1053,36 +1053,36 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
 
             {/* ── Abonnement ── */}
             <div className="mb-4">
-              <div className="text-[11px] font-semibold uppercase tracking-wider mb-2.5" style={{ color: "#4b5563" }}>
+              <div className="text-[11px] font-semibold uppercase tracking-wider mb-2.5" style={{ color: "#c4c8d0" }}>
                 Abonnement
               </div>
               <div className="flex items-center justify-between mb-2.5">
-                <span className="text-[13px]" style={{ color: "#9ca3af" }}>Statut</span>
+                <span className="text-[13px]" style={{ color: "#6b7280" }}>Statut</span>
                 <button
                   onClick={toggleSubscription}
                   className="flex items-center gap-2 px-2.5 py-1 rounded-lg text-[12px] font-medium transition-colors"
                   style={{
-                    background: profile.is_subscribed ? "#16562233" : "#33333344",
-                    color: profile.is_subscribed ? "#4ade80" : "#9ca3af",
-                    border: `1px solid ${profile.is_subscribed ? "#4ade8033" : "#2a2a3e"}`,
+                    background: profile.is_subscribed ? "#dcfce7" : "#f3f4f6",
+                    color: profile.is_subscribed ? "#16a34a" : "#6b7280",
+                    border: `1px solid ${profile.is_subscribed ? "#bbf7d0" : "#e5e7eb"}`,
                   }}
                 >
-                  <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: profile.is_subscribed ? "#4ade80" : "#6b7280" }} />
+                  <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: profile.is_subscribed ? "#16a34a" : "#9ca3af" }} />
                   {profile.is_subscribed ? "Abonné" : "Non abonné"}
                 </button>
               </div>
               {profile.plan && (
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[13px]" style={{ color: "#9ca3af" }}>Plan</span>
-                  <span className="text-[12px] font-medium capitalize" style={{ color: "#e8e4dc" }}>{profile.plan}</span>
+                  <span className="text-[13px]" style={{ color: "#6b7280" }}>Plan</span>
+                  <span className="text-[12px] font-medium capitalize" style={{ color: "#1f2937" }}>{profile.plan}</span>
                 </div>
               )}
               {profile.trial_ends_at && (
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[13px]" style={{ color: "#9ca3af" }}>Essai</span>
+                  <span className="text-[13px]" style={{ color: "#6b7280" }}>Essai</span>
                   <span
                     className="text-[12px] font-semibold"
-                    style={{ color: trialDaysLeft(profile.trial_ends_at) === "Expiré" ? "#f87171" : "#60a5fa" }}
+                    style={{ color: trialDaysLeft(profile.trial_ends_at) === "Expiré" ? "#ef4444" : "#2563eb" }}
                   >
                     {trialDaysLeft(profile.trial_ends_at)}
                   </span>
@@ -1092,16 +1092,16 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
 
             {/* ── Infos ── */}
             <div className="mb-4">
-              <div className="text-[11px] font-semibold uppercase tracking-wider mb-2.5" style={{ color: "#4b5563" }}>
+              <div className="text-[11px] font-semibold uppercase tracking-wider mb-2.5" style={{ color: "#c4c8d0" }}>
                 Infos
               </div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[13px]" style={{ color: "#9ca3af" }}>Inscrit le</span>
-                <span className="text-[12px]" style={{ color: "#e8e4dc" }}>{formatDate(profile.created_at)}</span>
+                <span className="text-[13px]" style={{ color: "#6b7280" }}>Inscrit le</span>
+                <span className="text-[12px]" style={{ color: "#1f2937" }}>{formatDate(profile.created_at)}</span>
               </div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[13px]" style={{ color: "#9ca3af" }}>Abonné le</span>
-                <span className="text-[12px]" style={{ color: "#e8e4dc" }}>
+                <span className="text-[13px]" style={{ color: "#6b7280" }}>Abonné le</span>
+                <span className="text-[12px]" style={{ color: "#1f2937" }}>
                   {profile.subscribed_at ? formatDate(profile.subscribed_at) : "—"}
                 </span>
               </div>
@@ -1109,7 +1109,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
 
             {/* ── Tags ── */}
             <div className="mb-4">
-              <div className="text-[11px] font-semibold uppercase tracking-wider mb-2.5" style={{ color: "#4b5563" }}>
+              <div className="text-[11px] font-semibold uppercase tracking-wider mb-2.5" style={{ color: "#c4c8d0" }}>
                 Tags
               </div>
               <div className="flex flex-wrap gap-1.5 mb-2">
@@ -1118,7 +1118,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                     key={tag}
                     onClick={() => removeTag(tag)}
                     className="group flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium transition-colors hover:opacity-70"
-                    style={{ background: "#C96E2C22", color: "#e2945a", border: "1px solid #C96E2C33" }}
+                    style={{ background: "#fff7ed", color: "#C96E2C", border: "1px solid rgba(201,110,44,0.15)" }}
                     title="Cliquer pour supprimer"
                   >
                     {tag}
@@ -1139,13 +1139,13 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                     onBlur={() => { if (tagInput.trim()) addTag(tagInput); else { setShowTagInput(false); setTagInput(""); } }}
                     placeholder="Nouveau tag…"
                     className="px-2 py-0.5 rounded-full text-[11px] border outline-none w-24"
-                    style={{ background: "#0d0d1a", borderColor: "#C96E2C66", color: "#f0ead8" }}
+                    style={{ background: "#ffffff", borderColor: "rgba(201,110,44,0.5)", color: "#111827" }}
                   />
                 ) : (
                   <button
                     onClick={() => setShowTagInput(true)}
                     className="flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] transition-colors hover:opacity-80"
-                    style={{ background: "#22223a", color: "#6b7280", border: "1px solid #2a2a3e" }}
+                    style={{ background: "#f9fafb", color: "#9ca3af", border: "1px solid #e5e7eb" }}
                   >
                     <Icon name="plus" size={10} />
                     ajouter
@@ -1156,7 +1156,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
 
             {/* ── Notes ── */}
             <div className="mb-2">
-              <div className="text-[11px] font-semibold uppercase tracking-wider mb-2.5" style={{ color: "#4b5563" }}>
+              <div className="text-[11px] font-semibold uppercase tracking-wider mb-2.5" style={{ color: "#c4c8d0" }}>
                 Notes internes
               </div>
               <textarea
@@ -1166,14 +1166,14 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                 placeholder="Notes internes (sauvegarde automatique…)"
                 className="w-full px-3 py-2.5 rounded-lg border text-[13px] resize-none outline-none leading-relaxed transition-colors"
                 style={{
-                  background: "#0d0d1a",
-                  borderColor: "#2a2a3e",
-                  color: "#e8e4dc",
+                  background: "#ffffff",
+                  borderColor: "#d1d5db",
+                  color: "#1f2937",
                 }}
-                onFocus={(e) => { e.currentTarget.style.borderColor = "#C96E2C66"; }}
-                onBlur={(e) => { e.currentTarget.style.borderColor = "#2a2a3e"; }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(201,110,44,0.5)"; }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = "#d1d5db"; }}
               />
-              <p className="text-[10px] mt-1" style={{ color: "#4b5563" }}>Sauvegarde automatique après 1 s</p>
+              <p className="text-[10px] mt-1" style={{ color: "#c4c8d0" }}>Sauvegarde automatique après 1 s</p>
             </div>
 
           </div>
@@ -1182,12 +1182,12 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
         {/* ══ CENTER — Timeline (46%) ══════════════════════════════════════ */}
         <main
           className="flex-1 overflow-y-auto"
-          style={{ background: "#0d0d1a" }}
+          style={{ background: "#f6f8fa" }}
         >
           <div className="px-6 py-5">
 
             {/* Section title */}
-            <h2 className="text-[13px] font-semibold uppercase tracking-wider mb-4" style={{ color: "#4b5563" }}>
+            <h2 className="text-[13px] font-semibold uppercase tracking-wider mb-4" style={{ color: "#c4c8d0" }}>
               Timeline
             </h2>
 
@@ -1199,9 +1199,9 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                   onClick={() => setTimelineFilter(f.id)}
                   className="px-3 py-1 rounded-full text-[12px] font-medium transition-colors"
                   style={{
-                    background: timelineFilter === f.id ? "#C96E2C22" : "#1a1a2e",
-                    color: timelineFilter === f.id ? "#e2945a" : "#6b7280",
-                    border: timelineFilter === f.id ? "1px solid #C96E2C44" : "1px solid #2a2a3e",
+                    background: timelineFilter === f.id ? "#fff7ed" : "#ffffff",
+                    color: timelineFilter === f.id ? "#C96E2C" : "#9ca3af",
+                    border: timelineFilter === f.id ? "1px solid rgba(201,110,44,0.2)" : "1px solid #e5e7eb",
                   }}
                 >
                   {f.label}
@@ -1215,9 +1215,9 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                 onClick={() => setShowNoteForm((p) => !p)}
                 className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-[13px] font-medium border transition-colors hover:opacity-80"
                 style={{
-                  background: showNoteForm ? "#C96E2C22" : "#1a1a2e",
-                  borderColor: showNoteForm ? "#C96E2C44" : "#2a2a3e",
-                  color: showNoteForm ? "#e2945a" : "#9ca3af",
+                  background: showNoteForm ? "#fff7ed" : "#ffffff",
+                  borderColor: showNoteForm ? "rgba(201,110,44,0.2)" : "#e5e7eb",
+                  color: showNoteForm ? "#C96E2C" : "#6b7280",
                 }}
               >
                 <Icon name="plus" size={14} />
@@ -1228,15 +1228,15 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
               {showNoteForm && (
                 <div
                   className="mt-2 p-4 rounded-xl border"
-                  style={{ background: "#1a1a2e", borderColor: "#2a2a3e" }}
+                  style={{ background: "#ffffff", borderColor: "#e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}
                 >
                   <div className="mb-3">
-                    <label className="text-[11px] font-medium mb-1 block" style={{ color: "#6b7280" }}>Type</label>
+                    <label className="text-[11px] font-medium mb-1 block" style={{ color: "#9ca3af" }}>Type</label>
                     <select
                       value={newNoteType}
                       onChange={(e) => setNewNoteType(e.target.value)}
                       className="w-full px-3 py-1.5 rounded-lg border text-[13px] outline-none appearance-none"
-                      style={{ background: "#0d0d1a", borderColor: "#2a2a3e", color: "#e8e4dc" }}
+                      style={{ background: "#ffffff", borderColor: "#d1d5db", color: "#1f2937" }}
                     >
                       <option value="admin_note">Note admin</option>
                       <option value="email_sent">Email envoyé</option>
@@ -1244,25 +1244,25 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                     </select>
                   </div>
                   <div className="mb-3">
-                    <label className="text-[11px] font-medium mb-1 block" style={{ color: "#6b7280" }}>Titre</label>
+                    <label className="text-[11px] font-medium mb-1 block" style={{ color: "#9ca3af" }}>Titre</label>
                     <input
                       type="text"
                       value={newNoteTitle}
                       onChange={(e) => setNewNoteTitle(e.target.value)}
                       placeholder="Titre de l'événement…"
                       className="w-full px-3 py-1.5 rounded-lg border text-[13px] outline-none"
-                      style={{ background: "#0d0d1a", borderColor: "#2a2a3e", color: "#e8e4dc" }}
+                      style={{ background: "#ffffff", borderColor: "#d1d5db", color: "#1f2937" }}
                     />
                   </div>
                   <div className="mb-3">
-                    <label className="text-[11px] font-medium mb-1 block" style={{ color: "#6b7280" }}>Description</label>
+                    <label className="text-[11px] font-medium mb-1 block" style={{ color: "#9ca3af" }}>Description</label>
                     <textarea
                       value={newNoteDesc}
                       onChange={(e) => setNewNoteDesc(e.target.value)}
                       rows={3}
                       placeholder="Description optionnelle…"
                       className="w-full px-3 py-2 rounded-lg border text-[13px] outline-none resize-none"
-                      style={{ background: "#0d0d1a", borderColor: "#2a2a3e", color: "#e8e4dc" }}
+                      style={{ background: "#ffffff", borderColor: "#d1d5db", color: "#1f2937" }}
                     />
                   </div>
                   <button
@@ -1279,7 +1279,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
 
             {/* Timeline entries */}
             {filteredTimeline.length === 0 ? (
-              <div className="text-center py-16 text-[13px]" style={{ color: "#4b5563" }}>
+              <div className="text-center py-16 text-[13px]" style={{ color: "#c4c8d0" }}>
                 Aucun événement pour ce filtre
               </div>
             ) : (
@@ -1287,7 +1287,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                 {/* Vertical line */}
                 <div
                   className="absolute left-[11px] top-0 bottom-0 w-px"
-                  style={{ background: "#2a2a3e" }}
+                  style={{ background: "#e5e7eb" }}
                 />
 
                 {grouped.map(({ month, items }) => (
@@ -1296,7 +1296,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                     <div className="flex items-center gap-3 mb-4 ml-8">
                       <div
                         className="text-[11px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full"
-                        style={{ background: "#1a1a2e", color: "#6b7280", border: "1px solid #2a2a3e" }}
+                        style={{ background: "#ffffff", color: "#9ca3af", border: "1px solid #e5e7eb" }}
                       >
                         {month}
                       </div>
@@ -1309,7 +1309,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                           {/* Icon dot */}
                           <div
                             className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 relative z-10"
-                            style={{ background: meta.color + "22", border: `1.5px solid ${meta.color}55` }}
+                            style={{ background: meta.color + "18", border: `1.5px solid ${meta.color}44` }}
                           >
                             <Icon name={meta.icon} size={11} style={{ color: meta.color }} />
                           </div>
@@ -1317,18 +1317,18 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                           {/* Content */}
                           <div
                             className="flex-1 rounded-xl px-4 py-3 border mb-1"
-                            style={{ background: "#1a1a2e", borderColor: "#2a2a3e" }}
+                            style={{ background: "#ffffff", borderColor: "#e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}
                           >
                             <div className="flex items-start justify-between gap-2">
-                              <span className="text-[13px] font-semibold leading-snug" style={{ color: "#f0ead8" }}>
+                              <span className="text-[13px] font-semibold leading-snug" style={{ color: "#111827" }}>
                                 {item.title}
                               </span>
-                              <span className="text-[11px] shrink-0 mt-0.5" style={{ color: "#4b5563" }}>
+                              <span className="text-[11px] shrink-0 mt-0.5" style={{ color: "#c4c8d0" }}>
                                 {relativeTime(item.created_at)}
                               </span>
                             </div>
                             {item.description && (
-                              <p className="text-[12px] mt-1 leading-relaxed" style={{ color: "#9ca3af" }}>
+                              <p className="text-[12px] mt-1 leading-relaxed" style={{ color: "#6b7280" }}>
                                 {item.description}
                               </p>
                             )}
@@ -1340,7 +1340,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                                 {item.type.replace(/_/g, " ")}
                               </span>
                               {item.source === "analytics" && (
-                                <span className="text-[10px]" style={{ color: "#4b5563" }}>analytics</span>
+                                <span className="text-[10px]" style={{ color: "#c4c8d0" }}>analytics</span>
                               )}
                             </div>
                           </div>
@@ -1357,18 +1357,18 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
         {/* ══ RIGHT — Tasks + Mariages (30%) ════════════════════════════════ */}
         <aside
           className="w-[30%] flex-shrink-0 border-l overflow-y-auto"
-          style={{ background: "#1a1a2e", borderColor: "#2a2a3e" }}
+          style={{ background: "#ffffff", borderColor: "#e5e7eb" }}
         >
           <div className="p-5">
 
             {/* ── Tâches ── */}
             <div className="mb-6">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-[13px] font-semibold uppercase tracking-wider" style={{ color: "#4b5563" }}>
+                <h2 className="text-[13px] font-semibold uppercase tracking-wider" style={{ color: "#c4c8d0" }}>
                   Tâches
                   <span
                     className="ml-2 text-[11px] font-bold px-1.5 py-0.5 rounded-full normal-case tracking-normal"
-                    style={{ background: "#C96E2C22", color: "#e2945a" }}
+                    style={{ background: "#fff7ed", color: "#C96E2C" }}
                   >
                     {incompleteTasks.length}
                   </span>
@@ -1377,9 +1377,9 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                   onClick={() => setShowAddTask((p) => !p)}
                   className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[12px] font-medium border transition-colors hover:opacity-80"
                   style={{
-                    background: showAddTask ? "#C96E2C22" : "transparent",
-                    borderColor: showAddTask ? "#C96E2C44" : "#2a2a3e",
-                    color: showAddTask ? "#e2945a" : "#6b7280",
+                    background: showAddTask ? "#fff7ed" : "transparent",
+                    borderColor: showAddTask ? "rgba(201,110,44,0.2)" : "#e5e7eb",
+                    color: showAddTask ? "#C96E2C" : "#9ca3af",
                   }}
                 >
                   <Icon name="plus" size={12} />
@@ -1391,7 +1391,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
               {showAddTask && (
                 <div
                   className="mb-3 p-3 rounded-xl border"
-                  style={{ background: "#0d0d1a", borderColor: "#2a2a3e" }}
+                  style={{ background: "#f9fafb", borderColor: "#e5e7eb" }}
                 >
                   <input
                     type="text"
@@ -1400,7 +1400,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                     onKeyDown={(e) => { if (e.key === "Enter") createTask(); if (e.key === "Escape") setShowAddTask(false); }}
                     placeholder="Titre de la tâche…"
                     className="w-full px-3 py-1.5 rounded-lg border text-[13px] outline-none mb-2"
-                    style={{ background: "#1a1a2e", borderColor: "#2a2a3e", color: "#e8e4dc" }}
+                    style={{ background: "#ffffff", borderColor: "#d1d5db", color: "#1f2937" }}
                     autoFocus
                   />
                   <div className="flex gap-2 mb-2">
@@ -1408,7 +1408,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                       value={newTaskType}
                       onChange={(e) => setNewTaskType(e.target.value)}
                       className="flex-1 px-2 py-1.5 rounded-lg border text-[12px] outline-none appearance-none"
-                      style={{ background: "#1a1a2e", borderColor: "#2a2a3e", color: "#e8e4dc" }}
+                      style={{ background: "#ffffff", borderColor: "#d1d5db", color: "#1f2937" }}
                     >
                       <option value="task">Tâche</option>
                       <option value="call">Appel</option>
@@ -1421,13 +1421,13 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                       value={newTaskDue}
                       onChange={(e) => setNewTaskDue(e.target.value)}
                       className="flex-1 px-2 py-1.5 rounded-lg border text-[12px] outline-none"
-                      style={{ background: "#1a1a2e", borderColor: "#2a2a3e", color: "#e8e4dc" }}
+                      style={{ background: "#ffffff", borderColor: "#d1d5db", color: "#1f2937" }}
                     />
                     <select
                       value={newTaskPriority}
                       onChange={(e) => setNewTaskPriority(e.target.value)}
                       className="flex-1 px-2 py-1.5 rounded-lg border text-[12px] outline-none appearance-none"
-                      style={{ background: "#1a1a2e", borderColor: "#2a2a3e", color: "#e8e4dc" }}
+                      style={{ background: "#ffffff", borderColor: "#d1d5db", color: "#1f2937" }}
                     >
                       <option value="low">Basse</option>
                       <option value="medium">Moyenne</option>
@@ -1447,7 +1447,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                     <button
                       onClick={() => setShowAddTask(false)}
                       className="px-3 py-1.5 rounded-lg text-[12px] border transition-colors hover:opacity-80"
-                      style={{ background: "transparent", borderColor: "#2a2a3e", color: "#6b7280" }}
+                      style={{ background: "transparent", borderColor: "#e5e7eb", color: "#9ca3af" }}
                     >
                       Annuler
                     </button>
@@ -1459,10 +1459,10 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
               {incompleteTasks.length === 0 && completedTasks.length === 0 ? (
                 <div
                   className="rounded-xl border px-4 py-8 text-center"
-                  style={{ borderColor: "#2a2a3e", borderStyle: "dashed" }}
+                  style={{ borderColor: "#e5e7eb", borderStyle: "dashed" }}
                 >
-                  <Icon name="check-circle" size={24} style={{ color: "#2a2a3e", margin: "0 auto 8px" }} />
-                  <p className="text-[12px]" style={{ color: "#4b5563" }}>Aucune tâche</p>
+                  <Icon name="check-circle" size={24} style={{ color: "#e5e7eb", margin: "0 auto 8px" }} />
+                  <p className="text-[12px]" style={{ color: "#c4c8d0" }}>Aucune tâche</p>
                 </div>
               ) : (
                 <div className="flex flex-col gap-1">
@@ -1470,27 +1470,27 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                     <div
                       key={task.id}
                       className="group flex items-center gap-2.5 px-3 py-2 rounded-lg border transition-colors hover:border-opacity-60"
-                      style={{ background: "#0d0d1a", borderColor: "#2a2a3e" }}
+                      style={{ background: "#f9fafb", borderColor: "#e5e7eb" }}
                     >
                       {/* Checkbox */}
                       <button
                         onClick={() => toggleTask(task)}
                         className="w-4 h-4 rounded-full border-2 flex-shrink-0 transition-colors hover:opacity-80"
-                        style={{ borderColor: PRIORITY_COLOR[task.priority] ?? "#6b7280", background: "transparent" }}
+                        style={{ borderColor: PRIORITY_COLOR[task.priority] ?? "#9ca3af", background: "transparent" }}
                       />
                       {/* Icon */}
                       <Icon
                         name={TASK_TYPE_ICON[task.task_type] ?? "check-circle"}
                         size={12}
-                        style={{ color: PRIORITY_COLOR[task.priority] ?? "#6b7280", flexShrink: 0 }}
+                        style={{ color: PRIORITY_COLOR[task.priority] ?? "#9ca3af", flexShrink: 0 }}
                       />
                       {/* Content */}
                       <div className="flex-1 min-w-0">
-                        <div className="text-[12px] font-medium truncate" style={{ color: "#e8e4dc" }}>
+                        <div className="text-[12px] font-medium truncate" style={{ color: "#1f2937" }}>
                           {task.title}
                         </div>
                         {task.due_date && (
-                          <div className="text-[10px]" style={{ color: "#6b7280" }}>
+                          <div className="text-[10px]" style={{ color: "#9ca3af" }}>
                             {formatDate(task.due_date)}
                           </div>
                         )}
@@ -1499,7 +1499,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                       <button
                         onClick={() => deleteTask(task.id)}
                         className="opacity-0 group-hover:opacity-100 transition-opacity w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
-                        style={{ color: "#ef4444" }}
+                        style={{ color: "#dc2626" }}
                       >
                         <Icon name="x" size={11} />
                       </button>
@@ -1512,7 +1512,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                       <button
                         onClick={() => setShowCompletedTasks((p) => !p)}
                         className="flex items-center gap-1.5 text-[11px] mb-1.5 transition-colors hover:opacity-80"
-                        style={{ color: "#4b5563" }}
+                        style={{ color: "#c4c8d0" }}
                       >
                         <Icon name={showCompletedTasks ? "chevronU" : "chevronD"} size={10} />
                         {completedTasks.length} terminée{completedTasks.length > 1 ? "s" : ""}
@@ -1522,30 +1522,30 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                           <div
                             key={task.id}
                             className="group flex items-center gap-2.5 px-3 py-2 rounded-lg border opacity-50 transition-opacity hover:opacity-70"
-                            style={{ background: "#0d0d1a", borderColor: "#2a2a3e" }}
+                            style={{ background: "#f9fafb", borderColor: "#e5e7eb" }}
                           >
                             {/* Checkbox (filled) */}
                             <button
                               onClick={() => toggleTask(task)}
                               className="w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center transition-colors"
-                              style={{ background: "#4b5563", border: "2px solid #4b5563" }}
+                              style={{ background: "#c4c8d0", border: "2px solid #c4c8d0" }}
                             >
-                              <Icon name="check-circle" size={8} style={{ color: "#0d0d1a" }} />
+                              <Icon name="check-circle" size={8} style={{ color: "#ffffff" }} />
                             </button>
                             <Icon
                               name={TASK_TYPE_ICON[task.task_type] ?? "check-circle"}
                               size={12}
-                              style={{ color: "#4b5563", flexShrink: 0 }}
+                              style={{ color: "#c4c8d0", flexShrink: 0 }}
                             />
                             <div className="flex-1 min-w-0">
-                              <div className="text-[12px] line-through truncate" style={{ color: "#6b7280" }}>
+                              <div className="text-[12px] line-through truncate" style={{ color: "#9ca3af" }}>
                                 {task.title}
                               </div>
                             </div>
                             <button
                               onClick={() => deleteTask(task.id)}
                               className="opacity-0 group-hover:opacity-100 transition-opacity w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
-                              style={{ color: "#ef4444" }}
+                              style={{ color: "#dc2626" }}
                             >
                               <Icon name="x" size={11} />
                             </button>
@@ -1555,7 +1555,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                           <button
                             onClick={() => setShowCompletedTasks(true)}
                             className="text-[11px] text-center py-1 transition-colors hover:opacity-80"
-                            style={{ color: "#4b5563" }}
+                            style={{ color: "#c4c8d0" }}
                           >
                             Voir {completedTasks.length - 5} de plus…
                           </button>
@@ -1569,11 +1569,11 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
 
             {/* ── Mariages liés ── */}
             <div>
-              <h2 className="text-[13px] font-semibold uppercase tracking-wider mb-4" style={{ color: "#4b5563" }}>
+              <h2 className="text-[13px] font-semibold uppercase tracking-wider mb-4" style={{ color: "#c4c8d0" }}>
                 Mariages liés
                 <span
                   className="ml-2 text-[11px] font-bold px-1.5 py-0.5 rounded-full normal-case tracking-normal"
-                  style={{ background: "#C96E2C22", color: "#e2945a" }}
+                  style={{ background: "#fff7ed", color: "#C96E2C" }}
                 >
                   {weddings.length}
                 </span>
@@ -1582,32 +1582,32 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
               {weddings.length === 0 ? (
                 <div
                   className="rounded-xl border px-5 py-10 text-center"
-                  style={{ borderColor: "#2a2a3e", borderStyle: "dashed" }}
+                  style={{ borderColor: "#e5e7eb", borderStyle: "dashed" }}
                 >
-                  <Icon name="rings" size={28} style={{ color: "#2a2a3e", margin: "0 auto 10px" }} />
-                  <p className="text-[13px]" style={{ color: "#4b5563" }}>Aucun mariage associé</p>
+                  <Icon name="rings" size={28} style={{ color: "#e5e7eb", margin: "0 auto 10px" }} />
+                  <p className="text-[13px]" style={{ color: "#c4c8d0" }}>Aucun mariage associé</p>
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
                   {weddings.map((w) => {
                     const pNames = [w.partner_a, w.partner_b].filter(Boolean).join(" & ") || w.name || "Sans nom";
-                    const roleStyle = ROLE_COLOR[w.role] ?? { bg: "#33333344", color: "#9ca3af" };
+                    const roleStyle = ROLE_COLOR[w.role] ?? { bg: "#f3f4f6", color: "#6b7280" };
                     const roleLabel = ROLE_LABEL[w.role] ?? w.role;
 
                     return (
                       <div
                         key={w.id}
                         className="rounded-xl border p-4 transition-colors"
-                        style={{ background: "#0d0d1a", borderColor: "#2a2a3e" }}
+                        style={{ background: "#f9fafb", borderColor: "#e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}
                       >
                         {/* Header row */}
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <div>
-                            <div className="text-[14px] font-semibold leading-snug" style={{ color: "#f0ead8" }}>
+                            <div className="text-[14px] font-semibold leading-snug" style={{ color: "#111827" }}>
                               {pNames}
                             </div>
                             {w.name && w.name !== pNames && (
-                              <div className="text-[11px] mt-0.5" style={{ color: "#6b7280" }}>{w.name}</div>
+                              <div className="text-[11px] mt-0.5" style={{ color: "#9ca3af" }}>{w.name}</div>
                             )}
                           </div>
                           <span
@@ -1621,13 +1621,13 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                         {/* Date + city */}
                         <div className="flex flex-wrap items-center gap-3 mb-3">
                           {w.date && (
-                            <div className="flex items-center gap-1.5 text-[12px]" style={{ color: "#9ca3af" }}>
+                            <div className="flex items-center gap-1.5 text-[12px]" style={{ color: "#6b7280" }}>
                               <Icon name="calendar" size={12} />
                               {formatDate(w.date)}
                             </div>
                           )}
                           {w.city && (
-                            <div className="flex items-center gap-1.5 text-[12px]" style={{ color: "#9ca3af" }}>
+                            <div className="flex items-center gap-1.5 text-[12px]" style={{ color: "#6b7280" }}>
                               <Icon name="pin" size={12} />
                               {w.city}
                             </div>
@@ -1636,7 +1636,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
 
                         {/* Footer */}
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px]" style={{ color: "#4b5563" }}>
+                          <span className="text-[11px]" style={{ color: "#c4c8d0" }}>
                             #{w.id}
                           </span>
                           <Link
