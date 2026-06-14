@@ -58,9 +58,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
         // la page où il est (la landing lui propose « Accès à mon mariage »).
         // Les pages login/signup gèrent elles-mêmes leur redirection.
       } else if (!isPublic) {
-        // Invitation en attente (parcours signup/confirmation email) → on y retourne
-        const pendingInvite = localStorage.getItem("jj_pending_invite");
-        router.push(pendingInvite ? `/invite/${pendingInvite}` : "/onboarding");
+        // Distingue "pas de session" (→ /login) de "session sans mariage" (→ /onboarding)
+        const { data: { user } } = await createClient().auth.getUser();
+        if (!user) {
+          router.push("/login");
+        } else {
+          const pendingInvite = localStorage.getItem("jj_pending_invite");
+          router.push(pendingInvite ? `/invite/${pendingInvite}` : "/onboarding");
+        }
       } else {
         setLoading(false);
       }

@@ -13,13 +13,13 @@ export default function Footer() {
       { label: "Se connecter", href: "/login" },
     ],
     "Modules": [
-      { label: "Invités & RSVP", href: "/signup" },
-      { label: "Budget", href: "/signup" },
-      { label: "Plan de table", href: "/signup" },
-      { label: "Déroulé Jour J", href: "/signup" },
+      { label: "Invités & RSVP", href: "/guests" },
+      { label: "Budget", href: "/budget" },
+      { label: "Plan de table", href: "/guests" },
+      { label: "Déroulé Jour J", href: "/dayj" },
     ],
     "Légal": [
-      { label: "Conditions d'utilisation", href: "#" },
+      { label: "Conditions d'utilisation", href: "/terms" },
       { label: "Politique de confidentialité", href: "/privacy" },
       { label: "Données personnelles", href: "/privacy#donnees" },
     ],
