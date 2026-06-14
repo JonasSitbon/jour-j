@@ -8,6 +8,7 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import { Icon } from "@/components/icon";
+import { useAdminTheme } from "@/app/admin/admin-theme-context";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -159,9 +160,9 @@ function KpiSkeleton() {
   );
 }
 
-function TableRowSkeleton({ cols }: { cols: number }) {
+function TableRowSkeleton({ cols, lineSoft = "#f0f0f0" }: { cols: number; lineSoft?: string }) {
   return (
-    <tr style={{ borderTop: "1px solid #f0f0f0" }}>
+    <tr style={{ borderTop: `1px solid ${lineSoft}` }}>
       {Array.from({ length: cols }).map((_, i) => (
         <td key={i} className="px-4 py-3">
           <div
@@ -176,19 +177,31 @@ function TableRowSkeleton({ cols }: { cols: number }) {
 
 // ─── Section header ───────────────────────────────────────────────────────────
 
-function SectionHeader({ icon, title, count }: { icon: string; title: string; count?: number }) {
+function SectionHeader({
+  icon,
+  title,
+  count,
+  accentHue = "#C96E2C",
+  accentSoft = "#fff7ed",
+}: {
+  icon: string;
+  title: string;
+  count?: number;
+  accentHue?: string;
+  accentSoft?: string;
+}) {
   return (
     <div
       className="flex items-center gap-3 px-5 py-4 border-b"
       style={{ borderColor: "#e5e7eb", background: "#f9fafb" }}
     >
-      <Icon name={icon} size={16} style={{ color: "#C96E2C" }} />
+      <Icon name={icon} size={16} style={{ color: accentHue }} />
       <h2 className="text-sm font-semibold" style={{ color: "#111827" }}>
         {title}
         {count !== undefined && (
           <span
             className="ml-2 px-2 py-0.5 rounded-full text-[11px] font-bold"
-            style={{ background: "#fff7ed", color: "#C96E2C" }}
+            style={{ background: accentSoft, color: accentHue }}
           >
             {count}
           </span>
@@ -201,6 +214,7 @@ function SectionHeader({ icon, title, count }: { icon: string; title: string; co
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ComptabilitePage() {
+  const { tc } = useAdminTheme();
   const [profiles, setProfiles] = useState<SubProfile[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -353,7 +367,7 @@ export default function ComptabilitePage() {
       label: "MRR",
       sublabel: "Revenu mensuel récurrent",
       value: loading ? null : fmtEuroFromEuros(kpis.mrr),
-      color: "#C96E2C",
+      color: tc.accentHue,
       highlight: true,
     },
     {
@@ -361,7 +375,7 @@ export default function ComptabilitePage() {
       label: "ARR",
       sublabel: "Revenu annuel récurrent",
       value: loading ? null : fmtEuroFromEuros(kpis.arr),
-      color: "#C96E2C",
+      color: tc.accentHue,
       highlight: false,
     },
     {
@@ -415,7 +429,7 @@ export default function ComptabilitePage() {
           <span style={{ color: "#e5e7eb" }}>|</span>
           <div>
             <h1 className="text-[22px] font-bold flex items-center gap-2.5" style={{ color: "#111827" }}>
-              <Icon name="receipt" size={20} style={{ color: "#C96E2C" }} />
+              <Icon name="receipt" size={20} style={{ color: tc.accentHue }} />
               Comptabilité &amp; Revenus
             </h1>
             <p className="text-[13px] mt-0.5" style={{ color: "#6b7280" }}>
@@ -428,7 +442,7 @@ export default function ComptabilitePage() {
           onClick={exportCsv}
           disabled={loading || activeSubscribers.length === 0}
           className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-[13px] font-semibold transition-all hover:opacity-80 disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{ background: "#C96E2C", color: "#fffaf2" }}
+          style={{ background: tc.accent, color: tc.accentInk }}
         >
           <Icon name="download" size={15} />
           Exporter CSV
@@ -444,8 +458,8 @@ export default function ComptabilitePage() {
                 key={card.label}
                 className="rounded-xl border p-5 flex flex-col gap-3"
                 style={{
-                  background: card.highlight ? "#fff7ed" : "#ffffff",
-                  borderColor: card.highlight ? "rgba(201,110,44,0.2)" : "#e5e7eb",
+                  background: card.highlight ? tc.accentSoft : "#ffffff",
+                  borderColor: card.highlight ? tc.accentBorder : "#e5e7eb",
                   boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
                 }}
               >
@@ -480,7 +494,7 @@ export default function ComptabilitePage() {
         className="rounded-xl border overflow-hidden mb-8"
         style={{ background: "#ffffff", borderColor: "#e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}
       >
-        <SectionHeader icon="bars" title="Revenus par mois" />
+        <SectionHeader icon="bars" title="Revenus par mois" accentHue={tc.accentHue} accentSoft={tc.accentSoft} />
 
         {loading ? (
           <div className="p-5 space-y-4">
@@ -496,7 +510,7 @@ export default function ComptabilitePage() {
           <div className="py-14 px-6 text-center">
             <div
               className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4"
-              style={{ background: "#fff7ed", color: "#C96E2C" }}
+              style={{ background: tc.accentSoft, color: tc.accentHue }}
             >
               <Icon name="receipt" size={22} />
             </div>
@@ -511,7 +525,7 @@ export default function ComptabilitePage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ borderBottom: "1px solid #e5e7eb", background: "#f9fafb" }}>
+                <tr style={{ borderBottom: `1px solid ${tc.line}`, background: "#f9fafb" }}>
                   <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "#c4c8d0" }}>Mois</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "#c4c8d0" }}>Factures</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider w-full" style={{ color: "#c4c8d0" }}>Distribution</th>
@@ -525,7 +539,7 @@ export default function ComptabilitePage() {
                     <tr
                       key={row.month + i}
                       className="transition-colors hover:bg-black/[0.02]"
-                      style={{ borderTop: i > 0 ? "1px solid #f0f0f0" : undefined }}
+                      style={{ borderTop: i > 0 ? `1px solid ${tc.lineSoft}` : undefined }}
                     >
                       <td className="px-5 py-3.5">
                         <span className="text-[13px] font-medium capitalize" style={{ color: "#374151" }}>
@@ -543,7 +557,7 @@ export default function ComptabilitePage() {
                             className="h-full rounded-md transition-all duration-700"
                             style={{
                               width: `${pct}%`,
-                              background: `linear-gradient(90deg, #C96E2C, #e2945a)`,
+                              background: `linear-gradient(90deg, ${tc.accent}, ${tc.accent}99)`,
                             }}
                           />
                         </div>
@@ -558,13 +572,13 @@ export default function ComptabilitePage() {
                 })}
               </tbody>
               <tfoot>
-                <tr style={{ borderTop: "2px solid #e5e7eb" }}>
+                <tr style={{ borderTop: `2px solid ${tc.line}` }}>
                   <td className="px-5 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: "#c4c8d0" }} colSpan={2}>
                     Total
                   </td>
                   <td className="px-5 py-3" />
                   <td className="px-5 py-3 text-right">
-                    <span className="text-[14px] font-bold tabular-nums" style={{ color: "#C96E2C" }}>
+                    <span className="text-[14px] font-bold tabular-nums" style={{ color: tc.accentHue }}>
                       {fmtEuro(revenueByMonth.reduce((a, r) => a + r.total, 0))}
                     </span>
                   </td>
@@ -584,12 +598,14 @@ export default function ComptabilitePage() {
           icon="check-circle"
           title="Abonnés actifs"
           count={loading ? undefined : activeSubscribers.length}
+          accentHue={tc.accentHue}
+          accentSoft={tc.accentSoft}
         />
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr style={{ borderBottom: "1px solid #e5e7eb", background: "#f9fafb" }}>
+              <tr style={{ borderBottom: `1px solid ${tc.line}`, background: "#f9fafb" }}>
                 <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "#c4c8d0" }}>Client</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "#c4c8d0" }}>Type</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "#c4c8d0" }}>Plan</th>
@@ -600,7 +616,7 @@ export default function ComptabilitePage() {
             </thead>
             <tbody>
               {loading ? (
-                Array.from({ length: 5 }).map((_, i) => <TableRowSkeleton key={i} cols={6} />)
+                Array.from({ length: 5 }).map((_, i) => <TableRowSkeleton key={i} cols={6} lineSoft={tc.lineSoft} />)
               ) : activeSubscribers.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-14 text-[13px]" style={{ color: "#c4c8d0" }}>
@@ -621,7 +637,7 @@ export default function ComptabilitePage() {
                       key={p.id}
                       className="transition-colors hover:bg-black/[0.02]"
                       style={{
-                        borderTop: i > 0 ? "1px solid #f0f0f0" : undefined,
+                        borderTop: i > 0 ? `1px solid ${tc.lineSoft}` : undefined,
                         background: i % 2 === 0 ? "transparent" : "#fafafa",
                       }}
                     >
@@ -630,7 +646,7 @@ export default function ComptabilitePage() {
                         <div className="flex items-center gap-2.5">
                           <div
                             className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
-                            style={{ background: "rgba(201,110,44,0.15)", color: "#C96E2C" }}
+                            style={{ background: tc.accentSoft, color: tc.accentHue }}
                           >
                             {initials}
                           </div>
@@ -695,12 +711,12 @@ export default function ComptabilitePage() {
 
             {!loading && activeSubscribers.length > 0 && (
               <tfoot>
-                <tr style={{ borderTop: "2px solid #e5e7eb" }}>
+                <tr style={{ borderTop: `2px solid ${tc.line}` }}>
                   <td className="px-5 py-3 text-xs" style={{ color: "#c4c8d0" }} colSpan={3}>
                     {activeSubscribers.length} abonné{activeSubscribers.length > 1 ? "s" : ""}
                   </td>
                   <td className="px-5 py-3 text-right">
-                    <span className="text-[13px] font-bold tabular-nums" style={{ color: "#C96E2C" }}>
+                    <span className="text-[13px] font-bold tabular-nums" style={{ color: tc.accentHue }}>
                       {fmtEuroFromEuros(kpis.mrr)} / mois
                     </span>
                   </td>
@@ -726,12 +742,14 @@ export default function ComptabilitePage() {
           icon="file"
           title="Historique des factures"
           count={loading ? undefined : invoices.length}
+          accentHue={tc.accentHue}
+          accentSoft={tc.accentSoft}
         />
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr style={{ borderBottom: "1px solid #e5e7eb", background: "#f9fafb" }}>
+              <tr style={{ borderBottom: `1px solid ${tc.line}`, background: "#f9fafb" }}>
                 <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "#c4c8d0" }}># Numéro</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "#c4c8d0" }}>Client</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "#c4c8d0" }}>Plan</th>
@@ -742,7 +760,7 @@ export default function ComptabilitePage() {
             </thead>
             <tbody>
               {loading ? (
-                Array.from({ length: 6 }).map((_, i) => <TableRowSkeleton key={i} cols={6} />)
+                Array.from({ length: 6 }).map((_, i) => <TableRowSkeleton key={i} cols={6} lineSoft={tc.lineSoft} />)
               ) : invoices.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-14 px-6 text-center">
@@ -774,7 +792,7 @@ export default function ComptabilitePage() {
                       key={inv.id}
                       className="transition-colors hover:bg-black/[0.02]"
                       style={{
-                        borderTop: i > 0 ? "1px solid #f0f0f0" : undefined,
+                        borderTop: i > 0 ? `1px solid ${tc.lineSoft}` : undefined,
                         background: i % 2 === 0 ? "transparent" : "#fafafa",
                       }}
                     >

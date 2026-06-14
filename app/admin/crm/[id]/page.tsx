@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import { Icon } from "@/components/icon";
+import { useAdminTheme } from "@/app/admin/admin-theme-context";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -304,6 +305,7 @@ function InlineField({
   onSave,
   placeholder,
   type = "text",
+  accentBorder = "rgba(201,110,44,0.5)",
 }: {
   label: string;
   value: string;
@@ -311,6 +313,7 @@ function InlineField({
   onSave: (field: string, value: string) => Promise<void>;
   placeholder?: string;
   type?: string;
+  accentBorder?: string;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -346,7 +349,7 @@ function InlineField({
           onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") { setDraft(value); setEditing(false); } }}
           disabled={saving}
           className="w-full px-2.5 py-1.5 rounded-lg border text-[13px] outline-none"
-          style={{ background: "#ffffff", borderColor: "rgba(201,110,44,0.5)", color: "#111827" }}
+          style={{ background: "#ffffff", borderColor: accentBorder, color: "#111827" }}
           placeholder={placeholder}
         />
       </div>
@@ -374,6 +377,7 @@ function InlineField({
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function CrmDetailPage({ params }: { params: { id: string } }) {
+  const { tc } = useAdminTheme();
   const userId = params.id;
 
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -700,7 +704,10 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
 
   // ── Computed ──────────────────────────────────────────────────────────────
 
-  const accountBadge = ACCOUNT_BADGE[profile?.account_type ?? "couple"] ?? { label: profile?.account_type ?? "", bg: "#f3f4f6", color: "#6b7280" };
+  const accountBadgeRaw = ACCOUNT_BADGE[profile?.account_type ?? "couple"] ?? { label: profile?.account_type ?? "", bg: "#f3f4f6", color: "#6b7280" };
+  const accountBadge = profile?.account_type === "super_admin"
+    ? { ...accountBadgeRaw, bg: tc.accentSoft, color: tc.accentHue }
+    : accountBadgeRaw;
 
   const statusBadge = profile?.is_subscribed
     ? STATUS_BADGE.subscribed
@@ -750,7 +757,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
       <div className="min-h-screen flex items-center justify-center" style={{ background: "#f6f8fa" }}>
         <div className="text-center">
           <p className="text-lg font-semibold mb-2" style={{ color: "#111827" }}>Utilisateur introuvable</p>
-          <Link href="/admin/users" className="text-sm" style={{ color: "#C96E2C" }}>← Retour à la liste</Link>
+          <Link href="/admin/users" className="text-sm" style={{ color: tc.accentHue }}>← Retour à la liste</Link>
         </div>
       </div>
     );
@@ -875,7 +882,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                   onClick={sendEmail}
                   disabled={sendingEmail || !emailSubject.trim() || !emailBody.trim() || !profile.email}
                   className="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-semibold transition-colors disabled:opacity-50"
-                  style={{ background: "#C96E2C", color: "#fffaf2" }}
+                  style={{ background: tc.accent, color: tc.accentInk }}
                 >
                   {sendingEmail ? (
                     <>
@@ -930,7 +937,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
           <button
             onClick={openEmailModal}
             className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors hover:opacity-80"
-            style={{ background: "#fff7ed", border: "1px solid rgba(201,110,44,0.2)", color: "#C96E2C" }}
+            style={{ background: tc.accentSoft, border: `1px solid ${tc.accentBorder}`, color: tc.accentHue }}
           >
             <Icon name="mail" size={14} />
             Envoyer un email
@@ -1007,11 +1014,11 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
 
             {/* Editable fields */}
             <div className="mb-4">
-              <InlineField label="Prénom" value={profile.first_name ?? ""} field="first_name" onSave={updateProfile} placeholder="Prénom" />
-              <InlineField label="Nom" value={profile.last_name ?? ""} field="last_name" onSave={updateProfile} placeholder="Nom" />
-              <InlineField label="Email" value={profile.email ?? ""} field="email" onSave={updateProfile} placeholder="email@exemple.com" type="email" />
-              <InlineField label="Téléphone" value={profile.phone ?? ""} field="phone" onSave={updateProfile} placeholder="+33 6 00 00 00 00" type="tel" />
-              <InlineField label="Société" value={profile.company ?? ""} field="company" onSave={updateProfile} placeholder="Nom de la société" />
+              <InlineField label="Prénom" value={profile.first_name ?? ""} field="first_name" onSave={updateProfile} placeholder="Prénom" accentBorder={tc.accentBorder} />
+              <InlineField label="Nom" value={profile.last_name ?? ""} field="last_name" onSave={updateProfile} placeholder="Nom" accentBorder={tc.accentBorder} />
+              <InlineField label="Email" value={profile.email ?? ""} field="email" onSave={updateProfile} placeholder="email@exemple.com" type="email" accentBorder={tc.accentBorder} />
+              <InlineField label="Téléphone" value={profile.phone ?? ""} field="phone" onSave={updateProfile} placeholder="+33 6 00 00 00 00" type="tel" accentBorder={tc.accentBorder} />
+              <InlineField label="Société" value={profile.company ?? ""} field="company" onSave={updateProfile} placeholder="Nom de la société" accentBorder={tc.accentBorder} />
             </div>
 
             {/* ── Pipeline ── */}
@@ -1118,7 +1125,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                     key={tag}
                     onClick={() => removeTag(tag)}
                     className="group flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium transition-colors hover:opacity-70"
-                    style={{ background: "#fff7ed", color: "#C96E2C", border: "1px solid rgba(201,110,44,0.15)" }}
+                    style={{ background: tc.accentSoft, color: tc.accentHue, border: `1px solid ${tc.accentBorder}` }}
                     title="Cliquer pour supprimer"
                   >
                     {tag}
@@ -1139,7 +1146,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                     onBlur={() => { if (tagInput.trim()) addTag(tagInput); else { setShowTagInput(false); setTagInput(""); } }}
                     placeholder="Nouveau tag…"
                     className="px-2 py-0.5 rounded-full text-[11px] border outline-none w-24"
-                    style={{ background: "#ffffff", borderColor: "rgba(201,110,44,0.5)", color: "#111827" }}
+                    style={{ background: "#ffffff", borderColor: tc.accentBorder, color: "#111827" }}
                   />
                 ) : (
                   <button
@@ -1170,7 +1177,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                   borderColor: "#d1d5db",
                   color: "#1f2937",
                 }}
-                onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(201,110,44,0.5)"; }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = tc.accentBorder; }}
                 onBlur={(e) => { e.currentTarget.style.borderColor = "#d1d5db"; }}
               />
               <p className="text-[10px] mt-1" style={{ color: "#c4c8d0" }}>Sauvegarde automatique après 1 s</p>
@@ -1199,9 +1206,9 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                   onClick={() => setTimelineFilter(f.id)}
                   className="px-3 py-1 rounded-full text-[12px] font-medium transition-colors"
                   style={{
-                    background: timelineFilter === f.id ? "#fff7ed" : "#ffffff",
-                    color: timelineFilter === f.id ? "#C96E2C" : "#9ca3af",
-                    border: timelineFilter === f.id ? "1px solid rgba(201,110,44,0.2)" : "1px solid #e5e7eb",
+                    background: timelineFilter === f.id ? tc.accentSoft : "#ffffff",
+                    color: timelineFilter === f.id ? tc.accentHue : "#9ca3af",
+                    border: timelineFilter === f.id ? `1px solid ${tc.accentBorder}` : `1px solid ${tc.line}`,
                   }}
                 >
                   {f.label}
@@ -1215,9 +1222,9 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                 onClick={() => setShowNoteForm((p) => !p)}
                 className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-[13px] font-medium border transition-colors hover:opacity-80"
                 style={{
-                  background: showNoteForm ? "#fff7ed" : "#ffffff",
-                  borderColor: showNoteForm ? "rgba(201,110,44,0.2)" : "#e5e7eb",
-                  color: showNoteForm ? "#C96E2C" : "#6b7280",
+                  background: showNoteForm ? tc.accentSoft : "#ffffff",
+                  borderColor: showNoteForm ? tc.accentBorder : tc.line,
+                  color: showNoteForm ? tc.accentHue : "#6b7280",
                 }}
               >
                 <Icon name="plus" size={14} />
@@ -1269,7 +1276,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                     onClick={submitNote}
                     disabled={savingNote || !newNoteTitle.trim()}
                     className="px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-colors disabled:opacity-50"
-                    style={{ background: "#C96E2C", color: "#fffaf2" }}
+                    style={{ background: tc.accent, color: tc.accentInk }}
                   >
                     {savingNote ? "Enregistrement…" : "Enregistrer"}
                   </button>
@@ -1303,7 +1310,10 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                     </div>
 
                     {items.map((item) => {
-                      const meta = EVENT_ICON[item.type] ?? EVENT_ICON.login;
+                      const metaRaw = EVENT_ICON[item.type] ?? EVENT_ICON.login;
+                      const meta = item.type === "admin_note"
+                        ? { ...metaRaw, color: tc.accentHue }
+                        : metaRaw;
                       return (
                         <div key={item.id} className="flex gap-4 mb-4 relative">
                           {/* Icon dot */}
@@ -1368,7 +1378,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                   Tâches
                   <span
                     className="ml-2 text-[11px] font-bold px-1.5 py-0.5 rounded-full normal-case tracking-normal"
-                    style={{ background: "#fff7ed", color: "#C96E2C" }}
+                    style={{ background: tc.accentSoft, color: tc.accentHue }}
                   >
                     {incompleteTasks.length}
                   </span>
@@ -1377,9 +1387,9 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                   onClick={() => setShowAddTask((p) => !p)}
                   className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[12px] font-medium border transition-colors hover:opacity-80"
                   style={{
-                    background: showAddTask ? "#fff7ed" : "transparent",
-                    borderColor: showAddTask ? "rgba(201,110,44,0.2)" : "#e5e7eb",
-                    color: showAddTask ? "#C96E2C" : "#9ca3af",
+                    background: showAddTask ? tc.accentSoft : "transparent",
+                    borderColor: showAddTask ? tc.accentBorder : tc.line,
+                    color: showAddTask ? tc.accentHue : "#9ca3af",
                   }}
                 >
                   <Icon name="plus" size={12} />
@@ -1440,7 +1450,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                       onClick={createTask}
                       disabled={!newTaskTitle.trim()}
                       className="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-colors disabled:opacity-50"
-                      style={{ background: "#C96E2C", color: "#fffaf2" }}
+                      style={{ background: tc.accent, color: tc.accentInk }}
                     >
                       Créer
                     </button>
@@ -1573,7 +1583,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                 Mariages liés
                 <span
                   className="ml-2 text-[11px] font-bold px-1.5 py-0.5 rounded-full normal-case tracking-normal"
-                  style={{ background: "#fff7ed", color: "#C96E2C" }}
+                  style={{ background: tc.accentSoft, color: tc.accentHue }}
                 >
                   {weddings.length}
                 </span>
@@ -1591,7 +1601,10 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                 <div className="flex flex-col gap-3">
                   {weddings.map((w) => {
                     const pNames = [w.partner_a, w.partner_b].filter(Boolean).join(" & ") || w.name || "Sans nom";
-                    const roleStyle = ROLE_COLOR[w.role] ?? { bg: "#f3f4f6", color: "#6b7280" };
+                    const roleStyleRaw = ROLE_COLOR[w.role] ?? { bg: "#f3f4f6", color: "#6b7280" };
+                    const roleStyle = w.role === "owner"
+                      ? { ...roleStyleRaw, bg: tc.accentSoft, color: tc.accentHue }
+                      : roleStyleRaw;
                     const roleLabel = ROLE_LABEL[w.role] ?? w.role;
 
                     return (
@@ -1642,7 +1655,7 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
                           <Link
                             href={`/dashboard`}
                             className="flex items-center gap-1 text-[12px] font-medium transition-colors hover:opacity-80"
-                            style={{ color: "#C96E2C" }}
+                            style={{ color: tc.accentHue }}
                           >
                             Voir
                             <Icon name="chevronR" size={12} />

@@ -7,6 +7,7 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import { Icon } from "@/components/icon";
+import { useAdminTheme } from "@/app/admin/admin-theme-context";
 
 // ─── Pipeline stages ──────────────────────────────────────────────────────────
 
@@ -146,26 +147,36 @@ function SkeletonColumn({ stageId, label, color }: { stageId: string; label: str
 
 interface ClientCardProps {
   profile: PipelineProfile;
-  currentStage: StageId;
-  onMove: (profileId: string, newStage: StageId) => void;
-  moving: boolean;
+  isDragging: boolean;
+  isMoving: boolean;
+  onDragStart: (e: React.DragEvent, id: string) => void;
+  onDragEnd: () => void;
+  accentHue: string;
+  accent: string;
+  accentBorder: string;
+  accentSoft: string;
 }
 
-function ClientCard({ profile, currentStage, onMove, moving }: ClientCardProps) {
-  const initials   = getInitials(profile.first_name, profile.last_name);
-  const fullName   = [profile.first_name, profile.last_name].filter(Boolean).join(" ") || "—";
+function ClientCard({ profile, isDragging, isMoving, onDragStart, onDragEnd, accentHue, accent, accentBorder, accentSoft }: ClientCardProps) {
+  const initials    = getInitials(profile.first_name, profile.last_name);
+  const fullName    = [profile.first_name, profile.last_name].filter(Boolean).join(" ") || "—";
   const avatarColor = getAvatarColor(profile.account_type);
   const trialBadge  = getTrialBadge(profile);
   const typeLabel   = ACCOUNT_TYPE_LABEL[profile.account_type] ?? profile.account_type;
 
   return (
     <div
-      className="rounded-xl border p-3 space-y-2.5 transition-all hover:border-[#C96E2C55]"
+      draggable
+      onDragStart={(e) => onDragStart(e, profile.id)}
+      onDragEnd={onDragEnd}
+      className="rounded-xl border p-3 space-y-2.5 transition-all hover:border-[#C96E2C55] select-none"
       style={{
         background: "#ffffff",
-        borderColor: "#e5e7eb",
-        opacity: moving ? 0.6 : 1,
-        boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+        borderColor: isDragging ? accent : "#e5e7eb",
+        opacity: isDragging || isMoving ? 0.45 : 1,
+        boxShadow: isDragging ? `0 8px 24px ${accentBorder}` : "0 1px 3px rgba(0,0,0,0.06)",
+        cursor: isDragging ? "grabbing" : "grab",
+        transform: isDragging ? "scale(0.97)" : undefined,
       }}
     >
       {/* Avatar + name */}
@@ -177,17 +188,11 @@ function ClientCard({ profile, currentStage, onMove, moving }: ClientCardProps) 
           {initials}
         </div>
         <div className="min-w-0 flex-1">
-          <div
-            className="font-semibold text-[12.5px] leading-tight truncate"
-            style={{ color: "#111827" }}
-          >
+          <div className="font-semibold text-[12.5px] leading-tight truncate" style={{ color: "#111827" }}>
             {fullName}
           </div>
           {profile.email && (
-            <div
-              className="text-[11px] truncate mt-0.5"
-              style={{ color: "#c4c8d0" }}
-            >
+            <div className="text-[11px] truncate mt-0.5" style={{ color: "#c4c8d0" }}>
               {profile.email}
             </div>
           )}
@@ -202,78 +207,43 @@ function ClientCard({ profile, currentStage, onMove, moving }: ClientCardProps) 
         </div>
       )}
 
-      {/* Badges row */}
+      {/* Badges */}
       <div className="flex flex-wrap gap-1.5">
-        {/* Account type */}
         <span
           className="text-[10.5px] font-semibold px-2 py-0.5 rounded-full"
           style={{
             background: profile.account_type === "planner" ? "#dcfce7" :
-                        profile.account_type === "couple"  ? "#dbeafe" : "#fff7ed",
+                        profile.account_type === "couple"  ? "#dbeafe" : accentSoft,
             color:      profile.account_type === "planner" ? "#15803d" :
-                        profile.account_type === "couple"  ? "#1d4ed8" : "#C96E2C",
+                        profile.account_type === "couple"  ? "#1d4ed8" : accentHue,
           }}
         >
           {typeLabel}
         </span>
-
-        {/* Subscribed */}
         {profile.is_subscribed && (
-          <span
-            className="text-[10.5px] font-semibold px-2 py-0.5 rounded-full"
-            style={{ background: "#dcfce7", color: "#16a34a" }}
-          >
+          <span className="text-[10.5px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "#dcfce7", color: "#16a34a" }}>
             Abonné{profile.plan ? ` · ${profile.plan}` : ""}
           </span>
         )}
-
-        {/* Trial / Expired */}
         {!profile.is_subscribed && trialBadge && (
-          <span
-            className="text-[10.5px] font-semibold px-2 py-0.5 rounded-full"
-            style={{ background: trialBadge.bg, color: trialBadge.color }}
-          >
+          <span className="text-[10.5px] font-semibold px-2 py-0.5 rounded-full" style={{ background: trialBadge.bg, color: trialBadge.color }}>
             {trialBadge.label}
           </span>
         )}
       </div>
 
-      {/* Actions row */}
-      <div className="flex items-center gap-2 pt-0.5">
+      {/* Fiche link */}
+      <div className="flex items-center pt-0.5">
         <Link
           href={`/admin/crm/${profile.id}`}
+          onClick={(e) => e.stopPropagation()}
           className="text-[11px] font-medium transition-colors hover:opacity-80"
-          style={{ color: "#C96E2C" }}
+          style={{ color: accentHue }}
         >
           Voir fiche →
         </Link>
-
         <div className="flex-1" />
-
-        {/* Move dropdown */}
-        <select
-          disabled={moving}
-          onChange={(e) => {
-            if (e.target.value) onMove(profile.id, e.target.value as StageId);
-            e.target.value = "";
-          }}
-          defaultValue=""
-          className="text-[10.5px] rounded-lg px-2 py-1 border outline-none cursor-pointer transition-colors hover:border-[#C96E2C55] disabled:opacity-40"
-          style={{
-            background: "#ffffff",
-            borderColor: "#d1d5db",
-            color: "#6b7280",
-            maxWidth: 110,
-          }}
-          title="Déplacer vers..."
-        >
-          <option value="" disabled>Déplacer →</option>
-          {STAGES.filter((s) => s.id !== currentStage).map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.label}
-            </option>
-          ))}
-        </select>
+        <span className="text-[10px]" style={{ color: "#d1d5db" }}>⠿⠿</span>
       </div>
     </div>
   );
@@ -284,48 +254,62 @@ function ClientCard({ profile, currentStage, onMove, moving }: ClientCardProps) 
 interface ColumnProps {
   stage: typeof STAGES[number];
   profiles: PipelineProfile[];
-  onMove: (profileId: string, newStage: StageId) => void;
+  isDragOver: boolean;
+  draggingId: string | null;
   movingId: string | null;
+  onDragStart: (e: React.DragEvent, id: string) => void;
+  onDragEnd: () => void;
+  onDragOver: (e: React.DragEvent, stageId: StageId) => void;
+  onDragLeave: () => void;
+  onDrop: (e: React.DragEvent, stageId: StageId) => void;
+  accentHue: string;
+  accent: string;
+  accentBorder: string;
+  accentSoft: string;
 }
 
-function KanbanColumn({ stage, profiles, onMove, movingId }: ColumnProps) {
-  const count = profiles.length;
+function KanbanColumn({
+  stage, profiles, isDragOver, draggingId, movingId,
+  onDragStart, onDragEnd, onDragOver, onDragLeave, onDrop,
+  accentHue, accent, accentBorder, accentSoft,
+}: ColumnProps) {
+  const count   = profiles.length;
   const isEmpty = count === 0;
 
   return (
     <div
-      className="rounded-xl border flex flex-col"
+      onDragOver={(e) => onDragOver(e, stage.id)}
+      onDragLeave={onDragLeave}
+      onDrop={(e) => onDrop(e, stage.id)}
+      className="rounded-xl border flex flex-col transition-all"
       style={{
         minWidth: 260,
         maxWidth: 300,
         width: 280,
-        background: "#ffffff",
-        borderColor: "#e5e7eb",
+        background: isDragOver ? `${stage.color}08` : "#ffffff",
+        borderColor: isDragOver ? stage.color : "#e5e7eb",
+        borderWidth: isDragOver ? 2 : 1,
         flexShrink: 0,
         maxHeight: "calc(100vh - 320px)",
         minHeight: 200,
-        boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+        boxShadow: isDragOver
+          ? `0 0 0 3px ${stage.color}30`
+          : "0 1px 3px rgba(0,0,0,0.06)",
       }}
     >
-      {/* Column header */}
+      {/* Header */}
       <div
         className="flex items-center gap-2 px-3 py-2.5 border-b sticky top-0 rounded-t-xl"
-        style={{ borderColor: "#e5e7eb", background: "#ffffff", zIndex: 1 }}
+        style={{ borderColor: isDragOver ? `${stage.color}30` : "#e5e7eb", background: isDragOver ? `${stage.color}0a` : "#ffffff", zIndex: 1 }}
       >
-        <span
-          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-          style={{ background: stage.color }}
-        />
+        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: stage.color }} />
         <Icon name={stage.icon} size={13} style={{ color: stage.color }} />
         <span className="text-[12.5px] font-semibold flex-1" style={{ color: "#374151" }}>
           {stage.label}
         </span>
         <span
           className="text-[11px] font-bold px-2 py-0.5 rounded-full"
-          style={{
-            background: isEmpty ? "#f3f4f6" : `${stage.color}20`,
-            color: isEmpty ? "#e5e7eb" : stage.color,
-          }}
+          style={{ background: isEmpty ? "#f3f4f6" : `${stage.color}20`, color: isEmpty ? "#d1d5db" : stage.color }}
         >
           {count}
         </span>
@@ -333,24 +317,47 @@ function KanbanColumn({ stage, profiles, onMove, movingId }: ColumnProps) {
 
       {/* Cards area */}
       <div className="p-2 space-y-2 overflow-y-auto flex-1">
-        {isEmpty ? (
+        {isEmpty && !isDragOver ? (
           <div
             className="flex flex-col items-center justify-center gap-2 py-8 rounded-lg border-dashed border"
-            style={{ borderColor: "#e5e7eb", color: "#e5e7eb" }}
+            style={{ borderColor: "#e5e7eb", color: "#d1d5db" }}
           >
-            <Icon name={stage.icon} size={20} style={{ color: "#e5e7eb" }} />
+            <Icon name={stage.icon} size={20} style={{ color: "#d1d5db" }} />
             <span className="text-[11px]">Aucun client</span>
           </div>
+        ) : isEmpty && isDragOver ? (
+          <div
+            className="flex flex-col items-center justify-center gap-2 py-8 rounded-lg border-dashed border-2"
+            style={{ borderColor: stage.color, color: stage.color }}
+          >
+            <Icon name={stage.icon} size={20} style={{ color: stage.color }} />
+            <span className="text-[11px] font-semibold">Déposer ici</span>
+          </div>
         ) : (
-          profiles.map((profile) => (
-            <ClientCard
-              key={profile.id}
-              profile={profile}
-              currentStage={stage.id}
-              onMove={onMove}
-              moving={movingId === profile.id}
-            />
-          ))
+          <>
+            {profiles.map((profile) => (
+              <ClientCard
+                key={profile.id}
+                profile={profile}
+                isDragging={draggingId === profile.id}
+                isMoving={movingId === profile.id}
+                onDragStart={onDragStart}
+                onDragEnd={onDragEnd}
+                accentHue={accentHue}
+                accent={accent}
+                accentBorder={accentBorder}
+                accentSoft={accentSoft}
+              />
+            ))}
+            {isDragOver && (
+              <div
+                className="rounded-xl border-2 border-dashed py-4 flex items-center justify-center text-[11px] font-semibold"
+                style={{ borderColor: stage.color, color: stage.color, background: `${stage.color}08` }}
+              >
+                Déposer ici
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -360,11 +367,14 @@ function KanbanColumn({ stage, profiles, onMove, movingId }: ColumnProps) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function PipelinePage() {
+  const { tc } = useAdminTheme();
   const [profiles, setProfiles] = useState<PipelineProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [accountFilter, setAccountFilter] = useState<AccountTypeFilter>("all");
   const [movingId, setMovingId] = useState<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOverStage, setDragOverStage] = useState<StageId | null>(null);
 
   // ── Load ──────────────────────────────────────────────────────────────────
 
@@ -412,6 +422,42 @@ export default function PipelinePage() {
       setProfiles((data as PipelineProfile[] | null) ?? []);
     } finally {
       setMovingId(null);
+    }
+  }
+
+  // ── Drag handlers ─────────────────────────────────────────────────────────
+
+  function handleDragStart(e: React.DragEvent, id: string) {
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("profileId", id);
+    setDraggingId(id);
+  }
+
+  function handleDragEnd() {
+    setDraggingId(null);
+    setDragOverStage(null);
+  }
+
+  function handleDragOver(e: React.DragEvent, stageId: StageId) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverStage(stageId);
+  }
+
+  function handleDragLeave() {
+    setDragOverStage(null);
+  }
+
+  async function handleDrop(e: React.DragEvent, stageId: StageId) {
+    e.preventDefault();
+    const profileId = e.dataTransfer.getData("profileId");
+    setDraggingId(null);
+    setDragOverStage(null);
+    if (profileId && profileId !== "") {
+      const currentStage = getEffectiveStage(profiles.find((p) => p.id === profileId)!);
+      if (currentStage !== stageId) {
+        await moveToStage(profileId, stageId);
+      }
     }
   }
 
@@ -504,7 +550,7 @@ export default function PipelinePage() {
       {/* ── Summary metrics bar ── */}
       <div
         className="flex items-center gap-4 px-6 py-3 border-b flex-shrink-0 overflow-x-auto"
-        style={{ borderColor: "#f0f0f0", background: "#fafafa" }}
+        style={{ borderColor: tc.lineSoft, background: "#fafafa" }}
       >
         {[
           { label: "Prospects",    value: metrics.prospectCount,  color: "#9ca3af", icon: "users"        },
@@ -518,7 +564,7 @@ export default function PipelinePage() {
             className="flex items-center gap-2 flex-shrink-0"
             style={
               i < 4
-                ? { paddingRight: "1rem", borderRight: "1px solid #f0f0f0" }
+                ? { paddingRight: "1rem", borderRight: `1px solid ${tc.lineSoft}` }
                 : undefined
             }
           >
@@ -536,7 +582,7 @@ export default function PipelinePage() {
       {/* ── Filter bar ── */}
       <div
         className="flex items-center gap-3 px-6 py-3 border-b flex-shrink-0"
-        style={{ borderColor: "#f0f0f0" }}
+        style={{ borderColor: tc.lineSoft }}
       >
         {/* Account type pills */}
         <div className="flex items-center gap-2">
@@ -553,9 +599,9 @@ export default function PipelinePage() {
                 onClick={() => setAccountFilter(key)}
                 className="px-3 py-1 rounded-full text-[12px] font-medium transition-all"
                 style={{
-                  background: active ? "#fff7ed" : "#ffffff",
-                  color: active ? "#C96E2C" : "#9ca3af",
-                  border: active ? "1px solid rgba(201,110,44,0.3)" : "1px solid #e5e7eb",
+                  background: active ? tc.accentSoft : "#ffffff",
+                  color: active ? tc.accentHue : "#9ca3af",
+                  border: active ? `1px solid ${tc.accentBorder}` : `1px solid ${tc.line}`,
                 }}
               >
                 {labels[key]}
@@ -629,8 +675,18 @@ export default function PipelinePage() {
                 key={stage.id}
                 stage={stage}
                 profiles={byStage[stage.id]}
-                onMove={moveToStage}
+                isDragOver={dragOverStage === stage.id}
+                draggingId={draggingId}
                 movingId={movingId}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                accentHue={tc.accentHue}
+                accent={tc.accent}
+                accentBorder={tc.accentBorder}
+                accentSoft={tc.accentSoft}
               />
             ))
           )}

@@ -191,6 +191,39 @@
   --line: #38242E;     --line-strong: #463040;
 }
 
+/* Nude — Sable Chaud & Orange Vif */
+:not([data-theme="dark"])[data-wedding-theme="nude"] {
+  --primary: #E8501A;  --primary-600: #D04210;  --primary-700: #B83508;
+  --primary-soft: #FFF0E8;  --primary-softer: #FFF7F3;  --on-primary: #FFFFFF;
+  --sage: #A08060;  --sage-soft: #F4EDE0;
+  --coral: #C94030;  --coral-soft: #FAE5E2;
+  --gold: #C8901A;  --gold-soft: #F6EAC8;  --gold-ink: #8A6010;
+  --amber: #C8901A;  --amber-soft: #F6EAC8;
+  --bg: #F5EDE0;  --bg-2: #EDE1CE;
+  --surface: #FFFFFF;  --surface-2: #FAF5EE;  --surface-3: #F2E8D8;
+  --hover: #F0E4D0;
+  --line: #E5D5C0;  --line-strong: #D4BFA4;
+  --text: #1C1008;  --text-2: #5C3E22;  --text-3: #9A7855;
+  --sh-primary: 0 4px 14px rgba(232,80,26,.28);
+}
+[data-theme="dark"][data-wedding-theme="nude"] {
+  --primary: #F06030;  --primary-600: #F87040;  --primary-700: #FF8050;
+  --primary-soft: #38180A;  --primary-softer: #2C1006;
+  --on-primary: #100400;
+  --sage: #C4A080;  --sage-soft: #2E2018;
+  --gold: #D4A030;  --gold-soft: #2E2008;  --gold-ink: #D4A030;
+  --bg: #1C1008;  --bg-2: #140C06;
+  --surface: #281A0E;  --surface-2: #301E12;  --surface-3: #3A2618;
+  --hover: #3A2618;
+  --line: #3C2818;  --line-strong: #4E3420;
+  --text: #F5EDE0;  --text-2: #BEA080;  --text-3: #7E6040;
+  --sh-xs:      0 1px 2px rgba(0,0,0,.5);
+  --sh-sm:      0 1px 3px rgba(0,0,0,.6);
+  --sh-md:      0 4px 12px rgba(0,0,0,.5);
+  --sh-lg:      0 12px 32px rgba(0,0,0,.6);
+  --sh-primary: 0 4px 14px rgba(240,96,48,.32);
+}
+
 /* Marin — Bleu Marine & Sable */
 :not([data-theme="dark"])[data-wedding-theme="marin"] {
   --primary: #1B4B8C;  --primary-600: #153C72;  --primary-700: #0F2D58;

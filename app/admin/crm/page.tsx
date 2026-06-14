@@ -8,6 +8,7 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import { Icon } from "@/components/icon";
+import { useAdminTheme } from "@/app/admin/admin-theme-context";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -118,9 +119,9 @@ function isTrial(profile: CrmProfile): boolean {
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
-function SkeletonRow() {
+function SkeletonRow({ lineSoft }: { lineSoft: string }) {
   return (
-    <tr style={{ borderTop: "1px solid #f0f0f0" }}>
+    <tr style={{ borderTop: `1px solid ${lineSoft}` }}>
       {[40, 80, 60, 60, 80, 70, 40, 50].map((w, i) => (
         <td key={i} className="px-4 py-3">
           <div
@@ -135,10 +136,10 @@ function SkeletonRow() {
 
 // ─── Sort arrow ───────────────────────────────────────────────────────────────
 
-function SortArrow({ active, dir }: { active: boolean; dir: SortDir }) {
+function SortArrow({ active, dir, accentHue }: { active: boolean; dir: SortDir; accentHue: string }) {
   if (!active) return <span style={{ color: "#e5e7eb", marginLeft: 4 }}>↕</span>;
   return (
-    <span style={{ color: "#C96E2C", marginLeft: 4 }}>
+    <span style={{ color: accentHue, marginLeft: 4 }}>
       {dir === "asc" ? "↑" : "↓"}
     </span>
   );
@@ -147,6 +148,7 @@ function SortArrow({ active, dir }: { active: boolean; dir: SortDir }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminCrmPage() {
+  const { tc } = useAdminTheme();
   const [profiles, setProfiles] = useState<CrmProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -300,7 +302,7 @@ export default function AdminCrmPage() {
         <button
           disabled
           className="flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-semibold opacity-40 cursor-not-allowed"
-          style={{ background: "#C96E2C", color: "#fffaf2" }}
+          style={{ background: tc.accent, color: tc.accentInk }}
           title="Fonctionnalité à venir"
         >
           <Icon name="plus" size={15} />
@@ -385,9 +387,9 @@ export default function AdminCrmPage() {
               onClick={() => setFilter(key)}
               className="px-3.5 py-1.5 rounded-full text-[12.5px] font-medium transition-all"
               style={{
-                background: active ? "#fff7ed" : "#ffffff",
-                color: active ? "#C96E2C" : "#9ca3af",
-                border: active ? "1px solid #C96E2C55" : "1px solid #e5e7eb",
+                background: active ? tc.accentSoft : "#ffffff",
+                color: active ? tc.accentHue : "#9ca3af",
+                border: active ? `1px solid ${tc.accentBorder}` : `1px solid ${tc.line}`,
               }}
             >
               {label}
@@ -404,16 +406,16 @@ export default function AdminCrmPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr style={{ borderBottom: "1px solid #e5e7eb", background: "#f9fafb" }}>
+              <tr style={{ borderBottom: `1px solid ${tc.line}`, background: "#f9fafb" }}>
                 {/* Nom/Email */}
                 <th className="text-left px-4 py-3">
                   <button
                     onClick={() => handleSort("name")}
                     className="flex items-center text-xs font-semibold uppercase tracking-wider transition-colors hover:opacity-70"
-                    style={{ color: sortKey === "name" ? "#C96E2C" : "#c4c8d0" }}
+                    style={{ color: sortKey === "name" ? tc.accentHue : "#c4c8d0" }}
                   >
                     Client
-                    <SortArrow active={sortKey === "name"} dir={sortDir} />
+                    <SortArrow active={sortKey === "name"} dir={sortDir} accentHue={tc.accentHue} />
                   </button>
                 </th>
                 {/* Type */}
@@ -425,10 +427,10 @@ export default function AdminCrmPage() {
                   <button
                     onClick={() => handleSort("status")}
                     className="flex items-center text-xs font-semibold uppercase tracking-wider transition-colors hover:opacity-70"
-                    style={{ color: sortKey === "status" ? "#C96E2C" : "#c4c8d0" }}
+                    style={{ color: sortKey === "status" ? tc.accentHue : "#c4c8d0" }}
                   >
                     Statut
-                    <SortArrow active={sortKey === "status"} dir={sortDir} />
+                    <SortArrow active={sortKey === "status"} dir={sortDir} accentHue={tc.accentHue} />
                   </button>
                 </th>
                 {/* Plan */}
@@ -452,10 +454,10 @@ export default function AdminCrmPage() {
                   <button
                     onClick={() => handleSort("created_at")}
                     className="flex items-center text-xs font-semibold uppercase tracking-wider transition-colors hover:opacity-70"
-                    style={{ color: sortKey === "created_at" ? "#C96E2C" : "#c4c8d0" }}
+                    style={{ color: sortKey === "created_at" ? tc.accentHue : "#c4c8d0" }}
                   >
                     Inscrit le
-                    <SortArrow active={sortKey === "created_at"} dir={sortDir} />
+                    <SortArrow active={sortKey === "created_at"} dir={sortDir} accentHue={tc.accentHue} />
                   </button>
                 </th>
                 {/* Action */}
@@ -465,7 +467,7 @@ export default function AdminCrmPage() {
 
             <tbody>
               {loading ? (
-                Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)
+                Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} lineSoft={tc.lineSoft} />)
               ) : displayed.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="text-center py-16 text-[13px]" style={{ color: "#c4c8d0" }}>
@@ -476,7 +478,10 @@ export default function AdminCrmPage() {
                 displayed.map((profile, i) => {
                   const initials  = getInitials(profile.first_name, profile.last_name);
                   const fullName  = [profile.first_name, profile.last_name].filter(Boolean).join(" ") || "—";
-                  const badge     = ACCOUNT_BADGE[profile.account_type] ?? { label: profile.account_type, bg: "#f3f4f6", color: "#6b7280" };
+                  const badgeRaw  = ACCOUNT_BADGE[profile.account_type] ?? { label: profile.account_type, bg: "#f3f4f6", color: "#6b7280" };
+                  const badge     = profile.account_type === "super_admin"
+                    ? { ...badgeRaw, bg: tc.accentSoft, color: tc.accentHue }
+                    : badgeRaw;
                   const status    = getStatusInfo(profile);
 
                   return (
@@ -484,7 +489,7 @@ export default function AdminCrmPage() {
                       key={profile.id}
                       className="transition-colors hover:bg-[#00000005]"
                       style={{
-                        borderTop: i > 0 ? "1px solid #f0f0f0" : undefined,
+                        borderTop: i > 0 ? `1px solid ${tc.lineSoft}` : undefined,
                         background: i % 2 === 0 ? "transparent" : "#fafafa",
                       }}
                     >
@@ -493,7 +498,7 @@ export default function AdminCrmPage() {
                         <div className="flex items-center gap-2.5">
                           <div
                             className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
-                            style={{ background: "#fff7ed", color: "#C96E2C" }}
+                            style={{ background: tc.accentSoft, color: tc.accentHue }}
                           >
                             {initials}
                           </div>
@@ -580,9 +585,9 @@ export default function AdminCrmPage() {
                           href={`/admin/crm/${profile.id}`}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors whitespace-nowrap hover:opacity-80"
                           style={{
-                            background: "#fff7ed",
-                            color: "#C96E2C",
-                            border: "1px solid rgba(201,110,44,0.15)",
+                            background: tc.accentSoft,
+                            color: tc.accentHue,
+                            border: `1px solid ${tc.accentBorder}`,
                           }}
                         >
                           <Icon name="eye" size={13} />
@@ -601,7 +606,7 @@ export default function AdminCrmPage() {
         {!loading && displayed.length > 0 && (
           <div
             className="flex items-center justify-between px-4 py-3 border-t"
-            style={{ borderColor: "#e5e7eb" }}
+            style={{ borderColor: tc.line }}
           >
             <span className="text-xs" style={{ color: "#c4c8d0" }}>
               {displayed.length} client{displayed.length !== 1 ? "s" : ""} affiché{displayed.length !== 1 ? "s" : ""}

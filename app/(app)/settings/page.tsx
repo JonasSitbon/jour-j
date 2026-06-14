@@ -968,6 +968,7 @@ export default function SettingsPage() {
                     { id: "moderne",    label: "Moderne",    emoji: "🖤", colors: ["#323232", "#C2A03A", "#F6F6F6"] },
                     { id: "baroque",    label: "Baroque",    emoji: "🏰", colors: ["#7A1C40", "#C4921A", "#F6F1F4"] },
                     { id: "marin",      label: "Marin",      emoji: "🌊", colors: ["#1B4B8C", "#C8A96A", "#F1F4F8"] },
+                    { id: "nude",       label: "Nude",       emoji: "🪨", colors: ["#E8501A", "#C8901A", "#F5EDE0"] },
                   ] as const).map(({ id, label, emoji, colors }) => {
                     const active = weddingTheme === id;
                     return (
