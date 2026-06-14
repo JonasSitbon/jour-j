@@ -314,7 +314,7 @@ export default function DayJPage() {
   }
 
   return (
-    <>
+    <div className="mx-auto w-full max-w-[1320px] px-5 md:px-8 py-6 md:py-8 pb-28 md:pb-12">
       <PageHead
         title="Déroulé du Jour J"
         sub={weddingDateFormatted ? `Programme heure par heure · ${weddingDateFormatted}` : "Programme heure par heure de votre mariage"}
@@ -337,7 +337,7 @@ export default function DayJPage() {
         }
       />
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 pb-16 space-y-6">
+      <div className="max-w-3xl mx-auto pb-8 space-y-6">
 
         {/* Show template picker when all days are empty */}
         {allDaysEmpty ? (
@@ -598,6 +598,6 @@ export default function DayJPage() {
           }}
         />
       )}
-    </>
+    </div>
   );
 }
