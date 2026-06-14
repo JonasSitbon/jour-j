@@ -6,7 +6,7 @@ import { TC, TEXT_DARK, TEXT_MID } from "./tokens";
 import { FadeIn, Pill } from "./shared";
 
 const FAQS = [
-  { q: "Jour J est-il vraiment gratuit ?", a: "Oui, complètement et sans limite. Aucune carte bancaire n'est requise. Tous les modules sont accessibles dès la création de votre compte." },
+  { q: "Comment fonctionne l'essai gratuit ?", a: "L'essai dure 7 jours avec accès complet à tous les modules, sans carte bancaire. À l'issue de l'essai, vous choisissez le plan qui correspond à vos besoins (Couple ou Wedding Planner). Aucun engagement, annulation à tout moment." },
   { q: "Combien de mariages puis-je gérer ?", a: "Jusqu'à 5 mariages par compte. Les wedding planners peuvent gérer plusieurs clients depuis le même tableau de bord avec une interface dédiée." },
   { q: "Puis-je collaborer avec mon partenaire ou ma wedding planner ?", a: "Oui ! Vous pouvez inviter des collaborateurs avec différents rôles : Administrateur, Éditeur ou Lecteur. Chaque rôle a des permissions précises." },
   { q: "Mes données sont-elles sécurisées ?", a: "Vos données sont hébergées sur des serveurs sécurisés et chiffrées. Seul vous et vos collaborateurs autorisés y ont accès — nous ne partageons jamais vos informations." },

@@ -554,6 +554,37 @@ function UserCard({ collapsed, onAction }: { collapsed: boolean; onAction?: () =
   );
 }
 
+// ─── Trial banner ─────────────────────────────────────────────────────────────
+
+function TrialBanner() {
+  const { state } = useStore();
+  const trialEndsAt = state.profile?.trialEndsAt;
+  if (!trialEndsAt) return null;
+
+  const daysLeft = Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / 86_400_000);
+  if (daysLeft > 3) return null;
+
+  if (daysLeft <= 0) {
+    return (
+      <div className="flex items-center gap-2.5 px-5 py-2.5 text-[13px] shrink-0"
+        style={{ background: "var(--coral-soft)", color: "var(--coral)", borderBottom: "1px solid rgba(217,79,79,0.15)" }}>
+        <Icon name="alert" size={14} />
+        <span>Votre essai gratuit a expiré.</span>
+        <a href="/#pricing" className="font-semibold underline ml-1 hover:opacity-80">Choisir un plan →</a>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2.5 px-5 py-2.5 text-[13px] shrink-0"
+      style={{ background: "rgba(201,110,44,0.08)", color: "var(--primary)", borderBottom: "1px solid rgba(201,110,44,0.12)" }}>
+      <Icon name="clock" size={14} />
+      <span>Il vous reste <strong>{daysLeft} jour{daysLeft > 1 ? "s" : ""}</strong> d&apos;essai gratuit.</span>
+      <a href="/#pricing" className="font-semibold underline ml-1 hover:opacity-80">Voir les plans →</a>
+    </div>
+  );
+}
+
 // ─── App shell ────────────────────────────────────────────────────────────────
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -718,6 +749,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <IconButton name="bell" badge={unread > 0} onClick={() => setNotifOpen(true)} />
         </header>
 
+        <TrialBanner />
         <main className="flex-1">{children}</main>
       </div>
 

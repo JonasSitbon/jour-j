@@ -191,6 +191,7 @@ export interface Profile {
   lastName: string;
   avatarUrl: string | null;
   accountType: AccountType;
+  trialEndsAt: string | null;
 }
 
 export interface WeddingSummary {

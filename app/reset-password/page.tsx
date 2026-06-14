@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Logo, Icon } from "@/components/icon";
 import { Button, Field, Input } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
+import { track } from "@/lib/analytics";
 
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState("");
@@ -24,6 +25,7 @@ export default function ResetPasswordPage() {
       setLoading(false);
       return;
     }
+    await track("password_reset_request");
     setSent(true);
     setLoading(false);
   };

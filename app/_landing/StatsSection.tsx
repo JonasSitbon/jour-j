@@ -9,7 +9,7 @@ export default function Stats() {
   const stats = [
     { val: 16, suffix: "+", label: "Modules inclus", icon: "grid" },
     { val: 250, suffix: "+", label: "Tâches pré-remplies", icon: "check" },
-    { val: 100, suffix: "%", label: "Gratuit", icon: "sparkle" },
+    { val: 100, suffix: "%", label: "Essai gratuit", icon: "sparkle" },
     { val: 2, suffix: " min", label: "Pour démarrer", icon: "clock" },
   ];
   return (

@@ -8,7 +8,7 @@ export default function Hero() {
   const STATS = [
     { value: "2 400+", label: "mariages planifiés" },
     { value: "16",     label: "modules intégrés"   },
-    { value: "100%",   label: "gratuit"             },
+    { value: "100%",   label: "essai gratuit"        },
     { value: "4.9★",   label: "satisfaction"        },
   ];
 

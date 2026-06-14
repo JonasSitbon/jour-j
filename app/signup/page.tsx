@@ -6,6 +6,7 @@ import { Logo, Icon } from "@/components/icon";
 import { Button, Field, Input } from "@/components/ui";
 import { createClient } from "@/lib/supabase";
 import { OAuthButtons } from "@/components/oauth-buttons";
+import { track } from "@/lib/analytics";
 
 const FEATURES = [
   "Tableau de bord complet",
@@ -43,8 +44,10 @@ export default function SignupPage() {
     if (error) { setErr(error.message); setLoading(false); return; }
 
     if (data.session) {
+      await track("signup_complete", { via: "email" });
       window.location.href = "/onboarding";
     } else {
+      await track("signup_complete", { via: "email", needs_confirmation: true });
       setDone(true);
     }
   };

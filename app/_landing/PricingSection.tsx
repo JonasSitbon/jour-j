@@ -146,10 +146,18 @@ export default function PricingCTA() {
               <div className="mb-6">
                 <div className="text-[11px] font-semibold uppercase tracking-widest mb-2" style={{ color: TC }}>Wedding Planner</div>
                 <div className="flex items-end gap-2 mb-1">
-                  <span className="text-5xl font-bold" style={{ color: TEXT_DARK }}>12€</span>
-                  <span className="text-[14px] mb-1.5" style={{ color: TEXT_LIGHT }}>/ mois</span>
+                  <span className="text-5xl font-bold" style={{ color: TEXT_DARK }}>
+                    {annual ? "120€" : "12€"}
+                  </span>
+                  <span className="text-[14px] mb-1.5" style={{ color: TEXT_LIGHT }}>
+                    {annual ? "/ an" : "/ mois"}
+                  </span>
                 </div>
-                <p className="text-[12px]" style={{ color: TEXT_LIGHT }}>facturation mensuelle</p>
+                {annual ? (
+                  <p className="text-[12px]" style={{ color: TEXT_LIGHT }}>soit 10€/mois — économisez 24€</p>
+                ) : (
+                  <p className="text-[12px]" style={{ color: TEXT_LIGHT }}>facturation mensuelle</p>
+                )}
                 <p className="text-[13.5px] mt-3 leading-relaxed" style={{ color: TEXT_MID }}>
                   Gérez jusqu&apos;à 5 mariages actifs en simultané avec un historique complet de vos clients passés.
                 </p>
