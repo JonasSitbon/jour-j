@@ -54,7 +54,6 @@ interface WeddingRow {
   partner_b: string | null;
   date: string | null;
   city: string | null;
-  created_at: string;
   role: string;
 }
 
@@ -463,19 +462,21 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
       setTimeline(merged);
 
       // Weddings owned by user
-      const { data: ownedWeddings } = await sb
+      const { data: ownedWeddings, error: weddingError } = await sb
         .from("wedding")
-        .select("id, user_id, name, partner_a, partner_b, date, city, created_at")
+        .select("id, user_id, name, partner_a, partner_b, date, city")
         .eq("user_id", userId);
+      if (weddingError) console.error("[CRM fiche] wedding fetch error:", weddingError);
 
       const owned: WeddingRow[] = (ownedWeddings ?? []).map((w) => ({ ...(w as Omit<WeddingRow, "role">), role: "owner" }));
 
-      // Weddings via access
+      // Weddings via access (planner invited to couple's wedding, etc.)
       const ownedIds = owned.map((w) => w.id);
-      const { data: accessData } = await sb
+      const { data: accessData, error: accessError } = await sb
         .from("wedding_access")
-        .select("wedding_id, role, accepted_at, wedding:wedding_id(id, user_id, name, partner_a, partner_b, date, city, created_at)")
+        .select("wedding_id, role, wedding:wedding_id(id, user_id, name, partner_a, partner_b, date, city)")
         .eq("user_id", userId);
+      if (accessError) console.error("[CRM fiche] wedding_access fetch error:", accessError);
 
       const accessWeddings: WeddingRow[] = [];
       for (const row of accessData ?? []) {
@@ -490,7 +491,6 @@ export default function CrmDetailPage({ params }: { params: { id: string } }) {
           partner_b: (acc.wedding.partner_b as string) ?? null,
           date: (acc.wedding.date as string) ?? null,
           city: (acc.wedding.city as string) ?? null,
-          created_at: (acc.wedding.created_at as string) ?? "",
           role: acc.role,
         });
       }
